@@ -12,7 +12,7 @@ This guide walks you through compiling the exist.io server daemon, initializing 
 
 ## 1. Build the server and CLI
 
-Compile the forge daemon (`existd`) and the compatibility CLI (`origin`):
+Compile the forge daemon (`existd`) and the companion CLI (`exist`):
 
 ```bash
 # Clone the repository (if you haven't already)
@@ -23,7 +23,7 @@ cd exist.io
 go build -o bin/existd ./cmd/existd
 
 # Build the companion CLI
-go build -o bin/origin ./cmd/origin
+go build -o bin/exist ./cmd/exist
 ```
 
 ## 2. Bootstrap your first administrator
@@ -65,18 +65,18 @@ The server binds to port `8080` and is immediately ready to accept Git Smart-HTT
 
 ## 4. Working with the CLI and Git
 
-Configure the `origin` CLI using your bootstrap API token:
+Configure the `exist` CLI using your bootstrap API token:
 
 ```bash
-export CURSOR_ORIGIN_ENDPOINT="http://localhost:8080/v1/origin"
-export CURSOR_AUTH_TOKEN="<your-admin-token>"
+export EXIST_ENDPOINT="http://localhost:8080/v1/origin"
+export EXIST_TOKEN="<your-admin-token>"
 ```
 
 ### Create and clone a repository
 
 ```bash
 # Create a new repository in your namespace
-./bin/origin repo create acme/demo-app
+./bin/exist repo create acme/demo-app
 
 # Clone the repository using Git Smart-HTTP
 git clone http://localhost:8080/acme/demo-app.git
@@ -100,7 +100,7 @@ git commit -m "feat: add greeting"
 git push origin feature/greet
 
 # Open a pull request with the CLI
-./bin/origin pr create \
+./bin/exist pr create \
   -R acme/demo-app \
   --title "Add greeting feature" \
   --head feature/greet \

@@ -32,7 +32,7 @@ exist.io is an open-source, self-hosted Git forge built from the ground up for b
 - **Pull Request Collaboration & Merge Engine:** Native 3-way merge and squash pipelines with conflict detection, required review gates, check runs enforcement, and auto-merge queues.
 - **Enterprise Policy & Security:** Fine-grained repository grants, branch and tag rulesets, bypass actor hierarchies, inbound IP allowlists, and SSH Certificate Authority signing.
 - **GitHub Mirroring & Webhooks:** Live repository synchronization with upstream GitHub, signed Ed25519 webhook dispatch, and delivery retry queues.
-- **Origin CLI:** Compatible command-line tool (`origin`) for developer workflows, terminal management, and agent task dispatching.
+- **CLI Companion:** Command-line tool (`exist`) for developer workflows, terminal management, and automation.
 - **Zero CGO, Single Binary:** Built with pure Go (`go-git/v6` and `modernc.org/sqlite` with WAL mode and foreign keys enabled), producing a standalone static binary (`existd`).
 
 ---
@@ -44,7 +44,7 @@ flowchart TD
     subgraph Clients["Clients & Agents"]
         GitCli["Standard Git CLI<br/>(clone / fetch / push)"]
         Agent["AI Coding Agent<br/>(MCP Client)"]
-        DevCli["Origin CLI<br/>(origin repo / pr / auth)"]
+        DevCli["Exist CLI<br/>(exist repo / pr / auth)"]
         TF["Terraform Provider<br/>(IaC Automation)"]
     end
 
@@ -90,14 +90,14 @@ flowchart TD
 
 ### Build
 
-Compile the daemon (`existd`) and CLI (`origin`):
+Compile the daemon (`existd`) and CLI (`exist`):
 
 ```bash
 # Build the forge server daemon
 go build -o bin/existd ./cmd/existd
 
 # Build the command-line interface
-go build -o bin/origin ./cmd/origin
+go build -o bin/exist ./cmd/exist
 ```
 
 ### Bootstrap First Administrator
@@ -138,34 +138,34 @@ This command provisions the database schema, creates the `acme` namespace and in
 
 ## Using the CLI
 
-Configure the `origin` CLI to communicate with your instance:
+Configure the `exist` CLI to communicate with your instance:
 
 ```bash
-export CURSOR_ORIGIN_ENDPOINT="http://localhost:8080/v1/origin"
-export CURSOR_AUTH_TOKEN="<your-admin-token>"
+export EXIST_ENDPOINT="http://localhost:8080/v1/origin"
+export EXIST_TOKEN="<your-admin-token>"
 ```
 
 ### Common Commands
 
 ```bash
 # Create a new repository
-./bin/origin repo create acme/my-service
+./bin/exist repo create acme/my-service
 
 # Clone over Git Smart-HTTP
 git clone http://localhost:8080/acme/my-service.git
 
 # Create a pull request
-./bin/origin pr create \
+./bin/exist pr create \
   -R acme/my-service \
   --title "Add authentication middleware" \
   --head feature/auth \
   --base main
 
 # List pull requests
-./bin/origin pr list -R acme/my-service
+./bin/exist pr list -R acme/my-service
 
 # Call any REST endpoint directly via CLI
-./bin/origin api repos/acme/my-service/pulls
+./bin/exist api repos/acme/my-service/pulls
 ```
 
 ---

@@ -24,21 +24,32 @@ type CLI struct {
 
 // New creates a new CLI instance configured from the environment.
 func New() *CLI {
-	endpoint := os.Getenv("CURSOR_ORIGIN_ENDPOINT")
+	endpoint := os.Getenv("EXIST_ENDPOINT")
+	if endpoint == "" {
+		endpoint = os.Getenv("CURSOR_ORIGIN_ENDPOINT")
+	}
 	if endpoint == "" {
 		endpoint = "http://localhost:8080/v1/origin"
 	}
 	endpoint = strings.TrimRight(endpoint, "/")
 
-	token := os.Getenv("CURSOR_AUTH_TOKEN")
+	token := os.Getenv("EXIST_TOKEN")
+	if token == "" {
+		token = os.Getenv("CURSOR_AUTH_TOKEN")
+	}
 	if token == "" {
 		token = os.Getenv("CURSOR_API_KEY")
+	}
+
+	defaultRepo := os.Getenv("EXIST_REPO")
+	if defaultRepo == "" {
+		defaultRepo = os.Getenv("ORIGIN_REPO")
 	}
 
 	return &CLI{
 		Endpoint:    endpoint,
 		Token:       token,
-		DefaultRepo: os.Getenv("ORIGIN_REPO"),
+		DefaultRepo: defaultRepo,
 		HTTPClient:  http.DefaultClient,
 		Stdout:      os.Stdout,
 		Stderr:      os.Stderr,
@@ -56,7 +67,7 @@ func (c *CLI) Run(args []string) error {
 		return c.printHelp()
 	}
 	if args[0] == "--version" || args[0] == "-v" {
-		fmt.Fprintln(c.Stdout, "origin version 2026.10.14-exist.io")
+		fmt.Fprintln(c.Stdout, "exist version 2026.10.14")
 		return nil
 	}
 
@@ -72,19 +83,19 @@ func (c *CLI) Run(args []string) error {
 	case "api":
 		return c.runAPI(args[1:])
 	default:
-		return fmt.Errorf("unknown command %q. Run 'origin --help' for usage", args[0])
+		return fmt.Errorf("unknown command %q. Run 'exist --help' for usage", args[0])
 	}
 }
 
 func (c *CLI) printHelp() error {
-	help := `origin <command>
+	help := `exist <command>
 
 Commands:
-  origin auth               Manage authentication
-  origin repo               Manage repositories
-  origin pr                 Manage pull requests
-  origin app                Manage Origin apps
-  origin api <endpoint>     Make an authenticated request to Origin REST API
+  exist auth               Manage authentication
+  exist repo               Manage repositories
+  exist pr                 Manage pull requests
+  exist app                Manage apps
+  exist api <endpoint>     Make an authenticated request to REST API
 
 Options:
   --version                 Show version number
