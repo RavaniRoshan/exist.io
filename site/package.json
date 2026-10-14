@@ -1,0 +1,13 @@
+{
+  "name": "exist-io-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "blume dev",
+    "build": "blume build",
+    "validate": "blume validate"
+  },
+  "devDependencies": {
+    "blume": "^2.2.3"
+  }
+}

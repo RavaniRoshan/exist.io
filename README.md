@@ -2,6 +2,8 @@
 
 **An open-source, self-hosted alternative to Cursor Origin—a Git forge for people and coding agents.**
 
+Product documentation: **[exist.io docs](https://ravaniroshan.github.io/exist.io/)**.
+
 exist.io is being built for teams who want their repositories, collaboration workflows, and agent integrations on infrastructure they control. The goal is a straightforward forge that works for humans first and gives coding agents a clear, permission-aware way to work with code.
 
 > [!IMPORTANT]

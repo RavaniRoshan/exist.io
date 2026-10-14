@@ -1,0 +1,41 @@
+---
+title: Your own Git forge
+description: An open-source, self-hosted home for repositories and coding-agent workflows.
+---
+
+exist.io is an open-source, self-hosted alternative to Cursor Origin: a place to host code, collaborate with your team, and give coding agents a permission-aware way to work.
+
+The goal is simple: keep your repositories and the workflows around them on infrastructure you control.
+
+:::caution[Early development]
+exist.io is not ready for production use. Installation, first-user setup, and Git-over-HTTP are still being built. The docs describe the direction of the project; they are not deployment instructions.
+:::
+
+## What exist.io is for
+
+- **Your repositories:** own the data, storage, and deployment boundary.
+- **Human collaboration:** build toward pull requests, reviews, checks, and repository access controls.
+- **Coding agents:** make repository workflows accessible through clear, permission-aware interfaces.
+
+Those are product goals, not a list of features available in this early codebase.
+
+## Find your way around
+
+<CardGroup cols={2}>
+  <Card title="Product overview" href="/overview">
+    The problem exist.io is designed to solve and the principles guiding the product.
+  </Card>
+  <Card title="Getting started" href="/getting-started">
+    Current setup status and what needs to be in place before the first runnable release.
+  </Card>
+  <Card title="Architecture" href="/architecture">
+    A concise view of the current technical direction and what is still missing.
+  </Card>
+  <Card title="Roadmap" href="/roadmap">
+    The order of work from a runnable forge to agent integrations.
+  </Card>
+</CardGroup>
+
+## The current milestone
+
+The next milestone is a self-hosted server that starts cleanly, lets an administrator bootstrap a workspace, and supports authenticated clone, fetch, and push. Until that foundation is ready, there is no stable quick start to follow.
