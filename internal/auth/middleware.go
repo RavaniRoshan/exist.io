@@ -1,3 +1,5 @@
+// Package auth provides authentication, token exchange, credential hashing,
+// principal resolution, and scope-based authorization middleware for exist.io.
 package auth
 
 import (

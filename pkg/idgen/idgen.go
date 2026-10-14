@@ -18,6 +18,7 @@ var (
 	entropy io.Reader = ulid.Monotonic(rand.Reader, 0)
 )
 
+// New returns a unique monotonic entity ID formatted as "<prefix>_<26-character ULID>".
 func New(prefix string) string {
 	mu.Lock()
 	id := ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
@@ -25,8 +26,11 @@ func New(prefix string) string {
 	return prefix + "_" + id.String()
 }
 
+// NewApp generates a prefixed app ID ("app_...").
 func NewApp() string             { return New("app") }
+// NewInstallation generates a prefixed installation ID ("inst_...").
 func NewInstallation() string    { return New("inst") }
+// NewNS generates a prefixed namespace ID ("ns_...").
 func NewNS() string              { return New("ns") }
 func NewRepo() string            { return New("repo") }
 func NewPR() string              { return New("pr") }

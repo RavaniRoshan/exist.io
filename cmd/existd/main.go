@@ -1,3 +1,6 @@
+// Command existd is the primary server daemon for exist.io.
+// It hosts the Smart-HTTP Git transport, REST API, Model Context Protocol (MCP) server,
+// and supports offline administrator bootstrap.
 package main
 
 import (

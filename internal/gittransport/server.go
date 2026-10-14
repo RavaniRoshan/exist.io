@@ -1,3 +1,5 @@
+// Package gittransport implements authenticated Git Smart-HTTP transfer protocols
+// (upload-pack, receive-pack) for exist.io repositories.
 package gittransport
 
 import (

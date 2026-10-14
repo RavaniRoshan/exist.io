@@ -1,3 +1,5 @@
+// Package mcp implements the Model Context Protocol (MCP) JSON-RPC 2.0 server
+// and tool definitions, providing AI coding agents with structured access to exist.io.
 package mcp
 
 import (

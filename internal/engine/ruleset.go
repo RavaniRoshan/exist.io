@@ -1,3 +1,5 @@
+// Package engine provides policy evaluation, branch/tag protection ruleset checking,
+// and mergeability gate validation for exist.io.
 package engine
 
 import (
@@ -9,6 +11,7 @@ import (
 	"exist.io/internal/store"
 )
 
+// MergeBlocker describes a condition preventing a pull request from being merged.
 type MergeBlocker struct {
 	Kind              string             `json:"kind"`
 	Message           string             `json:"message"`
@@ -16,21 +19,25 @@ type MergeBlocker struct {
 	RequiredChecks    *RequiredChecks    `json:"requiredChecks,omitempty"`
 }
 
+// RequiredApprovals summarizes approval count requirements and current state.
 type RequiredApprovals struct {
 	RequiredCount int `json:"requiredCount"`
 	ApprovedCount int `json:"approvedCount"`
 }
 
+// RequiredChecks summarizes required check runs and overall state.
 type RequiredChecks struct {
 	State  string         `json:"state"`
 	Checks []CheckDetails `json:"checks"`
 }
 
+// CheckDetails holds details for an individual status check run.
 type CheckDetails struct {
 	Name     string         `json:"name"`
 	CheckRun map[string]any `json:"checkRun,omitempty"`
 }
 
+// EvaluationResult contains the outcome of evaluating rulesets against a pull request or ref.
 type EvaluationResult struct {
 	Allowed  bool
 	Verdict  string // "mergeable" | "blocked"

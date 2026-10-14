@@ -1,3 +1,5 @@
+// Command exist provides the command-line interface for the exist.io Git forge.
+// It supports managing repositories, pull requests, applications, and authentication.
 package main
 
 import (

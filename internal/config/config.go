@@ -1,3 +1,5 @@
+// Package config manages runtime configuration for exist.io services,
+// reading environment variables and providing self-hosted defaults.
 package config
 
 import "os"
@@ -22,6 +24,7 @@ type Config struct {
 	GitHost  string
 }
 
+// Load reads configuration from environment variables, falling back to safe self-hosted defaults.
 func Load() Config {
 	listenAddr := getEnv("EXIST_LISTEN_ADDR", defaultListen)
 	dataDir := getEnv("EXIST_DATA_DIR", defaultDataDir)

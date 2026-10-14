@@ -1,3 +1,6 @@
+// Package app provides the composition root and application lifecycle management
+// for the exist.io Git forge, unifying configuration, database storage, Git object storage,
+// REST routing, and Smart-HTTP transport.
 package app
 
 import (

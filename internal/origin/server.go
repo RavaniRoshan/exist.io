@@ -1,3 +1,5 @@
+// Package origin implements the wire-compatible REST API handlers, route dispatching,
+// and response envelopes for the 119 Origin forge operations.
 package origin
 
 import (

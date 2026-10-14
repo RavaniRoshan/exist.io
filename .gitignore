@@ -35,3 +35,8 @@ site/.blume/
 # Temporary and scratch files
 tmp/
 scratch/
+
+# Local agent skills
+.agents/
+skills-lock.json
+
