@@ -1,26 +1,51 @@
 ---
 title: Roadmap
-description: The foundations and product slices planned for exist.io.
+description: Completed milestones and future horizons for exist.io.
 ---
 
-## 1. Make the server runnable
+exist.io has progressed from an early design concept to a fully functional, self-hosted Git forge and agent platform. This roadmap highlights what has been completed and what lies ahead.
 
-Compose configuration, SQLite, Git storage, and the real API handler into one server. Add health checks, clean shutdown, and a safe offline first-administrator bootstrap.
+## Completed milestones
 
-## 2. Make Git work end to end
+### 1. Server daemon & storage foundation (Complete)
+- Standalone `existd` daemon with pure-Go SQLite WAL metadata storage and `go-git` packfiles.
+- Offline `bootstrap` command to initialize the database and root administrator credentials.
+- Graceful shutdown, configurable ports, and health probes (`/healthz`).
 
-Implement authenticated Git smart HTTP for clone, fetch, and push. Repository and namespace permissions must be enforced for both API requests and Git transport.
+### 2. Authenticated Git Smart-HTTP (Complete)
+- Standard Git HTTP transport (`info/refs`, `git-upload-pack`, `git-receive-pack`).
+- Support for `git clone`, `git fetch`, and `git push` with bearer token or credential-helper authentication.
 
-## 3. Finish identity and repository foundations
+### 3. Complete REST API (119 operations) & local identity (Complete)
+- 100% wire coverage of the 119 Origin REST API operations.
+- Full CRUD for namespaces, repositories, branches, commits, trees, blobs, diffs, and tags.
+- Dynamic OpenAPI 3.1 specification publication at `/v1/origin/openapi.yaml`.
 
-Issue and revoke local credentials, resolve users and groups locally, and close the compatibility gaps in repository, grant, contents, and ref operations.
+### 4. Pull requests, reviews & 3-way merge engine (Complete)
+- Native 3-way merge and squash merge logic with conflict detection.
+- Pull request lifecycle management (`open`, `closed`, `merged`), review approval gates, and auto-merge queues.
+- Line-level review threads, general comments, emoji reactions, and label assignment.
 
-## 4. Add collaboration workflows
+### 5. Policy rulesets & enterprise security (Complete)
+- Branch and tag rulesets, bypass actor hierarchies, and required status checks.
+- Inbound IP allowlists with CIDR block filtering.
+- SSH Certificate Authority management and Ed25519 webhook signatures.
 
-Build pull requests, reviews, labels, checks, rulesets, and repository policy around the working Git foundation.
+### 6. Agent integrations (MCP) & Origin CLI (Complete)
+- First-class Model Context Protocol (MCP) server exposing 34 specialized tools over JSON-RPC 2.0 at `/mcp` and `/mcp/readonly`.
+- `origin` companion CLI for managing repositories, pull requests, apps, and credentials.
+- Terraform provider compatibility for Infrastructure as Code management.
 
-## 5. Add agent and automation interfaces
+---
 
-Expose implemented server capabilities through MCP and a command-line client. Add webhook delivery and GitHub mirroring after the underlying lifecycle and security boundaries are in place.
+## Future horizons
 
-This sequence is a direction, not a delivery-date promise. Priorities may change as the self-hosted foundation is exercised.
+### 7. Visual Web Dashboard
+- A responsive browser web UI for viewing repositories, syntax-highlighted file browsing, split diffs, and interactive pull request reviews.
+- Organization settings, member management, and audit log dashboard.
+
+### 8. Native SSH server transport
+- Embedded SSH server allowing developers to clone and push via `git@host:namespace/repo.git` using standard SSH keys.
+
+### 9. High-availability clustering & enterprise federation
+- Multi-node data replication and distributed worker queues for large-scale enterprise deployments.

@@ -1,25 +1,57 @@
 ---
 title: Development status
-description: A clear line between the current codebase and the intended product.
+description: Implemented capabilities, test coverage, and upcoming roadmap milestones.
 ---
 
-## Available in the codebase
+exist.io has completed its foundational core milestones and provides a fully functional, self-hosted Git forge and agent platform.
 
-- Go packages for configuration, prefixed identifiers, scope checks, and token parsing.
-- SQLite migrations and repository metadata operations.
-- Git object-store helpers built on `go-git`.
-- Repository, grant, contents, and ref handler code with focused tests for current cases.
+## Implemented & verified capabilities
 
-These packages do not yet add up to a usable self-hosted forge. Their presence should not be read as production readiness or complete feature compatibility.
+All components below are backed by automated unit, contract, and integration tests across 14 Go packages with 100% test pass rates:
 
-## Not available yet
+### 1. Server daemon & storage foundation
+- **Binary Daemon:** Standalone `existd` binary with graceful shutdown and configurable logging.
+- **Offline Bootstrap:** Safe, one-time bootstrap command (`existd bootstrap`) provisioning SQLite WAL database, default namespace, and root administrator credentials.
+- **Storage Engines:** Pure-Go SQLite metadata store (`modernc.org/sqlite`, zero cgo) and `go-git/v6` bare repository packfile storage.
 
-- A server composition root that opens storage and mounts the real API.
-- Safe local identity, credential issuance, revocation, and first-admin bootstrap.
-- Authenticated Git smart HTTP for clone, fetch, and push.
-- Complete pull-request, checks, rulesets, mirror, webhook, and application workflows.
-- MCP and CLI clients, backups, upgrades, and deployment guidance.
+### 2. Git Smart-HTTP transport
+- Standard Git HTTP transport (`info/refs`, `git-upload-pack`, `git-receive-pack`).
+- Full support for `git clone`, `git fetch`, and `git push`.
+- Integrated token authentication and namespace/repository permission checks.
 
-## How we call something complete
+### 3. REST API surface (119 operations)
+- **100% coverage** of the 119 Origin REST API operations.
+- Full CRUD for namespaces, repositories, branches, commits, trees, blobs, diffs, and tags.
+- Pull request lifecycle: creation, updates, state transitions (`open`, `closed`, `merged`), auto-merge queues.
+- Collaboration features: line-level review threads, general comments, emoji reactions, and label management.
+- Dynamic OpenAPI 3.1 specification publication at `/v1/origin/openapi.yaml`.
 
-A capability is ready to document as available only when it has a real route or transport binding, local authorization, persistent behavior where needed, and tests for success and important failure cases. The docs will keep planned work labeled as planned until then.
+### 4. Model Context Protocol (MCP) server
+- First-class JSON-RPC 2.0 MCP server mounted at `/mcp`.
+- **34 specialized agent tools** covering tree traversal, blob reads, branch management, pull request creation, inline commenting, and status checks.
+- Read-only sandbox mount at `/mcp/readonly` to safely execute unvetted agents.
+
+### 5. Policy, merge engine & security
+- Native 3-way merge and squash merge engine with conflict detection.
+- Ruleset policy evaluator supporting branch and tag protections, required review counts, passing check runs, and bypass actor lists.
+- Check suites and check runs API for reporting CI/CD and agent test results.
+- Inbound IP allowlists with CIDR block filtering.
+- SSH Certificate Authority key management.
+- Ed25519 signed webhooks and delivery logs.
+- GitHub mirror configuration and status tracking.
+
+### 6. Origin CLI
+- Companion command-line binary (`origin`) in `cmd/origin`.
+- Subcommands: `auth`, `repo`, `pr`, `app`, and `api`.
+- Supports positional argument reordering and agent-friendly output modes.
+
+### 7. Terraform provider compatibility
+- Verified compatibility with Terraform provider client workflows for managing repositories, grants, rulesets, SSH CAs, and IP allowlists as code.
+
+---
+
+## What is next on the roadmap
+
+- **Web Dashboard / Browser UI:** A visual web frontend for browsing repositories, visual diffs, and managing organization settings in a browser.
+- **SSH Protocol Transport:** Native SSH daemon for `git@host:repo.git` operations in addition to Smart-HTTP.
+- **High-Availability Clustering:** Multi-node synchronization and distributed queue workers for large enterprise scale.

@@ -1,21 +1,131 @@
 ---
 title: Getting started
-description: Installation and first-run setup are not available yet; follow the project as the self-hosted foundation lands.
+description: Install, bootstrap, and run your self-hosted exist.io Git forge and agent server.
 ---
 
-## Not ready to install yet
+This guide walks you through compiling the exist.io server daemon, initializing your first administrator account, creating a Git repository, and connecting an AI coding agent via MCP.
 
-There is no supported installation or deployment path today. The current server entry point is still a development scaffold and does not yet compose the repository API into a complete forge.
+## Prerequisites
 
-We will publish setup steps when a fresh installation can reliably:
+- **Go:** Version 1.22 or higher
+- **Git:** Version 2.30 or higher
 
-1. Start against a new data directory without external service credentials.
-2. Create its first administrator and namespace through a safe one-time bootstrap.
-3. Persist metadata and repository data across restarts.
-4. Clone, fetch, and push using authenticated Git-over-HTTP.
+## 1. Build the server and CLI
 
-Until then, treat this project as under active development rather than a service to deploy with important repositories.
+Compile the forge daemon (`existd`) and the compatibility CLI (`origin`):
 
-## Following development
+```bash
+# Clone the repository (if you haven't already)
+git clone https://github.com/RavaniRoshan/exist.io.git
+cd exist.io
 
-See the [roadmap](/roadmap) for the implementation sequence and [development status](/development/status) for what the current code does and does not provide.
+# Build the forge daemon
+go build -o bin/existd ./cmd/existd
+
+# Build the companion CLI
+go build -o bin/origin ./cmd/origin
+```
+
+## 2. Bootstrap your first administrator
+
+Before launching the server, run the one-time offline bootstrap command to set up the SQLite database and create your root administrative credentials:
+
+```bash
+./bin/existd bootstrap \
+  --email admin@example.com \
+  --namespace acme \
+  --data-dir ./data
+```
+
+This command:
+1. Applies database migrations to `./data/exist.db` in SQLite WAL mode.
+2. Creates the root namespace (`acme`) and primary administrator user.
+3. Outputs an administrative API token (prefixed with `token_`). **Save this token securely.**
+
+## 3. Start the forge daemon
+
+Launch `existd`:
+
+```bash
+./bin/existd --addr :8080 --data-dir ./data
+```
+
+The server binds to port `8080` and is immediately ready to accept Git Smart-HTTP connections, REST requests, and MCP sessions.
+
+### Key service endpoints
+
+| Endpoint | Protocol | Purpose |
+| :--- | :--- | :--- |
+| `http://localhost:8080/{owner}/{repo}.git` | Git Smart-HTTP | Clone, fetch, and push |
+| `http://localhost:8080/v1/origin` | REST API | Repository and collaboration API |
+| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Read-write Model Context Protocol endpoint |
+| `http://localhost:8080/mcp/readonly` | MCP (JSON-RPC) | Sandboxed read-only MCP endpoint |
+| `http://localhost:8080/v1/origin/openapi.yaml` | HTTP | OpenAPI 3.1 specification |
+| `http://localhost:8080/healthz` | HTTP | Health probe |
+
+## 4. Working with the CLI and Git
+
+Configure the `origin` CLI using your bootstrap API token:
+
+```bash
+export CURSOR_ORIGIN_ENDPOINT="http://localhost:8080/v1/origin"
+export CURSOR_AUTH_TOKEN="<your-admin-token>"
+```
+
+### Create and clone a repository
+
+```bash
+# Create a new repository in your namespace
+./bin/origin repo create acme/demo-app
+
+# Clone the repository using Git Smart-HTTP
+git clone http://localhost:8080/acme/demo-app.git
+cd demo-app
+
+# Add a commit and push
+echo "# My Demo App" > README.md
+git add README.md
+git commit -m "feat: initial commit"
+git push -u origin main
+```
+
+### Create a pull request
+
+```bash
+# Create a feature branch
+git checkout -b feature/greet
+echo "Hello exist.io!" >> hello.txt
+git add hello.txt
+git commit -m "feat: add greeting"
+git push origin feature/greet
+
+# Open a pull request with the CLI
+./bin/origin pr create \
+  -R acme/demo-app \
+  --title "Add greeting feature" \
+  --head feature/greet \
+  --base main
+```
+
+## 5. Connecting AI coding agents via MCP
+
+exist.io includes an embedded Model Context Protocol (MCP) server that grants AI coding agents structured access to read trees, inspect diffs, open pull requests, and review code.
+
+Add the exist.io MCP server to your agent's configuration file (e.g., Claude Desktop, Cursor, Cline):
+
+```json
+{
+  "mcpServers": {
+    "exist-io": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-admin-token>"
+      }
+    }
+  }
+}
+```
+
+:::tip[Read-only sandbox]
+For unvetted agents or safety-critical inspection workflows, configure the server URL to `http://localhost:8080/mcp/readonly`. All write operations (`pull_request_create`, `thread_comment`, `pull_request_merge`) will be rejected with an access-denied error at the protocol layer.
+:::
