@@ -1,6 +1,7 @@
 package gitstore
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -9,6 +10,12 @@ import (
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/filemode"
 	"github.com/go-git/go-git/v6/plumbing/object"
+)
+
+// Sentinel errors for ref operations.
+var (
+	ErrRefExists   = errors.New("gitstore: ref already exists")
+	ErrRefNotFound = errors.New("gitstore: ref not found")
 )
 
 // FileChange is one file to write in WriteFiles. Path is relative to the
@@ -214,6 +221,105 @@ func splitPath(p string) []string {
 		return nil
 	}
 	return strings.Split(p, "/")
+}
+
+// RefInfo is a resolved git reference.
+type RefInfo struct {
+	Ref    string
+	SHA    string
+	IsHash bool // true when the ref resolves directly to a hash ref
+}
+
+// GetRef resolves a branch reference by short or full name.
+func (s *Store) GetRef(namespaceSlug, repoName, refName string) (RefInfo, error) {
+	repo, err := s.Open(namespaceSlug, repoName)
+	if err != nil {
+		return RefInfo{}, err
+	}
+	r := normalizeBranchRef(refName)
+	ref, err := repo.Reference(plumbing.ReferenceName(r), true)
+	if err != nil {
+		return RefInfo{}, fmt.Errorf("gitstore: ref %s: %w", r, err)
+	}
+	return RefInfo{Ref: ref.Name().Short(), SHA: ref.Hash().String(), IsHash: ref.Type() == plumbing.HashReference}, nil
+}
+
+// CreateBranchRef creates refs/heads/<branch> pointing at sha. Only branch
+// refs may be created. Returns ErrRefExists if the branch already exists.
+func (s *Store) CreateBranchRef(namespaceSlug, repoName, refName, sha string) (RefInfo, error) {
+	repo, err := s.Open(namespaceSlug, repoName)
+	if err != nil {
+		return RefInfo{}, err
+	}
+	if !strings.HasPrefix(refName, "refs/heads/") && !strings.HasPrefix(refName, "heads/") {
+		return RefInfo{}, fmt.Errorf("gitstore: only branch references can be created, got %q", refName)
+	}
+	r := normalizeBranchRef(refName)
+	// Verify the commit exists.
+	if _, err := repo.CommitObject(plumbing.NewHash(sha)); err != nil {
+		return RefInfo{}, fmt.Errorf("gitstore: commit %s not found", sha)
+	}
+	if _, err := repo.Reference(plumbing.ReferenceName(r), true); err == nil {
+		return RefInfo{}, ErrRefExists
+	}
+	h := plumbing.NewHash(sha)
+	if err := repo.Storer.SetReference(plumbing.NewHashReference(plumbing.ReferenceName(r), h)); err != nil {
+		return RefInfo{}, err
+	}
+	return RefInfo{Ref: strings.TrimPrefix(r, "refs/heads/"), SHA: sha, IsHash: true}, nil
+}
+
+// DeleteRef removes refs/heads/<branch>. Returns ErrRefNotFound when absent.
+func (s *Store) DeleteRef(namespaceSlug, repoName, refName string) error {
+	repo, err := s.Open(namespaceSlug, repoName)
+	if err != nil {
+		return err
+	}
+	r := normalizeBranchRef(refName)
+	rn := plumbing.ReferenceName(r)
+	ref, err := repo.Reference(rn, true)
+	if err != nil {
+		return ErrRefNotFound
+	}
+	// Refuse deleting the HEAD target (git convention).
+	if head, herr := repo.Reference(plumbing.HEAD, true); herr == nil && ref.Hash() == head.Hash() && head.Name() == rn {
+		return ErrRefNotFound
+	}
+	return repo.Storer.RemoveReference(rn)
+}
+
+// ListMatchingRefs returns refs whose full name starts with the given prefix
+// (normalized to refs/heads/ style), sorted by full ref name.
+func (s *Store) ListMatchingRefs(namespaceSlug, repoName, prefix string) ([]RefInfo, error) {
+	repo, err := s.Open(namespaceSlug, repoName)
+	if err != nil {
+		return nil, err
+	}
+	p := normalizeBranchRef(prefix)
+	iter, err := repo.References()
+	if err != nil {
+		return nil, err
+	}
+	var out []RefInfo
+	err = iter.ForEach(func(ref *plumbing.Reference) error {
+		name := ref.Name().String()
+		if strings.HasPrefix(name, p) {
+			out = append(out, RefInfo{Ref: strings.TrimPrefix(name, "refs/heads/"), SHA: ref.Hash().String(), IsHash: ref.Type() == plumbing.HashReference})
+		}
+		return nil
+	})
+	return out, err
+}
+
+// normalizeBranchRef ensures the ref is in refs/heads/... form.
+func normalizeBranchRef(ref string) string {
+	if strings.HasPrefix(ref, "refs/") {
+		return ref
+	}
+	if strings.HasPrefix(ref, "heads/") {
+		return "refs/" + ref
+	}
+	return "refs/heads/" + ref
 }
 
 func removeStr(list []string, s string) []string {
