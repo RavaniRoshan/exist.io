@@ -30,7 +30,10 @@ func testServer(t *testing.T) (*Server, *store.DB, http.Handler) {
 		t.Fatalf("gitstore.New: %v", err)
 	}
 
-	srv := New(db, git, auth.NewRegistry(), "https://api.cursor.com", "origin.cursor.com")
+	srv := New(db, git, auth.NewRegistry(), "http://127.0.0.1:8080", "127.0.0.1:8080")
+	// Ensure default user_test exists in database for foreign keys
+	_, _ = db.UpsertUserByEmail(t.Context(), "test@exist.io", func() string { return "user_test" })
+
 	// Default resolver: a user token with every scope, so handler tests focus
 	// on behavior, not auth. Auth-denial paths are tested separately.
 	srv.resolve = userResolver(allScopes()...)

@@ -179,7 +179,11 @@ func (s *Store) ReadFileAtPath(namespaceSlug, repoName, commitHash, path string)
 	if err != nil {
 		return nil, "", 0, false, err
 	}
-	commit, err := repo.CommitObject(plumbing.NewHash(commitHash))
+	targetHash, err := resolveRefInRepo(repo, commitHash)
+	if err != nil {
+		return nil, "", 0, false, err
+	}
+	commit, err := repo.CommitObject(targetHash)
 	if err != nil {
 		return nil, "", 0, false, err
 	}

@@ -1,0 +1,25 @@
+---
+title: Development status
+description: A clear line between the current codebase and the intended product.
+---
+
+## Available in the codebase
+
+- Go packages for configuration, prefixed identifiers, scope checks, and token parsing.
+- SQLite migrations and repository metadata operations.
+- Git object-store helpers built on `go-git`.
+- Repository, grant, contents, and ref handler code with focused tests for current cases.
+
+These packages do not yet add up to a usable self-hosted forge. Their presence should not be read as production readiness or complete feature compatibility.
+
+## Not available yet
+
+- A server composition root that opens storage and mounts the real API.
+- Safe local identity, credential issuance, revocation, and first-admin bootstrap.
+- Authenticated Git smart HTTP for clone, fetch, and push.
+- Complete pull-request, checks, rulesets, mirror, webhook, and application workflows.
+- MCP and CLI clients, backups, upgrades, and deployment guidance.
+
+## How we call something complete
+
+A capability is ready to document as available only when it has a real route or transport binding, local authorization, persistent behavior where needed, and tests for success and important failure cases. The docs will keep planned work labeled as planned until then.

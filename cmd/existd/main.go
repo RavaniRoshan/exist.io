@@ -1,44 +1,89 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"flag"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"exist.io/internal/auth"
+	"exist.io/internal/app"
 	"exist.io/internal/config"
-	"exist.io/pkg/scopes"
 )
 
 func main() {
 	cfg := config.Load()
 
-	// The operation registry maps Origin operationIds to their x-origin-scopes
-	// requirements. Later handler groups populate it incrementally; the auth
-	// middleware enforces each operation against the acting credential.
-	registry := auth.NewRegistry()
-	registry.Register("OriginService_ListRepos", scopes.Requirements{
-		TokenTypes: []string{scopes.TypeUser},
-		Scopes:     []string{scopes.NamespaceRepositoriesRead},
-	})
+	// Check for CLI subcommands
+	if len(os.Args) > 1 && os.Args[1] == "bootstrap" {
+		fs := flag.NewFlagSet("bootstrap", flag.ExitOnError)
+		email := fs.String("email", "", "Admin user email address (required)")
+		namespace := fs.String("namespace", "", "Initial admin namespace slug (required)")
+		dataDir := fs.String("data-dir", cfg.DataDir, "Path to exist.io data directory")
+		if err := fs.Parse(os.Args[2:]); err != nil {
+			log.Fatalf("bootstrap: %v", err)
+		}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "ok")
-	})
+		if *email == "" || *namespace == "" {
+			fmt.Fprintln(os.Stderr, "Usage: existd bootstrap --email <email> --namespace <slug> [--data-dir <path>]")
+			os.Exit(1)
+		}
 
-	// Example guarded route: enforces the registered operation's scopes before
-	// dispatching to the (not-yet-implemented) handler.
-	mux.Handle("/v1/origin/repos", auth.Require(registry, "OriginService_ListRepos",
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `[]`)
-		})))
+		cfg.DataDir = *dataDir
+		res, err := app.Bootstrap(context.Background(), cfg, *email, *namespace)
+		if err != nil {
+			log.Fatalf("bootstrap failed: %v", err)
+		}
 
-	fmt.Printf("existd listening on %s (endpoint=%s gitHost=%s dataDir=%s)\n",
-		cfg.ListenAddr, cfg.Endpoint, cfg.GitHost, cfg.DataDir)
+		fmt.Println("exist.io bootstrap complete!")
+		fmt.Printf("User:      %s (id: %s)\n", res.User.Email, res.User.ID)
+		fmt.Printf("Namespace: %s (id: %s)\n", res.Namespace.Slug, res.Namespace.ID)
+		fmt.Printf("API Key:   %s\n", res.RawKey)
+		fmt.Println("\nIMPORTANT: Store this API key securely. It will not be shown again.")
+		return
+	}
 
-	if err := http.ListenAndServe(cfg.ListenAddr, mux); err != nil {
-		panic(err)
+	application, err := app.Open(cfg)
+	if err != nil {
+		log.Fatalf("existd: failed to initialize application: %v", err)
+	}
+	defer func() {
+		if err := application.Close(); err != nil {
+			log.Printf("existd: error closing application: %v", err)
+		}
+	}()
+
+	server := &http.Server{
+		Addr:    cfg.ListenAddr,
+		Handler: application.Handler(),
+	}
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+	serverErr := make(chan error, 1)
+	go func() {
+		fmt.Printf("existd listening on %s (publicURL=%s gitURL=%s dataDir=%s)\n",
+			cfg.ListenAddr, cfg.PublicURL, cfg.GitURL, cfg.DataDir)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+	}()
+
+	select {
+	case err := <-serverErr:
+		log.Fatalf("existd: server error: %v", err)
+	case sig := <-shutdown:
+		fmt.Printf("\nexistd: received signal %v, shutting down gracefully...\n", sig)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("existd: shutdown error: %v", err)
+		}
 	}
 }

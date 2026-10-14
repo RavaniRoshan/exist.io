@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -161,11 +162,14 @@ func (db *DB) UpsertUserByEmail(ctx context.Context, email string, newID func() 
 // GetUser returns a user by id.
 func (db *DB) GetUser(ctx context.Context, id string) (User, error) {
 	var u User
+	var login, name sql.NullString
 	err := db.sql.QueryRowContext(ctx, `SELECT id, email, login, name, created_at FROM users WHERE id=?`, id).
-		Scan(&u.ID, &u.Email, &u.Login, &u.Name, &u.CreatedAt)
+		Scan(&u.ID, &u.Email, &login, &name, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return User{}, ErrNotFound
 	}
+	u.Login = login.String
+	u.Name = name.String
 	return u, err
 }
 
@@ -195,4 +199,67 @@ type User struct {
 	Login     string
 	Name      string
 	CreatedAt string
+}
+
+// CheckRepoAccess checks if a user has read or write permission on a repository.
+// The namespace owner always has full access.
+func (db *DB) CheckRepoAccess(ctx context.Context, repo Repo, userID string, write bool) (bool, error) {
+	if userID == "" {
+		return false, nil
+	}
+
+	ns, err := db.GetNamespace(ctx, repo.NamespaceID)
+	if err != nil {
+		return false, err
+	}
+	if ns.OwnerUserID == userID {
+		return true, nil
+	}
+
+	// Check repository-level grants
+	rows, err := db.sql.QueryContext(ctx, `
+		SELECT permission FROM grants
+		WHERE scope='repository' AND repo_id=? AND principal_kind='user' AND user_id=?`,
+		repo.ID, userID)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var perm string
+			if err := rows.Scan(&perm); err == nil {
+				if hasPerm(perm, write) {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	// Check namespace-level grants
+	nsRows, err := db.sql.QueryContext(ctx, `
+		SELECT permission FROM grants
+		WHERE scope='namespace' AND namespace_id=? AND principal_kind='user' AND user_id=?`,
+		ns.ID, userID)
+	if err == nil {
+		defer nsRows.Close()
+		for nsRows.Next() {
+			var perm string
+			if err := nsRows.Scan(&perm); err == nil {
+				if hasPerm(perm, write) {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func hasPerm(perm string, write bool) bool {
+	perm = strings.ToLower(perm)
+	switch perm {
+	case "admin", "permission_admin", "write", "permission_write":
+		return true
+	case "read", "permission_read", "contributor", "permission_contributor":
+		return !write
+	}
+	return false
 }

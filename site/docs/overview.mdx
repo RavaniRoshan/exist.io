@@ -1,0 +1,38 @@
+---
+title: Product overview
+description: What exist.io is, who it is for, and what the first release is aiming to deliver.
+---
+
+## A forge you can operate yourself
+
+exist.io is for teams that want a Git forge they can run on their own infrastructure. It brings repository hosting and collaboration into one place without requiring a hosted account from a particular coding-agent vendor.
+
+The product is an open-source alternative to Cursor Origin, focused on the forge and the interfaces agents use to work with repositories. It is not an attempt to reproduce proprietary hosted agents or their orchestration.
+
+## Who it is for
+
+- Developers and small teams that want ownership over where source code is stored.
+- Organizations that need to define their own identity, access, and operational policies.
+- Coding-agent builders who need repository APIs and Git access governed by explicit permissions.
+
+## Product principles
+
+### Self-hosted by default
+
+The core forge should work without Cursor credentials or calls to Cursor-hosted services. Operators choose where it runs and how it is exposed.
+
+### Git first
+
+Repository creation only matters if standard Git clients can clone, fetch, and push. Git transport is a foundational milestone, not a later integration.
+
+### Agents act through permissions
+
+Agent integrations should use the same repository and namespace authorization rules as other clients. A syntactically plausible token must never be treated as proof of identity.
+
+### Honest compatibility
+
+Compatibility should be measured operation by operation. The project should not advertise a route, tool, or CLI command until it is implemented and exercised.
+
+## What is not included
+
+The first goal is a Git forge and agent integration surface—not a hosted AI coding agent, model service, enterprise identity provider, or managed cloud. Those services can integrate with exist.io, but they are not part of the core product.

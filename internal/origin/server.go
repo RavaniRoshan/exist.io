@@ -2,6 +2,7 @@ package origin
 
 import (
 	"net/http"
+	"strings"
 
 	"exist.io/internal/auth"
 	"exist.io/internal/gitstore"
@@ -42,6 +43,11 @@ func (s *Server) Store() *store.DB { return s.store }
 // Git exposes the git object store.
 func (s *Server) Git() *gitstore.Store { return s.git }
 
+// SetResolver sets an explicit token resolver for the server.
+func (s *Server) SetResolver(r auth.Resolver) {
+	s.resolve = r
+}
+
 // register is a small helper for handler groups to declare an operation's
 // scope requirements.
 func (s *Server) register(operationID string, reqs scopes.Requirements) {
@@ -53,19 +59,26 @@ func (s *Server) register(operationID string, reqs scopes.Requirements) {
 // x-origin-scopes requirements. If s.resolve is set (tests), it is used;
 // otherwise the production BearerResolver applies.
 func (s *Server) guard(operationID string, h http.HandlerFunc) http.Handler {
-	resolve := s.resolve
-	if resolve == nil {
-		resolve = auth.BearerResolver
-	}
-	return auth.RequireWith(s.registry, operationID, resolve, h)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resolve := s.resolve
+		if resolve == nil {
+			resolve = auth.BearerResolver
+		}
+		auth.RequireWith(s.registry, operationID, resolve, h).ServeHTTP(w, r)
+	})
 }
 
-// cloneURL builds the HTTPS clone URL for a repo.
+// cloneURL builds the clone URL for a repo.
 func (s *Server) cloneURL(ownerSlug, repoName string) string {
-	return "https://" + s.gitHost + "/" + ownerSlug + "/" + repoName + ".git"
+	host := s.gitHost
+	if strings.Contains(host, "://") {
+		return strings.TrimRight(host, "/") + "/" + ownerSlug + "/" + repoName + ".git"
+	}
+	return "https://" + host + "/" + ownerSlug + "/" + repoName + ".git"
 }
 
 // webURL builds the browser URL for a repo.
 func (s *Server) webURL(ownerSlug, repoName string) string {
-	return "https://cursor.com/codebase/" + ownerSlug + "/" + repoName
+	base := strings.TrimRight(s.endpoint, "/")
+	return base + "/" + ownerSlug + "/" + repoName
 }

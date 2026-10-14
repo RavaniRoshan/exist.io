@@ -28,6 +28,7 @@ func TestOpenAndMigrate(t *testing.T) {
 		// schema is stable from the first migration.
 		"check_suites", "groups", "check_run_annotations",
 		"pr_comments", "pr_reviews", "labels", "pr_labels",
+		"pr_threads", "pr_comment_reactions", "pr_requested_reviewers", "pr_auto_merge",
 		"migrations",
 	}
 	for _, tbl := range want {

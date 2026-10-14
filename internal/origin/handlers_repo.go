@@ -128,7 +128,13 @@ func (s *Server) createRepo(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getRepo(w http.ResponseWriter, r *http.Request) {
 	owner := r.PathValue("ownerSlug")
 	name := r.PathValue("repoName")
-	repo, err := s.store.GetRepo(r.Context(), owner, name)
+	var repo store.Repo
+	var err error
+	if owner == "_" {
+		repo, err = s.store.GetRepoByID(r.Context(), name)
+	} else {
+		repo, err = s.store.GetRepo(r.Context(), owner, name)
+	}
 	if err != nil {
 		notFound(w, "repository not found")
 		return

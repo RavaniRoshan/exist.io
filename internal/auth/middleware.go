@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,6 +57,29 @@ func (r *Registry) Requirements(operationID string) (scopes.Requirements, bool) 
 	return reqs, ok
 }
 
+// Operations returns the list of all registered operation IDs.
+func (r *Registry) Operations() []string {
+	out := make([]string, 0, len(r.ops))
+	for op := range r.ops {
+		out = append(out, op)
+	}
+	return out
+}
+
+// authMiddleware enforces op against the credential resolved from each request.
+// On success it calls next; on failure it writes Origin's Status envelope and
+// does not call next.
+//
+//   - Resolver error (no/expired/unusable credential) → 401 UNAUTHENTICATED
+//   - scopes.Require denial (wrong type or missing scope) → 403 PERMISSION_DENIED
+type tokenContextKey struct{}
+
+// ContextToken extracts the acting Token from a guarded request context.
+func ContextToken(ctx context.Context) (Token, bool) {
+	tok, ok := ctx.Value(tokenContextKey{}).(Token)
+	return tok, ok
+}
+
 // authMiddleware enforces op against the credential resolved from each request.
 // On success it calls next; on failure it writes Origin's Status envelope and
 // does not call next.
@@ -78,6 +102,7 @@ func authMiddleware(resolve Resolver, next http.Handler, op OperationMeta) http.
 			writeStatus(w, http.StatusForbidden, scopes.CodePermissionDenied, err.Error())
 			return
 		}
+		r = r.WithContext(context.WithValue(r.Context(), tokenContextKey{}, tok))
 		next.ServeHTTP(w, r)
 	})
 }

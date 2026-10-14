@@ -6,20 +6,22 @@
 
 ## Evidence sources (what we actually have)
 
+Snapshot check — 2026-10-14: the local OpenAPI file has 119 unique `operationId` entries (not 120), SHA-256 `8e23b604a66d529f595be5949404092264b8513bd2e4713ffb346c499d88b74d`. The derived checked-in operation inventory is `docs/reverse-engineering/origin-operation-inventory.csv`; provenance and regeneration instructions are in `operation-inventory.md`. The CLI artifact SHA-256 is `d653ba55831cb698cdce49167a85ffc5a7d7d839d633c8a62fa17b073be04011`. Both source inputs currently live under `/tmp/opencode`; the operation count is evidence about this snapshot, not a guarantee that the live service has not changed.
+
 | Source | Path | What it authoritatively gives us |
 |---|---|---|
-| Origin OpenAPI 3.1 spec | `/tmp/opencode/origin-spec/openapi.yaml` (1.0 MB) | All 120 operations, every request/response schema, all 34 scopes, `x-origin-scopes` per op, 35 webhook event types, `Status` error envelope, enum wire values |
-| Origin CLI (Bun binary) | `/tmp/opencode/origin-bin/co` == `origin` (md5 `e58cb0ec…`, 98 MB, ELF x86-64, **not stripped**, Bun 2.2–2.3 compiled) | Embedded TS module manifest (~545 `.ts` paths), string constants, proto/JSON descriptors, CLI command tree, env var names, header names, error/refusal messages, mergeability model, auth-policy model |
+| Origin OpenAPI 3.1 snapshot | `/tmp/opencode/origin-spec/openapi.yaml` (1.0 MB; SHA-256 above) | 119 `operationId` entries in this snapshot, schemas, scope extensions, webhook event names, error envelope, enum values |
+| Origin CLI (Bun binary) | `/tmp/opencode/origin-bin/co` == `origin` (98 MB, ELF x86-64, SHA-256 above) | Embedded TypeScript module paths, strings, descriptors, CLI command tree, env var/header names, error/refusal text, mergeability and auth-policy clues |
 | Terraform provider (source) | `/tmp/opencode/tfcursor/` (Go) | Real client usage of the API: repo + grant CRUD shapes, auth flow, pagination |
 | Cursor product docs | `cursor.com/docs/origin`, `flaviocopes.com/cursor-origin` | Product architecture, what's public vs proprietary, agent-native positioning |
 
 ---
 
-## PART A — What IS fully reverse-engineered (wire-compatible, high confidence)
+## PART A — What the static artifacts describe
 
-These are **exact** because they come from the shipped spec/binary, not inference:
+The OpenAPI snapshot gives exact static wire descriptions for its captured version. This does not establish live service behavior, complete client compatibility, or current product coverage. Reconcile every claim through the checked-in operation inventory planned in `docs/superpowers/plans/2026-10-14-exist-io.md` Task 0.
 
-1. **REST surface (120 ops).** Path shapes including `:action` verbs (`:syncMirror`,
+1. **REST surface (119 operations in this snapshot).** The checked-in operation inventory maps each operation to a plan task and marks the 28 baseline registrations as unverified, not complete. Path shapes include `:action` verbs (`:syncMirror`,
    `:batchGet`, `:entries:replace`, `:batchRedeliver`, `:grep`), all under `/v1/origin/`.
 2. **Auth model.** 3 token types (`app` JWT, `oit_` install ≤15 min, user cred),
    `key_`/`crsr_` exchange via `POST /auth/exchange_user_api_key`, `Authorization: Bearer`,
@@ -90,7 +92,7 @@ These are the "key parts of Origin" that are **not a git forge** and have **no p
 
 ## PART C — What we must BUILD OURSELVES to make a complete, open-source forge
 
-The reverse-engineered part is the **wire contract** (so Origin clients work unchanged).
+The reverse-engineered part is the **static wire contract** for the captured client-facing artifact; unchanged-client operation is a goal that still requires contract testing.
 The **open-source product** needs these self-built pillars, which no artifact provides:
 
 1. **Metadata store + migrations** (Task 5) — our schema, our choice (SQLite via modernc, pure Go).
@@ -115,14 +117,10 @@ The **open-source product** needs these self-built pillars, which no artifact pr
 
 ## Bottom line
 
-- **Wire compatibility: ~fully reverse-engineered (high confidence).** An Origin CLI, MCP client,
-  or Terraform provider will talk to exist.io unchanged. The spec + binary + provider cover the
-  entire client-visible contract.
+- **Static contract coverage: substantial, not yet proven complete.** The snapshot describes 119 operations and client artifacts reveal additional command/tool behavior. Compatibility with the current live service and unchanged-client operation remains unverified until contract tests pass against exist.io.
 - **Server behavior & product brain: NOT reverse-engineerable and intentionally so.** Merge logic,
   sync, rate limits, agents, automations, review AI, Cursor tenancy = ours to design. We match the
   *contract*, not the *implementation*.
-- **Net:** exist.io = an open-source, wire-compatible Origin forge. It clones the API surface
-  exactly and reimplements the server with our own engines. It is a forge *for agents*, not a
-  clone of Cursor's agent intelligence.
+- **Net:** exist.io targets an open-source, self-hosted forge with a measured Origin-compatible surface. Server behavior absent from the artifacts remains our design, and proprietary Cursor agent functionality is outside this forge's scope.
 
 See `docs/reverse-engineering/scopes-34.txt` and `cli-module-manifest.txt` for the raw evidence.

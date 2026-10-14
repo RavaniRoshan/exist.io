@@ -1,0 +1,21 @@
+---
+title: Architecture
+description: The current technical direction for the exist.io self-hosted forge.
+---
+
+## Current direction
+
+The project is being built as a Go HTTP service with SQLite for forge metadata and `go-git` for Git object storage. Repository data and metadata have separate storage responsibilities: SQLite owns forge entities and permissions; Git storage owns commits, trees, blobs, and refs.
+
+The intended shape is deliberately small: one self-hosted service, a local identity and authorization model, and adapters for REST, Git transport, and agent-facing tools.
+
+## Trust boundaries
+
+- **Identity is local.** User and app credentials must be issued and validated by the exist.io installation.
+- **Authorization is shared.** REST handlers and Git transport must consult the same namespace and repository permissions.
+- **Git is data, not a URL field.** Clone URLs point to the operator's deployment, and transport must reach the local repository store.
+- **Adapters do not imply parity.** MCP, CLI, and provider compatibility are built only over behavior that the server actually implements.
+
+## What remains
+
+The server composition root, first-admin bootstrap, and authenticated Git smart HTTP are not complete. There is also no supported upgrade, backup, or production operations story yet. The [roadmap](/roadmap) tracks those foundations before broader API or agent features.

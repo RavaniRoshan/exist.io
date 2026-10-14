@@ -42,3 +42,12 @@ func NewGroup() string           { return New("grp") }
 func NewUser() string            { return New("user") }
 func NewStack() string           { return New("stk") }
 func NewInstallToken() string    { return New("oit") }
+func NewPRComment() string       { return New("prc") }
+func NewPRReview() string        { return New("prr") }
+func NewPRThread() string        { return New("prt") }
+func NewLabel() string              { return New("lbl") }
+func NewReaction() string           { return New("rxn") }
+func NewRuleset() string            { return New("rs") }
+func NewRulesetRule() string        { return New("rsr") }
+func NewRulesetBypassActor() string { return New("rsba") }
+func NewCheckRunAnnotation() string { return New("cra") }

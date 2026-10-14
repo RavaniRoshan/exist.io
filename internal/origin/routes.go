@@ -11,7 +11,12 @@ import (
 // routes; this is the single entry point the server binary mounts.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	s.RegisterRoutes(mux)
+	return mux
+}
 
+// RegisterRoutes registers all Origin routes onto an existing ServeMux.
+func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	s.registerRepos(mux)    // Task 6
 	s.registerGrants(mux)   // Task 7
 	s.registerContents(mux) // Task 9
@@ -24,8 +29,8 @@ func (s *Server) Handler() http.Handler {
 	s.registerMirror(mux)   // Task 16
 	s.registerApps(mux)     // Task 17
 	s.registerWebhooks(mux) // Task 18
-
-	return mux
+	s.registerLabels(mux)
+	s.registerResidual(mux)
 }
 
 // The registerX methods are defined in their respective handler files. Until a

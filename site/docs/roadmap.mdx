@@ -1,0 +1,26 @@
+---
+title: Roadmap
+description: The foundations and product slices planned for exist.io.
+---
+
+## 1. Make the server runnable
+
+Compose configuration, SQLite, Git storage, and the real API handler into one server. Add health checks, clean shutdown, and a safe offline first-administrator bootstrap.
+
+## 2. Make Git work end to end
+
+Implement authenticated Git smart HTTP for clone, fetch, and push. Repository and namespace permissions must be enforced for both API requests and Git transport.
+
+## 3. Finish identity and repository foundations
+
+Issue and revoke local credentials, resolve users and groups locally, and close the compatibility gaps in repository, grant, contents, and ref operations.
+
+## 4. Add collaboration workflows
+
+Build pull requests, reviews, labels, checks, rulesets, and repository policy around the working Git foundation.
+
+## 5. Add agent and automation interfaces
+
+Expose implemented server capabilities through MCP and a command-line client. Add webhook delivery and GitHub mirroring after the underlying lifecycle and security boundaries are in place.
+
+This sequence is a direction, not a delivery-date promise. Priorities may change as the self-hosted foundation is exercised.
