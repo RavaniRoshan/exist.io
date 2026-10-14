@@ -1,0 +1,37 @@
+# Binaries and build outputs
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Runtime data & SQLite databases
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Internal notes, planning, and private research
+docs/reverse-engineering/
+docs/superpowers/
+.superpowers/
+
+# Node and Blume documentation build artifacts
+site/node_modules/
+site/dist/
+site/.blume/
+
+# IDE and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary and scratch files
+tmp/
+scratch/
