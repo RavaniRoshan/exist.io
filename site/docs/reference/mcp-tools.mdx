@@ -1,0 +1,88 @@
+---
+title: Model Context Protocol (MCP) tool catalog
+description: Complete technical reference of all 34 MCP tools exposed by exist.io for AI coding agents.
+---
+
+exist.io exposes **34 specialized tools** over the [Model Context Protocol](https://modelcontextprotocol.io) at `/mcp` (read-write) and `/mcp/readonly` (sandboxed read-only).
+
+Every tool call uses standard JSON-RPC 2.0 with method `tools/call`.
+
+---
+
+## 1. Repository & Git Navigation (10 tools)
+
+| Tool Name | Scope | Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `repo_get` | Read | `owner` (string), `repo` (string) | Retrieve repository details, default branch, and visibility. |
+| `repo_list` | Read | `owner` (string), `limit` (int, opt) | List repositories within a namespace. |
+| `repo_tree` | Read | `owner` (string), `repo` (string), `ref` (string, opt), `recursive` (bool, opt) | Recursively inspect file trees at a specified commit, branch, or tag. |
+| `file_read` | Read | `owner` (string), `repo` (string), `path` (string), `ref` (string, opt) | Read the content, encoding, and byte size of a file blob. |
+| `commit_get` | Read | `owner` (string), `repo` (string), `sha` (string) | Get commit metadata, author, committer, and parent hashes. |
+| `commit_list` | Read | `owner` (string), `repo` (string), `ref` (string, opt), `limit` (int, opt) | List commits reachable from a reference. |
+| `branch_list` | Read | `owner` (string), `repo` (string) | List all branches in the repository with target commit SHAs. |
+| `diff_compare`| Read | `owner` (string), `repo` (string), `base` (string), `head` (string) | Compute two-way and three-way diffs between two refs or commits. |
+| `tag_list` | Read | `owner` (string), `repo` (string) | List all tags in the repository. |
+| `ref_resolve` | Read | `owner` (string), `repo` (string), `ref` (string) | Resolve symbolic ref (such as `HEAD` or branch name) to an exact SHA. |
+
+---
+
+## 2. Pull Request Management (8 tools)
+
+| Tool Name | Scope | Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `pull_request_create` | Write | `owner`, `repo`, `title`, `base`, `head`, `body` (opt) | Open a new pull request between `head` and `base` branches. |
+| `pull_request_get` | Read | `owner`, `repo`, `number` (int) | Retrieve pull request details, state, and mergeability verdict. |
+| `pull_request_list` | Read | `owner`, `repo`, `state` (string, opt: `open`\|`closed`\|`all`) | List pull requests for a repository. |
+| `pull_request_update` | Write | `owner`, `repo`, `number`, `title` (opt), `body` (opt) | Update pull request title or description. |
+| `pull_request_merge` | Write | `owner`, `repo`, `number`, `method` (string: `merge`\|`squash`), `commit_message` (opt) | Merge a pull request through policy rulesets. |
+| `pull_request_close` | Write | `owner`, `repo`, `number` | Close an open pull request without merging. |
+| `pull_request_files` | Read | `owner`, `repo`, `number` | List all modified, added, and deleted files in a pull request. |
+| `pull_request_diff` | Read | `owner`, `repo`, `number` | Retrieve the unified diff patch for a pull request. |
+
+---
+
+## 3. Reviews, Threads & Collaboration (8 tools)
+
+| Tool Name | Scope | Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `thread_create` | Write | `owner`, `repo`, `pull_number`, `body`, `path` (opt), `line` (opt) | Start a line-level review thread or top-level PR discussion. |
+| `thread_reply` | Write | `owner`, `repo`, `pull_number`, `thread_id`, `body` | Reply to an existing review thread. |
+| `thread_list` | Read | `owner`, `repo`, `pull_number` | List all review threads and comments on a pull request. |
+| `thread_resolve` | Write | `owner`, `repo`, `pull_number`, `thread_id`, `resolved` (bool) | Mark a review thread as resolved or reopen it. |
+| `reaction_add` | Write | `owner`, `repo`, `comment_id`, `content` (string: `+1`, `-1`, `heart`, etc.) | Add an emoji reaction to a comment. |
+| `reaction_list` | Read | `owner`, `repo`, `comment_id` | List all emoji reactions on a comment. |
+| `label_list` | Read | `owner`, `repo` | List all labels defined in the repository. |
+| `label_apply` | Write | `owner`, `repo`, `pull_number`, `labels` (array of strings) | Apply labels to a pull request. |
+
+---
+
+## 4. Status Checks & Rulesets (8 tools)
+
+| Tool Name | Scope | Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `check_suite_create` | Write | `owner`, `repo`, `head_sha` | Create a new check suite for a commit. |
+| `check_run_create` | Write | `owner`, `repo`, `head_sha`, `name`, `status` (string), `conclusion` (opt) | Register a check run (e.g. `test/unit`, `lint/vet`). |
+| `check_run_update` | Write | `owner`, `repo`, `check_run_id`, `status`, `conclusion`, `output` (opt) | Update check run state and output. |
+| `status_check_report` | Write | `owner`, `repo`, `head_sha`, `context`, `state` (string: `pending`\|`success`\|`failure`) | Convenience tool to report a status check outcome. |
+| `ruleset_list` | Read | `owner`, `repo` | List all active rulesets applicable to a repository. |
+| `ruleset_get` | Read | `owner`, `repo`, `ruleset_id` | Get details and conditions for a specific ruleset. |
+| `ruleset_evaluate` | Read | `owner`, `repo`, `ref` | Test ruleset policy rules against a specific branch ref. |
+| `merge_blockers_list` | Read | `owner`, `repo`, `pull_number` | Inspect active blockers (missing approvals, failing checks) preventing a PR from merging. |
+
+---
+
+## Read-Only Sandbox Policy
+
+When connecting to `http://<host>:<port>/mcp/readonly`:
+- All **Read** tools operate normally.
+- All **Write** tools immediately return error code `-32001` (Unauthorized) with message:
+  ```json
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+      "code": -32001,
+      "message": "Tool '<tool_name>' is not permitted on read-only MCP endpoint"
+    }
+  }
+  ```

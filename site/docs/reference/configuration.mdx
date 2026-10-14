@@ -1,0 +1,66 @@
+---
+title: Configuration and environment reference
+description: Full reference for server flags, environment variables, and storage layout.
+---
+
+The `existd` server daemon and `exist` CLI are configured through environment variables or command-line flags. Flags take precedence over environment variables.
+
+## Server Daemon (`existd`)
+
+### Environment Variables
+
+| Variable | CLI Flag | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `EXIST_LISTEN_ADDR` | `--addr` | `127.0.0.1:8080` | Network address and port to bind the HTTP server |
+| `EXIST_DATA_DIR` | `--data-dir` | `data` | Directory where SQLite metadata and Git repositories are stored |
+| `EXIST_PUBLIC_URL` | `--public-url` | `http://127.0.0.1:8080` | Publicly reachable base URL used for webhook callbacks |
+| `EXIST_GIT_URL` | `--git-url` | `127.0.0.1:8080` | Public host string returned in clone URLs |
+| `EXIST_LOG_LEVEL` | `--log-level` | `info` | Minimum log verbosity level (`debug`, `info`, `warn`, `error`) |
+
+### Subcommand: `bootstrap`
+
+Used for offline, one-time initialization of the SQLite database and creation of the primary administrator account:
+
+```bash
+existd bootstrap \
+  --email <admin-email> \
+  --namespace <namespace-slug> \
+  [--data-dir <path>]
+```
+
+| Flag | Required | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--email` | Yes | (none) | Email address for the root administrator account |
+| `--namespace` | Yes | (none) | Namespace slug to create for the initial workspace |
+| `--data-dir` | No | `./data` | Target directory for database and storage |
+
+---
+
+## On-Disk Storage Layout
+
+When `--data-dir` is configured (for example, `./data`), `existd` organizes files in the following structure:
+
+```text
+data/
+├── meta.db          # Primary SQLite metadata database
+├── meta.db-wal      # SQLite Write-Ahead Log
+├── meta.db-shm      # SQLite shared memory file
+└── repos/           # Bare Git repositories
+    └── acme/
+        ├── demo-app.git/
+        └── backend.git/
+```
+
+- **`meta.db`**: Stores users, tokens, namespaces, repository records, permissions, pull requests, review comments, status checks, and rulesets.
+- **`repos/{owner}/{repo}.git`**: Standard bare Git repositories storing commits, trees, blobs, refs, and packfiles managed via `go-git/v6`.
+
+---
+
+## SQLite Pragmas
+
+`existd` automatically applies the following database pragmas upon connection:
+
+- `PRAGMA journal_mode = WAL`: High-concurrency Write-Ahead Logging.
+- `PRAGMA busy_timeout = 5000`: 5-second wait on lock contention before returning busy error.
+- `PRAGMA foreign_keys = ON`: Strict relational integrity for cascading deletes and reference checks.
+- Connection limit: Single writer connection to prevent database lock contention.

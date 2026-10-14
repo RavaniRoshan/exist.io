@@ -1,0 +1,99 @@
+---
+title: How to configure branch rulesets and merge protections
+description: Protect branches, require code reviews, and enforce passing status checks using exist.io rulesets.
+---
+
+This guide shows you how to define repository rulesets that protect default branches (such as `main`), enforce required approvals, require green status checks, and configure bypass actors.
+
+## Prerequisites
+
+- Administrative access (`admin` grant) on the target repository or namespace.
+- An authenticated `exist` CLI or access to the REST API.
+
+## Step 1: Create a branch ruleset
+
+Rulesets target branches or tags matching specified ref glob patterns.
+
+Use the `exist api` command to create a ruleset targeting `main`:
+
+```bash
+./bin/exist api repos/acme/my-service/rulesets --method POST --body '{
+  "name": "Protect Main Branch",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/main"]
+    }
+  }
+}'
+```
+
+The response returns the created ruleset with an assigned `id` (e.g. `rs_01k...`).
+
+## Step 2: Require pull request reviews
+
+To prevent direct pushes and require that changes arrive through pull requests with approvals, add a `pull_request` rule to the ruleset:
+
+```bash
+./bin/exist api repos/acme/my-service/rulesets/rs_01k.../rules --method POST --body '{
+  "type": "pull_request",
+  "parameters": {
+    "required_approving_review_count": 1,
+    "dismiss_stale_reviews_on_push": true,
+    "require_code_owner_review": false
+  }
+}'
+```
+
+With this rule active:
+- Direct `git push origin main` will be rejected by the Git transport engine.
+- Merging a PR targeting `main` will be blocked until at least 1 approving review is submitted.
+
+## Step 3: Require status checks to pass
+
+To ensure automated CI pipelines or test suites pass before merging, add a `required_status_checks` rule:
+
+```bash
+./bin/exist api repos/acme/my-service/rulesets/rs_01k.../rules --method POST --body '{
+  "type": "required_status_checks",
+  "parameters": {
+    "strict_required_status_checks_policy": true,
+    "required_status_checks": [
+      { "context": "ci/tests" },
+      { "context": "lint/vet" }
+    ]
+  }
+}'
+```
+
+If an agent or developer attempts to merge while `ci/tests` has not completed with `success`, the merge engine will return HTTP 422 with a structured `MergeBlocker`:
+
+```json
+{
+  "code": "failed_precondition",
+  "message": "merge blocked by required status checks",
+  "details": {
+    "blockers": [
+      {
+        "kind": "required_checks",
+        "message": "check 'ci/tests' must be successful before merging"
+      }
+    ]
+  }
+}
+```
+
+## Step 4: Configure bypass actors
+
+For emergency deployments or release automation bots, you can allow designated actors to bypass ruleset protections:
+
+```bash
+./bin/exist api repos/acme/my-service/rulesets/rs_01k.../bypass-actors --method POST --body '{
+  "actor_id": "user_01k...",
+  "actor_type": "user",
+  "bypass_mode": "always"
+}'
+```
+
+Actors configured with `bypass_mode: "always"` can merge pull requests even when required reviews or checks are pending.

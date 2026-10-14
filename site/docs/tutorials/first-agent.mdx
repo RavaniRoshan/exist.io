@@ -1,0 +1,179 @@
+---
+title: "Tutorial: Your first automated PR with an AI agent"
+description: "Guided hands-on lesson showing how an AI agent inspects code, creates branches, and opens pull requests on exist.io."
+---
+
+In this tutorial, you will follow an autonomous AI coding agent as it inspects a repository on exist.io, analyzes code, and opens a pull request using the Model Context Protocol (MCP).
+
+## What you will learn
+
+- How AI agents discover files and navigate commit trees on exist.io.
+- How agents construct and submit pull requests programmatically.
+- How the merge engine validates changes before allowing merges.
+
+## Prerequisites
+
+- `existd` running locally on port 8080 (`./bin/existd`).
+- A repository initialized in your namespace (e.g., `acme/service`).
+- An active administrative token (`token_...`).
+
+---
+
+## The Scenario
+
+You have instructed an AI coding agent:
+> *"Inspect repository acme/service, find main.go, and open a pull request adding a /healthz endpoint."*
+
+Here is how the agent accomplishes this through exist.io's MCP server.
+
+---
+
+## Step 1: Inspecting the repository tree
+
+The agent needs to know what files exist in the repository. It calls `repo_tree`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "repo_tree",
+    "arguments": {
+      "owner": "acme",
+      "repo": "service",
+      "ref": "main"
+    }
+  }
+}
+```
+
+**Response received by the agent:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "entries": [
+      { "path": "README.md", "type": "blob", "size": 340 },
+      { "path": "main.go", "type": "blob", "size": 890 },
+      { "path": "go.mod", "type": "blob", "size": 120 }
+    ]
+  }
+}
+```
+
+The agent identifies `main.go`.
+
+---
+
+## Step 2: Reading the file content
+
+To understand how to add the endpoint, the agent inspects `main.go` using `file_read`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "file_read",
+    "arguments": {
+      "owner": "acme",
+      "repo": "service",
+      "path": "main.go",
+      "ref": "main"
+    }
+  }
+}
+```
+
+The agent reads the existing HTTP handlers and decides to add `http.HandleFunc("/healthz", healthHandler)`.
+
+---
+
+## Step 3: Pushing the feature branch
+
+The agent makes the code edit in its local workspace and pushes a new branch `feature/health-check` to exist.io using standard Git Smart-HTTP:
+
+```bash
+git checkout -b feature/health-check
+git add main.go
+git commit -m "feat: add /healthz endpoint"
+git push origin feature/health-check
+```
+
+---
+
+## Step 4: Opening the pull request
+
+Now the agent opens a formal pull request on exist.io using `pull_request_create`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "pull_request_create",
+    "arguments": {
+      "owner": "acme",
+      "repo": "service",
+      "title": "feat: add /healthz health check endpoint",
+      "head": "feature/health-check",
+      "base": "main",
+      "body": "This PR adds a lightweight /healthz HTTP liveness probe."
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "number": 1,
+    "title": "feat: add /healthz health check endpoint",
+    "state": "open",
+    "mergeable": true
+  }
+}
+```
+
+---
+
+## Step 5: Checking policy & merge blockers
+
+Before attempting to merge, the agent queries active merge blockers using `merge_blockers_list`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "merge_blockers_list",
+    "arguments": {
+      "owner": "acme",
+      "repo": "service",
+      "pull_number": 1
+    }
+  }
+}
+```
+
+If rulesets require code review approvals or passing status checks, the agent receives a structured blocker list and posts a comment explaining what reviews are needed.
+
+---
+
+## Conclusion
+
+You have seen how an autonomous AI coding agent interacts with exist.io:
+1. Discovers files via `repo_tree` and reads source code via `file_read`.
+2. Pushes commits through authenticated Git Smart-HTTP.
+3. Opens a pull request via `pull_request_create`.
+4. Inspects policy compliance via `merge_blockers_list`.
+
+Next, explore [How to configure rulesets](/how-to/rulesets) or inspect the full [MCP tool catalog](/reference/mcp-tools).

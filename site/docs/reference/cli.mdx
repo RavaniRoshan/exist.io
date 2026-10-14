@@ -1,0 +1,109 @@
+---
+title: Command-line interface (CLI) reference
+description: Complete command and flag reference for the exist companion CLI.
+---
+
+The `exist` CLI (`cmd/exist`) provides terminal and automation access to an exist.io instance.
+
+## Installation & Build
+
+```bash
+go build -o bin/exist ./cmd/exist
+```
+
+## Environment Variables
+
+| Variable | Fallback | Description |
+| :--- | :--- | :--- |
+| `EXIST_ENDPOINT` | `CURSOR_ORIGIN_ENDPOINT`, `http://localhost:8080/v1/origin` | Target REST API endpoint URL |
+| `EXIST_TOKEN` | `CURSOR_AUTH_TOKEN`, `CURSOR_API_KEY` | Bearer authentication token |
+| `EXIST_REPO` | `ORIGIN_REPO` | Default `owner/repo` used when `-R` flag is omitted |
+
+---
+
+## Global Options
+
+- `--help`, `-h`: Display command usage and available subcommands.
+- `--version`, `-v`: Output version string (e.g. `exist version 2026.10.14`).
+
+---
+
+## Subcommands
+
+### 1. `exist repo`
+
+Manage repositories within namespaces.
+
+```bash
+# Create a new repository
+exist repo create <namespace>/<repo-name> [--description <text>] [--private]
+
+# List repositories in a namespace
+exist repo list [namespace]
+
+# View repository details
+exist repo get <namespace>/<repo-name>
+
+# Delete a repository
+exist repo delete <namespace>/<repo-name>
+```
+
+### 2. `exist pr`
+
+Create, inspect, and merge pull requests.
+
+```bash
+# Create a pull request
+exist pr create -R <owner>/<repo> --title <title> --head <branch> --base <target> [--body <description>]
+
+# List pull requests
+exist pr list -R <owner>/<repo> [--state open|closed|all]
+
+# View a pull request
+exist pr view -R <owner>/<repo> <pr-number>
+
+# Merge a pull request
+exist pr merge -R <owner>/<repo> <pr-number> [--merge|--squash] [--commit-message <msg>]
+
+# Close a pull request
+exist pr close -R <owner>/<repo> <pr-number>
+```
+
+### 3. `exist auth`
+
+Manage authentication status and credentials.
+
+```bash
+# Check current authentication status
+exist auth status
+
+# Login with a token
+exist auth login --token <api-token>
+
+# Logout / clear cached token
+exist auth logout
+```
+
+### 4. `exist app`
+
+Manage apps and installations.
+
+```bash
+# List registered apps
+exist app list
+
+# Get app details
+exist app get <app-slug-or-id>
+```
+
+### 5. `exist api`
+
+Execute authenticated HTTP requests against any endpoint of the exist.io REST API.
+
+```bash
+# GET request
+exist api repos/acme/my-service/pulls
+
+# POST request with JSON payload
+exist api repos/acme/my-service/labels --method POST --body '{"name": "bug", "color": "d73a4a"}'
+```

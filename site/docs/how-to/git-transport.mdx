@@ -1,0 +1,80 @@
+---
+title: How to authenticate and push with Git Smart-HTTP
+description: Clone, fetch, and push code using standard Git clients and credential helpers with exist.io.
+---
+
+exist.io provides a pure-Go Git Smart-HTTP server compatible with all standard Git clients (`git clone`, `git fetch`, `git push`).
+
+## Repository URL format
+
+Every repository in exist.io is served at:
+
+```text
+http://<host>:<port>/{namespace}/{repo-name}.git
+```
+
+For example, on a default local instance:
+`http://localhost:8080/acme/my-service.git`
+
+## Step 1: Authentication options
+
+The Git transport engine authenticates callers using either bearer tokens or HTTP Basic Authentication.
+
+### Option A: HTTP Basic Auth with API Token (Recommended)
+
+When prompted for username and password by Git:
+- **Username:** `token` (or your user email)
+- **Password:** `<your-api-token>` (the raw token starting with `token_`)
+
+### Option B: URL Embedding (Automation Scripts)
+
+For CI/CD scripts or automated containers:
+
+```bash
+git clone http://token:<your-api-token>@localhost:8080/acme/my-service.git
+```
+
+### Option C: Git Credential Store (Developer Desktops)
+
+To store credentials persistently so you do not need to retype your token on every push:
+
+```bash
+# Enable credential helper
+git config --global credential.helper store
+
+# Perform initial clone
+git clone http://localhost:8080/acme/my-service.git
+# Enter 'token' as username and paste your token as password
+```
+
+## Step 2: Push changes and create branches
+
+Standard Git workflows function as expected:
+
+```bash
+cd my-service
+
+# Create a new branch
+git checkout -b feature/login-page
+
+# Make changes and commit
+echo "<div>Login</div>" > login.html
+git add login.html
+git commit -m "feat: add login page template"
+
+# Push branch to exist.io
+git push -u origin feature/login-page
+```
+
+## Step 3: Permission enforcement during push
+
+Before accepting incoming packfiles via `git-receive-pack`, exist.io performs permission checks:
+
+1. **Repository Access:** The caller must hold at least `write` permission on the repository or parent namespace.
+2. **Branch Protections:** If a branch is protected by a ruleset (e.g. `main`), direct pushes will be rejected with an informative error message:
+   ```text
+   remote: error: push to 'refs/heads/main' blocked by ruleset 'Protect Main Branch'
+   remote: Changes must be submitted via a pull request.
+   To http://localhost:8080/acme/my-service.git
+    ! [remote rejected] main -> main (pre-receive hook declined)
+   ```

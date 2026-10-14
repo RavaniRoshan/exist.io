@@ -1,0 +1,122 @@
+---
+title: How to connect AI coding agents via MCP
+description: Step-by-step guide to connect Claude Desktop, Cursor, or Cline to exist.io using the Model Context Protocol.
+---
+
+This guide shows you how to connect autonomous AI coding agents to an exist.io instance using the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+
+## Prerequisites
+
+- A running `existd` server (default: `http://localhost:8080`).
+- An administrative or personal API token (generated via `./bin/existd bootstrap` or issued via the `/v1/origin/tokens` API).
+- An MCP-compatible client (such as Claude Desktop, Cursor, Cline, or an SDK-based agent).
+
+## Step 1: Choose your access mode
+
+exist.io provides two distinct MCP endpoints:
+
+1. **Read-Write Endpoint (`/mcp`):**
+   Exposes all 34 MCP tools. Agents can read files, inspect diffs, create branches, open pull requests, comment on reviews, and merge changes.
+2. **Read-Only Sandbox (`/mcp/readonly`):**
+   Restricts execution to 16 read-only tools. Any write action (such as `pull_request_create` or `thread_comment`) is rejected at the protocol layer with an access-denied error. Use this for unvetted models or security-sensitive audit workflows.
+
+## Step 2: Configure your client
+
+### Claude Desktop
+
+Edit your Claude Desktop configuration file:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add `exist-io` under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "exist-io": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-api-token>"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop to apply the configuration.
+
+### Cursor / OpenCode
+
+In your editor's MCP settings, add a new remote server:
+
+- **Name:** `exist-io`
+- **Type:** `sse` or `http`
+- **URL:** `http://localhost:8080/mcp`
+- **HTTP Headers:** `Authorization: Bearer <your-api-token>`
+
+### Cline (VS Code Extension)
+
+In Cline settings under **MCP Servers**, add:
+
+```json
+{
+  "exist-io": {
+    "url": "http://localhost:8080/mcp",
+    "headers": {
+      "Authorization": "Bearer <your-api-token>"
+    }
+  }
+}
+```
+
+## Step 3: Verify the connection
+
+You can verify that the server is responding to MCP tool discovery using `curl`:
+
+```bash
+curl -s -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-api-token>" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }' | jq '.result.tools | length'
+```
+
+A successful response outputs `34`, confirming that all forge tools are registered and available.
+
+## Step 4: Test a tool invocation
+
+Instruct your agent to list repositories or inspect a file tree:
+
+> *"Can you inspect the latest file tree of repository acme/demo-app using the exist.io MCP tools?"*
+
+The agent will invoke `repo_tree`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "repo_tree",
+    "arguments": {
+      "owner": "acme",
+      "repo": "demo-app",
+      "ref": "main"
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### HTTP 401 Unauthorized
+- Verify that your token starts with `token_` or is a valid personal access token.
+- Ensure the `Authorization` header is formatted as `Bearer <token>`.
+
+### Error: "Tool not allowed in read-only mode"
+- You connected to `http://localhost:8080/mcp/readonly` and attempted a write operation. Switch the endpoint to `http://localhost:8080/mcp` if write access is intended.
