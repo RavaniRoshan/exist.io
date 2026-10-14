@@ -59,6 +59,33 @@ func (db *DB) GetNamespace(ctx context.Context, id string) (Namespace, error) {
 	return scanNamespace(row)
 }
 
+// ListNamespaces returns namespaces ordered by slug, up to limit.
+func (db *DB) ListNamespaces(ctx context.Context, limit int) ([]Namespace, error) {
+	if limit <= 0 {
+		limit = 30
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	rows, err := db.sql.QueryContext(ctx, `SELECT id, slug, type, name, owner_user_id, created_at, updated_at
+		FROM namespaces ORDER BY slug ASC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Namespace
+	for rows.Next() {
+		var ns Namespace
+		var owner sql.NullString
+		if err := rows.Scan(&ns.ID, &ns.Slug, &ns.Type, &ns.Name, &owner, &ns.CreatedAt, &ns.UpdatedAt); err != nil {
+			return nil, err
+		}
+		ns.OwnerUserID = owner.String
+		out = append(out, ns)
+	}
+	return out, rows.Err()
+}
+
 func scanNamespace(row *sql.Row) (Namespace, error) {
 	var ns Namespace
 	var owner sql.NullString

@@ -87,6 +87,12 @@ func authMiddleware(resolve Resolver, next http.Handler, op OperationMeta) http.
 // operation's x-origin-scopes once, then guard the route by operationId. If the
 // operation is not registered, the wrapped handler fails closed with 403.
 func Require(reg *Registry, operationID string, next http.Handler) http.Handler {
+	return RequireWith(reg, operationID, BearerResolver, next)
+}
+
+// RequireWith is Require with an explicit credential resolver, so callers (and
+// tests) can supply a fixed credential with known scopes.
+func RequireWith(reg *Registry, operationID string, resolve Resolver, next http.Handler) http.Handler {
 	reqs, ok := reg.Requirements(operationID)
 	if !ok {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +100,7 @@ func Require(reg *Registry, operationID string, next http.Handler) http.Handler 
 				fmt.Sprintf("auth: operation %q is not registered", operationID))
 		})
 	}
-	return authMiddleware(BearerResolver, next, OperationMeta{ID: operationID, Reqs: reqs})
+	return authMiddleware(resolve, next, OperationMeta{ID: operationID, Reqs: reqs})
 }
 
 // BearerResolver parses the Authorization: Bearer header into a Token by
