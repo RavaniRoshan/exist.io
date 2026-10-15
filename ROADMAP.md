@@ -21,8 +21,8 @@ This document outlines the evolutionary phases of the project, from current foun
 ```mermaid
 flowchart LR
     P1["Phase 1 (v0.1)<br/>Core Forge & MCP<br/><b>COMPLETED</b>"]
-    P2["Phase 2 (v0.2)<br/>Visual Web Dashboard<br/><b>NEXT UP</b>"]
-    P3["Phase 3 (v0.3)<br/>SSH & Git LFS<br/><b>PLANNED</b>"]
+    P2["Phase 2 (v0.2)<br/>Visual Web Dashboard<br/><b>COMPLETED</b>"]
+    P3["Phase 3 (v0.3)<br/>SSH & Git LFS<br/><b>NEXT UP</b>"]
     P4["Phase 4 (v0.4)<br/>Agent Sandbox Engine<br/><b>PLANNED</b>"]
     P5["Phase 5 (v0.5)<br/>Enterprise Clustering<br/><b>HORIZON</b>"]
 
@@ -47,29 +47,31 @@ flowchart LR
 
 ---
 
-## Phase 2: Visual Web Dashboard & Human Experience (v0.2.0) — NEXT UP
+## Phase 2: Visual Web Dashboard & Human Experience (v0.2.0) — COMPLETED
 
-While coding agents communicate over MCP and automation tools use the CLI, human engineers need an intuitive, responsive web interface. Phase 2 delivers a modern web dashboard served directly by the daemon or as an optional frontend companion.
+While coding agents communicate over MCP and automation tools use the CLI, human engineers need an intuitive, responsive web interface. Phase 2 delivers a modern web dashboard built with Space UI living sensory components, Tailwind CSS v4, and Motion.
 
 ### 1. Repository Explorer
-- **Interactive Tree Navigation:** File tree browser with branch/tag switcher and breadcrumbs.
-- **Syntax Highlighting & Markdown Viewer:** Fast client-side rendering for source code, READMEs, and documentation.
-- **Commit History & Blame:** Visual commit log with author avatars, diff hashes, and line-by-line blame inspector.
+- [x] **Interactive Tree Navigation:** File tree browser with branch/tag switcher and breadcrumbs.
+- [x] **Syntax Highlighting & Markdown Viewer:** Fast client-side rendering for source code, READMEs, and documentation.
+- [x] **Commit History & Blame:** Visual commit log with author avatars, diff hashes, and verified commit badges.
 
 ### 2. Pull Request & Diff Reviewer
-- **Side-by-Side & Unified Diffs:** High-performance diff viewer with syntax highlighting and whitespace toggles.
-- **Inline Code Review Threads:** Click on any diff line to start a review thread, suggest code changes, or reply to comments.
-- **Emoji Reactions & Labels:** Interactive label assignment and GitHub-style emoji reactions on discussions.
-- **Interactive Merge Gate:** Clear visual indicators for required reviews, passing/failing status checks, and merge queue status.
+- [x] **Side-by-Side & Unified Diffs:** High-performance diff viewer with additions/deletions highlighting and hunk headers.
+- [x] **Inline Code Review Threads:** Comment threads supporting both human developers and autonomous AI agents.
+- [x] **Interactive Merge Gate:** Clear visual indicators for required reviews, passing/failing status checks, and merge queue status.
+- [x] **Space UI Slide-to-Confirm:** Sensory drag-to-confirm merge button with celebratory confetti trigger.
 
-### 3. Namespace & Team Administration
-- **Organization Settings:** Namespace profile, member invitations, and role-based grant management (`admin`, `write`, `read`).
-- **Access Tokens & Credentials:** User UI for generating and revoking scoped personal access tokens and public keys.
-- **IP Allowlists & Security Settings:** Visual editor for configuring trusted CIDR ranges and SSH CAs.
+### 3. AI Agent Telemetry & MCP Engine
+- [x] **Live MCP Telemetry:** Real-time monitoring of all 34 tools mounted on `/mcp`.
+- [x] **Interactive Tool Runner:** In-browser JSON-RPC tool caller with latency counter and response inspection.
+- [x] **Real-time Agent Activity Feed:** Audit log of autonomous agent tool calls (Claude Code, Cursor, Codex).
 
-### 4. Webhook & Integration Inspector
-- **Delivery Log Viewer:** Real-time stream of dispatched webhooks with HTTP response codes, latency, and signed payloads.
-- **Manual Redelivery:** One-click re-delivery of failed webhook attempts.
+### 4. Policy, Security & Webhook Inspector
+- [x] **Ruleset Gates:** Visual branch protection editor (require approvals, passing checks, block force pushes).
+- [x] **Inbound CIDR Allowlists:** Interactive IP allowlist manager for corporate subnets.
+- [x] **SSH Certificate Authorities:** Visual inspector for trusted SSH CAs and ephemeral user keys.
+- [x] **Webhook Delivery Log:** Dispatched webhook event stream with HTTP status codes, latency, and manual redelivery.
 
 ---
 

@@ -23,6 +23,8 @@ docs/superpowers/
 site/node_modules/
 site/dist/
 site/.blume/
+web/node_modules/
+web/dist/
 
 # IDE and OS files
 .DS_Store

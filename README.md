@@ -73,6 +73,7 @@ flowchart TD
     subgraph Clients["Clients & Autonomous Agents"]
         GitCli["Standard Git CLI<br/>(clone / fetch / push)"]
         Agent["AI Coding Agent<br/>(Claude / Cursor / Cline / Custom)"]
+        WebUI["Space UI Living Dashboard<br/>(web/: React 19 / Vite / Motion)"]
         DevCli["Exist CLI (cmd/exist)<br/>(exist repo / pr / auth)"]
         IaC["Terraform Provider<br/>(Infrastructure as Code)"]
     end
@@ -92,6 +93,7 @@ flowchart TD
 
     GitCli -->|Smart-HTTP| Gateway
     Agent -->|JSON-RPC 2.0| Gateway
+    WebUI -->|REST & MCP| Gateway
     DevCli -->|REST API| Gateway
     IaC -->|REST API| Gateway
 
@@ -146,12 +148,23 @@ This creates the `./data/meta.db` database, provisions the initial admin namespa
 ```
 
 > [!TIP]
-> The server listens on `0.0.0.0:8080` by default. Customize via flags (e.g. `--addr :9000 --data-dir /var/lib/exist`) or environment variables.
+### 4. Start the Space UI Visual Dashboard
+
+Launch the human developer web dashboard with live MCP telemetry and sensory controls:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+The web dashboard is served at `http://localhost:3000` with hot module replacement and automatic API/MCP proxying to `existd`.
 
 ### Service Endpoints
 
 | Endpoint | Protocol | Description |
 | :--- | :--- | :--- |
+| `http://localhost:3000` | Web UI | Space UI living developer dashboard & MCP console |
 | `http://localhost:8080/{owner}/{repo}.git` | Git Smart-HTTP | Clone, fetch, and push endpoint |
 | `http://localhost:8080/v1/origin` | REST / JSON | Full forge REST API (119 operations) |
 | `http://localhost:8080/mcp` | MCP (JSON-RPC) | Read-write Model Context Protocol endpoint |
