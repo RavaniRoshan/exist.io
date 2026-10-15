@@ -101,7 +101,9 @@ Achieving pixel-accurate developer ergonomics and end-user workflow parity with 
 - [x] **Repository Transfer Ownership (`TransferRepoModal`):** Sudo mode credential challenge, repository path confirmation string, atomic disk directory relocation across namespaces, and full preservation of git objects, issues, PRs, deploy keys, and webhooks.
 - [x] **Repository Deploy Keys & SSH Isolation:** OpenSSH public key enrollment, SHA-256 fingerprinting, strict repository UUID isolation, and read-only push rejection in embedded pure-Go SSH server.
 - [x] **Repository Webhooks & Delivery History:** Event subscriptions (push, pull_request, issues, release), HMAC-SHA256 signatures, test ping dispatch, HTTP response inspection drawer, and 1-click redeliver.
-- [x] **100% Comprehensive Unit Test Coverage:** 133 automated unit tests across 36 suites in Vitest with zero failures and verified production bundle build.
+- [x] **Danger Zone 3-Tier Deletion & Sudo Hardening (`DeleteRepoModal`):** Multi-tier friction (consequence acknowledgment checkbox, path confirmation string, and caller-scoped sudo challenge) across repository settings and profile views.
+- [x] **Subprocess Concurrency Semaphores & Zero-Heap Streaming:** 64-limit semaphore channels on both Git Smart-HTTP and embedded SSH servers, zero-heap streaming tarball archives, and per-repository RWMutex locking registry.
+- [x] **100% Comprehensive Unit Test Coverage:** 137 automated unit tests across 37 suites in Vitest with zero failures, 100% Go backend test pass rate across all 25 packages, and verified production bundle build.
 
 ---
 

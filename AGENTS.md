@@ -162,7 +162,7 @@ go build -o bin/existd ./cmd/existd
 # Navigate to web directory
 cd web
 
-# Run full Vitest automated test suite (36 suites, 133+ tests)
+# Run full Vitest automated test suite (37 suites, 137 tests)
 npm test
 
 # Run specific test suite
