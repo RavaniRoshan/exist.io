@@ -6,7 +6,7 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { Box, BoxHeader, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Dialog } from '@/components/ui/Dialog'
@@ -86,32 +86,30 @@ export const EnterpriseUsers: React.FC = () => {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-md">
-        <div className="flex items-center gap-3.5">
-          <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400">
-            <Users className="w-5 h-5" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              <span>Enterprise User Management & RBAC</span>
+            </h2>
+            <Badge variant="outline" className="text-[10px]">
+              {users.length} {users.length === 1 ? 'account' : 'accounts'}
+            </Badge>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-white">Enterprise User Management & RBAC</h3>
-              <Badge variant="outline" className="text-[10px] text-slate-300">
-                {users.length} {users.length === 1 ? 'account' : 'accounts'}
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Manage developer memberships, access roles, and platform administrator privileges.
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Manage developer memberships, access roles, and platform administrator privileges.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" onClick={loadUsers} disabled={loading} className="gap-1.5">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={loadUsers} disabled={loading} className="gap-1.5 text-xs">
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </Button>
-          <Button variant="glow" size="sm" onClick={() => setInviteModalOpen(true)} className="gap-1.5">
+          <Button variant="primary" size="sm" onClick={() => setInviteModalOpen(true)} className="gap-1.5 text-xs">
             <UserPlus className="w-3.5 h-3.5" />
             <span>Add User</span>
           </Button>
@@ -121,50 +119,55 @@ export const EnterpriseUsers: React.FC = () => {
       {/* Filter Toolbar */}
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search users by name, username, or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            className="w-full h-8 pl-8 pr-3 text-xs bg-input border border-border rounded-md text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
           />
         </div>
       </div>
 
       {/* Users Table */}
-      <Card className="p-0 overflow-hidden border-slate-800 bg-slate-950/70">
-        {loading ? (
-          <div className="p-12 text-center text-xs text-slate-500 font-mono flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-sky-400" />
-            <span>Loading user accounts...</span>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <Users className="w-8 h-8 text-slate-600 mx-auto" />
-            <h4 className="text-sm font-medium text-slate-300">No users found</h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              {searchQuery ? 'No accounts matched your search query.' : 'Create an account or connect your SCIM/SSO provider to sync corporate users.'}
-            </p>
-            {!searchQuery && (
-              <Button size="sm" variant="glow" onClick={() => setInviteModalOpen(true)} className="mt-2">
-                Add First User
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-850/80">
-            {filteredUsers.map((u) => (
-              <div
+      <Box>
+        <BoxHeader className="bg-secondary/35 py-2.5">
+          <span className="font-semibold text-foreground text-xs">Registered Members</span>
+          <span className="text-muted-foreground font-mono text-[11px]">{filteredUsers.length} accounts</span>
+        </BoxHeader>
+
+        <BoxBody className="p-0">
+          {loading ? (
+            <div className="p-8 text-center text-xs text-muted-foreground font-mono flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+              <span>Loading user accounts...</span>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="p-8 text-center space-y-3">
+              <Users className="w-6 h-6 text-muted-foreground mx-auto" />
+              <h4 className="text-xs font-semibold text-foreground">No users found</h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                {searchQuery ? 'No accounts matched your search query.' : 'Create an account or connect your SCIM/SSO provider to sync corporate users.'}
+              </p>
+              {!searchQuery && (
+                <Button size="sm" variant="primary" onClick={() => setInviteModalOpen(true)} className="mt-2 text-xs">
+                  Add First User
+                </Button>
+              )}
+            </div>
+          ) : (
+            filteredUsers.map((u) => (
+              <BoxRow
                 key={u.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-900/40 transition-colors gap-3"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 hover:bg-secondary/20 transition-colors gap-3"
               >
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3">
                   <LivingAvatar name={u.name} size="md" />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-white">{u.name}</span>
-                      <span className="text-xs text-slate-500 font-mono">@{u.username}</span>
+                      <span className="text-sm font-semibold text-foreground">{u.name}</span>
+                      <span className="text-xs text-muted-foreground font-mono">@{u.username}</span>
                       <Badge
                         variant={u.role === 'admin' ? 'agent' : 'outline'}
                         className="text-[10px] py-0 capitalize"
@@ -178,25 +181,25 @@ export const EnterpriseUsers: React.FC = () => {
                         {u.status}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3 text-slate-500" />
+                        <Mail className="w-3 h-3 text-muted-foreground" />
                         <span>{u.email}</span>
                       </span>
                       <span>•</span>
-                      <span className="text-slate-500 font-mono text-[11px]">{u.id}</span>
+                      <span className="font-mono text-[11px]">{u.id}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <span className="text-[11px] text-slate-500">{u.lastActive}</span>
+                  <span className="text-[11px] text-muted-foreground">{u.lastActive}</span>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              </BoxRow>
+            ))
+          )}
+        </BoxBody>
+      </Box>
 
       {/* Add User Modal */}
       <Dialog
@@ -205,15 +208,15 @@ export const EnterpriseUsers: React.FC = () => {
         title="Add Enterprise Member"
         description="Create an authenticated user account with role-based access controls."
       >
-        <form onSubmit={handleCreateUser} className="space-y-4 pt-2">
+        <form onSubmit={handleCreateUser} className="space-y-3 pt-2">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+            <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-xs">
               {errorMsg}
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-300">Email Address *</label>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Email Address *</label>
             <Input
               type="email"
               placeholder="developer@enterprise.internal"
@@ -225,34 +228,34 @@ export const EnterpriseUsers: React.FC = () => {
                 }
               }}
               required
-              className="bg-slate-900 border-slate-700 text-xs"
+              className="text-xs"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Username *</label>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">Username *</label>
               <Input
                 placeholder="alice"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 required
-                className="bg-slate-900 border-slate-700 text-xs font-mono"
+                className="text-xs font-mono"
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Full Name</label>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">Full Name</label>
               <Input
                 placeholder="Alice Walker"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-slate-900 border-slate-700 text-xs"
+                className="text-xs"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-300">Initial Password * (min. 8 chars)</label>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Initial Password * (min. 8 chars)</label>
             <Input
               type="password"
               placeholder="••••••••••••"
@@ -260,46 +263,46 @@ export const EnterpriseUsers: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="bg-slate-900 border-slate-700 text-xs font-mono"
+              className="text-xs font-mono"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-300">Platform Role</label>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Platform Role</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setRole('member')}
-                className={`p-3 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-md border text-left transition-colors ${
                   role === 'member'
-                    ? 'bg-sky-500/10 border-sky-500 text-sky-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-secondary border-primary text-foreground'
+                    : 'bg-card border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <div className="text-xs font-semibold">Member</div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Read/write access to permitted repositories.</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Read/write access to permitted repositories.</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setRole('admin')}
-                className={`p-3 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-md border text-left transition-colors ${
                   role === 'admin'
-                    ? 'bg-purple-500/10 border-purple-500 text-purple-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-secondary border-primary text-foreground'
+                    : 'bg-card border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <div className="text-xs font-semibold">Administrator</div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Full control over users, cluster, SSO, and policies.</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Full control over users, cluster, SSO, and policies.</div>
               </button>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setInviteModalOpen(false)}>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button type="button" variant="outline" size="sm" onClick={() => setInviteModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="glow" size="sm" disabled={submitting}>
+            <Button type="submit" variant="primary" size="sm" disabled={submitting}>
               {submitting ? 'Creating...' : 'Create Account'}
             </Button>
           </div>

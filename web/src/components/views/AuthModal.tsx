@@ -66,12 +66,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     >
       <div className="space-y-4 pt-2">
         {/* Tab Switcher */}
-        <div className="flex rounded-xl bg-background p-1 border border-border text-xs font-medium">
+        <div className="flex rounded-md bg-secondary p-0.5 border border-border text-xs font-medium">
           <button
             type="button"
             onClick={() => { setTab('login'); setError(null) }}
-            className={`flex-1 py-1.5 rounded-lg transition-colors ${
-              tab === 'login' ? 'bg-primary/20 text-primary font-semibold shadow-inner' : 'text-muted-foreground hover:text-foreground'
+            className={`flex-1 py-1 rounded transition-colors ${
+              tab === 'login' ? 'bg-background text-foreground font-semibold shadow-2xs' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Sign In
@@ -79,8 +79,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <button
             type="button"
             onClick={() => { setTab('register'); setError(null) }}
-            className={`flex-1 py-1.5 rounded-lg transition-colors ${
-              tab === 'register' ? 'bg-primary/20 text-primary font-semibold shadow-inner' : 'text-muted-foreground hover:text-foreground'
+            className={`flex-1 py-1 rounded transition-colors ${
+              tab === 'register' ? 'bg-background text-foreground font-semibold shadow-2xs' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Create Account
@@ -91,7 +91,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-2.5 text-xs text-destructive"
+            className="p-2.5 rounded-md bg-destructive/10 border border-destructive/30 flex items-start gap-2.5 text-xs text-destructive"
           >
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <span>{error}</span>
@@ -178,7 +178,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <div className="pt-2">
             <Button
               type="submit"
-              variant="glow"
+              variant="primary"
               disabled={loading}
               className="w-full justify-center gap-2"
             >

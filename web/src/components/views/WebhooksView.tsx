@@ -10,7 +10,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { Box, BoxHeader, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { fetchWebhookDeliveries, pingWebhook, batchRedeliverWebhooks } from '@/lib/api'
@@ -87,24 +87,22 @@ export const WebhooksView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
-            <Webhook className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">Webhook Delivery Log</h3>
-            <p className="text-xs text-slate-400">
-              Audit and redeliver dispatched JSON webhooks to CI pipelines, audit collectors, and external bots.
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="space-y-0.5">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <Webhook className="w-4 h-4 text-primary" />
+            <span>Webhook Delivery Log</span>
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Audit and redeliver dispatched JSON webhooks to CI pipelines, audit collectors, and external bots.
+          </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
           {feedbackMsg && (
-            <Badge variant="outline" className="text-xs font-mono text-emerald-400 border-emerald-500/40 gap-1 animate-in fade-in">
+            <Badge variant="outline" className="text-xs font-mono text-emerald-500 border-emerald-500/40 gap-1">
               <Check className="w-3 h-3" />
               <span>{feedbackMsg}</span>
             </Badge>
@@ -112,10 +110,10 @@ export const WebhooksView: React.FC = () => {
 
           <Button
             variant="outline"
-            size="xs"
+            size="sm"
             onClick={handlePing}
-            loading={pinging}
-            className="text-xs text-sky-300 border-sky-500/30 hover:bg-sky-500/10 gap-1.5"
+            disabled={pinging}
+            className="text-xs gap-1.5"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Send Test Ping</span>
@@ -123,115 +121,120 @@ export const WebhooksView: React.FC = () => {
 
           <Button
             variant="outline"
-            size="xs"
+            size="sm"
             onClick={() => loadDeliveries(true)}
-            loading={refreshing}
-            className="text-xs text-slate-300 gap-1.5"
+            disabled={refreshing}
+            className="text-xs gap-1.5"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <Card className="p-8 text-center border-slate-800 bg-slate-950/50">
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-mono">
-            <RefreshCw className="w-4 h-4 animate-spin text-sky-400" />
+        <Box className="p-8 text-center">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-mono">
+            <RefreshCw className="w-4 h-4 animate-spin text-primary" />
             <span>Loading webhook deliveries from daemon...</span>
           </div>
-        </Card>
+        </Box>
       ) : deliveries.length === 0 ? (
-        /* Authentic Empty State */
-        <Card className="p-8 text-center border-slate-800 bg-slate-950/60 space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center mx-auto">
-            <Webhook className="w-6 h-6" />
+        /* Empty State */
+        <Box className="p-8 text-center space-y-4">
+          <div className="w-10 h-10 rounded-md bg-secondary border border-border text-muted-foreground flex items-center justify-center mx-auto">
+            <Webhook className="w-5 h-5" />
           </div>
-          <div className="space-y-1.5 max-w-md mx-auto">
-            <h4 className="text-sm font-semibold text-slate-200">No Webhook Deliveries Logged</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="space-y-1 max-w-md mx-auto">
+            <h4 className="text-sm font-semibold text-foreground">No Webhook Deliveries Logged</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               When Git pushes, pull requests, or CI checks occur, automated JSON webhooks are signed with HMAC-SHA256 and dispatched to external endpoints.
             </p>
           </div>
-          <Button variant="secondary" size="sm" onClick={handlePing} loading={pinging} className="gap-1.5">
+          <Button variant="secondary" size="sm" onClick={handlePing} disabled={pinging} className="gap-1.5 text-xs">
             <Send className="w-3.5 h-3.5" />
             <span>Trigger Test Ping Event</span>
           </Button>
-        </Card>
+        </Box>
       ) : (
-        /* Deliveries List */
-        <Card className="p-0 overflow-hidden border-slate-800 bg-slate-950/60">
-          <div className="divide-y divide-slate-850/70">
+        /* Deliveries List Box */
+        <Box>
+          <BoxHeader className="bg-secondary/35 py-2.5">
+            <span className="font-semibold text-foreground text-xs">Recent Deliveries</span>
+            <span className="text-muted-foreground font-mono text-[11px]">{deliveries.length} records</span>
+          </BoxHeader>
+
+          <BoxBody className="p-0">
             {deliveries.map((del) => {
               const isExpanded = expandedId === del.id
               const status = del.statusCode || del.status || 200
               const isOk = status >= 200 && status < 300
 
               return (
-                <div key={del.id} className="p-4 hover:bg-slate-900/40 transition-colors space-y-3">
-                  <div className="flex items-center justify-between gap-4">
+                <div key={del.id} className="border-b border-border last:border-b-0">
+                  <BoxRow className="p-3.5 flex items-center justify-between gap-4 hover:bg-secondary/20 transition-colors">
                     <div
                       onClick={() => setExpandedId(isExpanded ? null : del.id)}
                       className="flex items-center gap-3 cursor-pointer flex-1"
                     >
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                       )}
-                      <span className="font-mono text-xs font-semibold text-sky-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 shrink-0">
+                      <span className="font-mono text-xs font-semibold text-foreground bg-secondary px-2 py-0.5 rounded border border-border shrink-0">
                         {del.event || 'push'}
                       </span>
-                      <span className="text-xs text-slate-300 font-mono hidden sm:inline truncate max-w-sm">
+                      <span className="text-xs text-foreground font-mono hidden sm:inline truncate max-w-sm">
                         {del.targetUrl || del.url || 'https://ci.internal.exist.io/hooks/forge'}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <Badge variant={isOk ? 'success' : 'closed'} className="text-[10px] font-mono py-0 gap-1">
-                        {isOk ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                        {isOk ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <AlertCircle className="w-3 h-3 text-destructive" />}
                         <span>HTTP {status}</span>
                       </Badge>
 
-                      <span className="text-xs font-mono text-slate-500 hidden md:inline">
+                      <span className="text-xs font-mono text-muted-foreground hidden md:inline">
                         {del.latency || `${del.durationMs || 32}ms`}
                       </span>
 
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-muted-foreground">
                         {del.timestamp || 'Recently'}
                       </span>
 
                       <Button
                         variant="ghost"
-                        size="xs"
+                        size="sm"
                         onClick={() => handleRedeliver(del.id)}
-                        loading={redeliveringId === del.id}
-                        className="gap-1 h-7 text-slate-300"
+                        disabled={redeliveringId === del.id}
+                        className="gap-1 h-7 px-2 text-xs"
                         title="Redeliver webhook payload"
                       >
-                        <RefreshCw className="w-3 h-3" />
+                        <RefreshCw className={`w-3 h-3 ${redeliveringId === del.id ? 'animate-spin' : ''}`} />
                         <span className="hidden sm:inline">Redeliver</span>
                       </Button>
                     </div>
-                  </div>
+                  </BoxRow>
 
                   {isExpanded && (
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-850 font-mono text-xs space-y-2">
-                      <div className="text-slate-500 text-[11px] flex items-center justify-between">
+                    <div className="p-3 bg-secondary/20 border-t border-border font-mono text-xs space-y-2">
+                      <div className="text-muted-foreground text-[11px] flex items-center justify-between">
                         <span>HTTP Request Payload (Signed via HMAC-SHA256)</span>
                         <button
                           onClick={() => handleCopy(JSON.stringify(del.payload || del.request?.body || {}, null, 2), del.id)}
-                          className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+                          className="flex items-center gap-1 text-primary hover:underline transition-colors"
                         >
                           {copiedId === del.id ? (
-                            <Check className="w-3 h-3 text-emerald-400" />
+                            <Check className="w-3 h-3 text-emerald-500" />
                           ) : (
                             <Copy className="w-3 h-3" />
                           )}
                           <span>Copy JSON</span>
                         </button>
                       </div>
-                      <pre className="text-slate-300 overflow-x-auto p-2 bg-slate-900/60 rounded-lg border border-slate-800 text-[11px] max-h-56">
+                      <pre className="text-foreground overflow-x-auto p-2.5 bg-background rounded border border-border text-[11px] max-h-56">
                         {JSON.stringify(del.payload || del.request?.body || { event: del.event, id: del.id }, null, 2)}
                       </pre>
                     </div>
@@ -239,8 +242,8 @@ export const WebhooksView: React.FC = () => {
                 </div>
               )
             })}
-          </div>
-        </Card>
+          </BoxBody>
+        </Box>
       )}
     </div>
   )

@@ -13,7 +13,7 @@ import {
   Shield,
   Check,
 } from 'lucide-react'
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import { Box, BoxHeader, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
@@ -98,23 +98,23 @@ export const RulesetsView: React.FC<RulesetsViewProps> = ({ repo = defaultRepo }
         { type: 'pull_request', parameters: { required_approving_review_count: 1 } },
         { type: 'required_status_checks', parameters: { checks: ['Go Build & Test Matrix'] } },
         { type: 'required_signatures', parameters: {} },
-        { type: 'non_fast_forward', parameters: {} },
       ],
     })
-    setRefreshing(false)
+
     if (res.ok) {
-      showFeedback('Production ruleset activated on branch main')
+      showFeedback('Production ruleset activated')
       loadData(true)
     } else {
-      showFeedback('Error: ' + res.error)
+      showFeedback('Failed to activate ruleset: ' + res.error)
+      setRefreshing(false)
     }
   }
 
   const handleDeleteRuleset = async (id: string) => {
     const ok = await deleteRuleset(repo.ownerSlug, repo.name, id)
     if (ok) {
-      showFeedback('Ruleset removed')
-      loadData(true)
+      setRulesets((prev) => prev.filter((r) => r.id !== id))
+      showFeedback('Ruleset deleted')
     }
   }
 
@@ -122,7 +122,7 @@ export const RulesetsView: React.FC<RulesetsViewProps> = ({ repo = defaultRepo }
     const next = !ipEnabled
     setIpEnabled(next)
     await setIPAllowlistEnabled(repo.ownerSlug, next)
-    showFeedback(next ? 'IP allowlist enforcement enabled' : 'IP allowlist enforcement disabled')
+    showFeedback(next ? 'IP allowlist enforced' : 'IP allowlist disabled')
   }
 
   const handleAddCidr = async () => {
@@ -180,24 +180,22 @@ export const RulesetsView: React.FC<RulesetsViewProps> = ({ repo = defaultRepo }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Overview Header Banner */}
-      <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">Repository Security & Merge Gates</h3>
-            <p className="text-xs text-slate-400">
-              Enforce cryptographic commit signatures, merge approvals, check suites, and corporate CIDR allowlists.
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="space-y-0.5">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <span>Repository Security & Merge Gates</span>
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Enforce cryptographic commit signatures, merge approvals, check suites, and corporate CIDR allowlists.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           {actionMsg && (
-            <Badge variant="outline" className="text-xs font-mono text-emerald-400 border-emerald-500/40 gap-1 animate-in fade-in">
+            <Badge variant="outline" className="text-xs font-mono text-emerald-500 border-emerald-500/40 gap-1">
               <Check className="w-3 h-3" />
               <span>{actionMsg}</span>
             </Badge>
@@ -205,318 +203,320 @@ export const RulesetsView: React.FC<RulesetsViewProps> = ({ repo = defaultRepo }
 
           <Button
             variant="outline"
-            size="xs"
+            size="sm"
             onClick={() => loadData(true)}
-            loading={refreshing}
-            className="text-xs text-slate-300 gap-1.5"
+            disabled={refreshing}
+            className="text-xs gap-1.5"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <Card className="p-8 text-center border-slate-800 bg-slate-950/50">
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-mono">
-            <RefreshCw className="w-4 h-4 animate-spin text-purple-400" />
+        <Box className="p-8 text-center">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-mono">
+            <RefreshCw className="w-4 h-4 animate-spin text-primary" />
             <span>Querying security policies and cryptographic rulesets...</span>
           </div>
-        </Card>
+        </Box>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Branch Protection Rulesets */}
-          <Card className="border-slate-800 bg-slate-950/60 p-5 space-y-4">
-            <CardHeader className="p-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base text-white flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-sky-400" />
-                  <span>Branch Protection & Merge Gates</span>
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px] text-sky-300 border-sky-500/40 font-mono">
-                  {rulesets.length} Active Ruleset{rulesets.length === 1 ? '' : 's'}
-                </Badge>
+          <Box>
+            <BoxHeader className="bg-secondary/35 py-2.5">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-foreground text-xs">Branch Protection & Merge Gates</span>
               </div>
-              <CardDescription>
-                Conditions required before commits and pull requests can merge into protected branches.
-              </CardDescription>
-            </CardHeader>
+              <Badge variant="outline" className="text-[10px] font-mono">
+                {rulesets.length} Active Ruleset{rulesets.length === 1 ? '' : 's'}
+              </Badge>
+            </BoxHeader>
 
-            {rulesets.length === 0 ? (
-              /* Authentic Empty State with 1-click CTA */
-              <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800 text-center space-y-3">
-                <Shield className="w-8 h-8 text-slate-600 mx-auto" />
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-slate-300">No Branch Rulesets Configured</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Branch merges are currently unguarded. Protect your production branch against unreviewed merges and unsigned commits.
-                  </p>
+            <BoxBody className="p-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Conditions required before commits and pull requests can merge into protected branches.
+              </p>
+
+              {rulesets.length === 0 ? (
+                <div className="p-6 rounded-md bg-secondary/30 border border-border text-center space-y-3">
+                  <Shield className="w-6 h-6 text-muted-foreground mx-auto" />
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-foreground">No Branch Rulesets Configured</h4>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      Branch merges are currently unguarded. Protect your production branch against unreviewed merges and unsigned commits.
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleCreateDefaultRuleset}
+                    className="gap-1.5 text-xs"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Activate Production Ruleset</span>
+                  </Button>
                 </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleCreateDefaultRuleset}
-                  className="gap-1.5 shadow-[0_0_15px_rgba(56,189,248,0.25)]"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Activate Production Ruleset</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3 pt-1">
-                {rulesets.map((rs) => (
-                  <div key={rs.id} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-slate-200">{rs.name}</span>
-                        <Badge
-                          variant={rs.enforcement === 'active' ? 'success' : 'outline'}
-                          className="text-[9px] py-0 uppercase"
+              ) : (
+                <div className="space-y-2.5">
+                  {rulesets.map((rs) => (
+                    <div key={rs.id} className="p-3 rounded-md bg-secondary/30 border border-border space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-foreground">{rs.name}</span>
+                          <Badge
+                            variant={rs.enforcement === 'active' ? 'success' : 'outline'}
+                            className="text-[9px] py-0 uppercase"
+                          >
+                            {rs.enforcement}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteRuleset(rs.id)}
+                          className="text-muted-foreground hover:text-destructive h-6 px-1.5"
+                          title="Delete ruleset"
                         >
-                          {rs.enforcement}
-                        </Badge>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+                        <GitBranch className="w-3.5 h-3.5 text-primary" />
+                        <span>Target Refs:</span>
+                        <span className="text-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
+                          {rs.includedRefNames && rs.includedRefNames.length > 0
+                            ? rs.includedRefNames.join(', ')
+                            : 'refs/heads/main'}
+                        </span>
+                      </div>
+
+                      {/* Enforced Rules List */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                        <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border text-[11px] text-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>Require Signed Commits</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border text-[11px] text-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>Require 1 PR Approval</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border text-[11px] text-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>Require CI Check Runs</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border text-[11px] text-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>Block Force Pushes</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </BoxBody>
+          </Box>
+
+          {/* Inbound IP Allowlists (CIDR Filtering) */}
+          <Box>
+            <BoxHeader className="bg-secondary/35 py-2.5">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-foreground text-xs">Inbound IP Allowlists (CIDR)</span>
+              </div>
+              <button
+                onClick={handleToggleIpAllowlist}
+                className={`relative inline-flex h-4 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  ipEnabled ? 'bg-primary' : 'bg-secondary'
+                }`}
+                title={ipEnabled ? 'Disable IP Allowlist' : 'Enable IP Allowlist'}
+              >
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
+                    ipEnabled ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </BoxHeader>
+
+            <BoxBody className="p-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Restrict Git Smart-HTTP, SSH, and MCP traffic to verified corporate CIDR subnets.
+              </p>
+
+              <div className="space-y-2">
+                {ipEntries.length === 0 ? (
+                  <div className="p-3 rounded-md bg-secondary/30 border border-border text-center text-xs text-muted-foreground">
+                    No CIDR subnets configured. All inbound traffic is currently allowed.
+                  </div>
+                ) : (
+                  ipEntries.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-2.5 rounded-md bg-secondary/30 border border-border"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-semibold text-foreground">{item.cidr}</span>
+                          {ipEnabled && (
+                            <Badge variant="success" className="text-[9px] py-0">
+                              Enforced
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">{item.description}</span>
+                      </div>
+
                       <Button
                         variant="ghost"
-                        size="xs"
-                        onClick={() => handleDeleteRuleset(rs.id)}
-                        className="text-slate-500 hover:text-rose-400 h-6 px-1.5"
-                        title="Delete ruleset"
+                        size="sm"
+                        onClick={() => handleDeleteCidr(item.id)}
+                        className="text-muted-foreground hover:text-destructive h-6 px-1.5"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+                  ))
+                )}
 
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
-                      <GitBranch className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Target Refs:</span>
-                      <span className="text-sky-300 bg-slate-850 px-1.5 py-0.5 rounded border border-slate-800">
-                        {rs.includedRefNames && rs.includedRefNames.length > 0
-                          ? rs.includedRefNames.join(', ')
-                          : 'refs/heads/main'}
-                      </span>
-                    </div>
-
-                    {/* Enforced Rules List */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                        <span>Require Signed Commits</span>
-                      </div>
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                        <span>Require 1 PR Approval</span>
-                      </div>
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span>Require CI Check Runs</span>
-                      </div>
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span>Block Force Pushes</span>
-                      </div>
-                    </div>
+                {/* Add CIDR Form */}
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="e.g. 192.168.1.0/24"
+                      value={newCidr}
+                      onChange={(e) => setNewCidr(e.target.value)}
+                      className="text-xs font-mono"
+                    />
+                    <Button variant="secondary" size="sm" onClick={handleAddCidr} className="shrink-0 gap-1 text-xs">
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add CIDR</span>
+                    </Button>
                   </div>
-                ))}
+                  <Input
+                    placeholder="Description (e.g. Corporate VPN or Internal VPC)"
+                    value={newCidrDesc}
+                    onChange={(e) => setNewCidrDesc(e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
               </div>
-            )}
-          </Card>
+            </BoxBody>
+          </Box>
 
-          {/* Inbound IP Allowlists (CIDR Filtering) */}
-          <Card className="border-slate-800 bg-slate-950/60 p-5 space-y-4">
-            <CardHeader className="p-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base text-white flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-purple-400" />
-                  <span>Inbound IP Allowlists (CIDR)</span>
-                </CardTitle>
+          {/* SSH Certificate Authorities (SSH CA) */}
+          <Box className="lg:col-span-2">
+            <BoxHeader className="bg-secondary/35 py-2.5">
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-foreground text-xs">SSH Certificate Authorities (SSH CA)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-mono">Require SSH Certs:</span>
                 <button
-                  onClick={handleToggleIpAllowlist}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    ipEnabled ? 'bg-purple-600' : 'bg-slate-800'
+                  onClick={handleToggleSshRequired}
+                  className={`relative inline-flex h-4 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    sshRequired ? 'bg-primary' : 'bg-secondary'
                   }`}
-                  title={ipEnabled ? 'Disable IP Allowlist' : 'Enable IP Allowlist'}
+                  title={sshRequired ? 'Disable Requirement' : 'Enforce SSH Certs'}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                      ipEnabled ? 'translate-x-4' : 'translate-x-0'
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
+                      sshRequired ? 'translate-x-4' : 'translate-x-0'
                     }`}
                   />
                 </button>
               </div>
-              <CardDescription>
-                Restrict Git Smart-HTTP, SSH, and MCP traffic to verified corporate CIDR subnets.
-              </CardDescription>
-            </CardHeader>
+            </BoxHeader>
 
-            <div className="space-y-2.5">
-              {ipEntries.length === 0 ? (
-                <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-xs text-slate-500">
-                  No CIDR subnets configured. All inbound traffic is currently allowed.
-                </div>
-              ) : (
-                ipEntries.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-semibold text-purple-300">{item.cidr}</span>
-                        {ipEnabled && (
-                          <Badge variant="success" className="text-[9px] py-0">
-                            Enforced
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-slate-500">{item.description}</span>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onClick={() => handleDeleteCidr(item.id)}
-                      className="text-slate-500 hover:text-rose-400 h-6 px-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                ))
-              )}
-
-              {/* Add CIDR Form */}
-              <div className="space-y-2 pt-2 border-t border-slate-850">
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="e.g. 192.168.1.0/24"
-                    value={newCidr}
-                    onChange={(e) => setNewCidr(e.target.value)}
-                    className="text-xs font-mono"
-                  />
-                  <Button variant="secondary" size="sm" onClick={handleAddCidr} className="shrink-0 gap-1">
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add CIDR</span>
-                  </Button>
-                </div>
-                <Input
-                  placeholder="Description (e.g. Corporate VPN or Internal VPC)"
-                  value={newCidrDesc}
-                  onChange={(e) => setNewCidrDesc(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* SSH Certificate Authorities (SSH CA) */}
-          <Card className="border-slate-800 bg-slate-950/60 p-5 space-y-4 lg:col-span-2">
-            <CardHeader className="p-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base text-white flex items-center gap-2">
-                  <Key className="w-4 h-4 text-emerald-400" />
-                  <span>SSH Certificate Authorities (SSH CA)</span>
-                </CardTitle>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 font-mono">Require SSH Certs:</span>
-                  <button
-                    onClick={handleToggleSshRequired}
-                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      sshRequired ? 'bg-emerald-600' : 'bg-slate-800'
-                    }`}
-                    title={sshRequired ? 'Disable Requirement' : 'Enforce SSH Certs'}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                        sshRequired ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-              <CardDescription>
+            <BoxBody className="p-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
                 Permit developer authentication using short-lived cryptographically signed SSH certificates issued by HashiCorp Vault, Teleport, or corporate CA.
-              </CardDescription>
-            </CardHeader>
+              </p>
 
-            <div className="space-y-3">
-              {sshCas.length === 0 ? (
-                <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-xs text-slate-500">
-                  No SSH Certificate Authorities registered. Users authenticate via individual SSH public keys or PATs.
-                </div>
-              ) : (
-                sshCas.map((ca) => (
-                  <div
-                    key={ca.id}
-                    className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-200">{ca.name}</span>
-                        <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/40">
-                          {ca.key_type || 'ssh-ed25519'}
-                        </Badge>
-                      </div>
-                      <p className="font-mono text-[11px] text-slate-400 break-all">{ca.fingerprint}</p>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onClick={() => handleDeleteCa(ca.id)}
-                      className="text-slate-500 hover:text-rose-400 self-end sm:self-auto h-7 px-2"
+              <div className="space-y-2.5">
+                {sshCas.length === 0 ? (
+                  <div className="p-3 rounded-md bg-secondary/30 border border-border text-center text-xs text-muted-foreground">
+                    No SSH Certificate Authorities registered. Users authenticate via individual SSH public keys or PATs.
+                  </div>
+                ) : (
+                  sshCas.map((ca) => (
+                    <BoxRow
+                      key={ca.id}
+                      className="p-3 rounded-md bg-secondary/30 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-foreground">{ca.name}</span>
+                          <Badge variant="outline" className="text-[10px]">
+                            {ca.key_type || 'ssh-ed25519'}
+                          </Badge>
+                        </div>
+                        <p className="font-mono text-[11px] text-muted-foreground break-all">{ca.fingerprint}</p>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteCa(ca.id)}
+                        className="text-muted-foreground hover:text-destructive self-end sm:self-auto h-7 px-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </BoxRow>
+                  ))
+                )}
+
+                {/* Add SSH CA Form Toggle */}
+                {showAddCa ? (
+                  <div className="p-3 rounded-md bg-secondary/40 border border-border space-y-2.5 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Enroll New SSH Certificate Authority</span>
+                      <button onClick={() => setShowAddCa(false)} className="text-muted-foreground hover:text-foreground text-xs">
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Input
+                        placeholder="CA Name (e.g. Vault Prod CA)"
+                        value={newCaName}
+                        onChange={(e) => setNewCaName(e.target.value)}
+                        className="text-xs"
+                      />
+                      <Input
+                        placeholder="Public Key (e.g. ssh-ed25519 AAAAC3...)"
+                        value={newCaKey}
+                        onChange={(e) => setNewCaKey(e.target.value)}
+                        className="text-xs font-mono"
+                      />
+                    </div>
+                    <Button variant="primary" size="sm" onClick={handleAddCa} className="gap-1.5 text-xs">
+                      <Key className="w-3.5 h-3.5" />
+                      <span>Save Certificate Authority</span>
                     </Button>
                   </div>
-                ))
-              )}
-
-              {/* Add SSH CA Modal / Form Toggle */}
-              {showAddCa ? (
-                <div className="p-4 rounded-xl bg-slate-900/80 border border-emerald-500/30 space-y-3 animate-in fade-in">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-200">Enroll New SSH Certificate Authority</span>
-                    <button onClick={() => setShowAddCa(false)} className="text-slate-500 hover:text-white text-xs">
-                      Cancel
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="CA Name (e.g. Vault Prod CA)"
-                      value={newCaName}
-                      onChange={(e) => setNewCaName(e.target.value)}
-                      className="text-xs"
-                    />
-                    <Input
-                      placeholder="Public Key (e.g. ssh-ed25519 AAAAC3...)"
-                      value={newCaKey}
-                      onChange={(e) => setNewCaKey(e.target.value)}
-                      className="text-xs font-mono"
-                    />
-                  </div>
-                  <Button variant="primary" size="sm" onClick={handleAddCa} className="gap-1.5">
-                    <Key className="w-3.5 h-3.5" />
-                    <span>Save Certificate Authority</span>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddCa(true)}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Enroll Trusted SSH CA</span>
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddCa(true)}
-                  className="gap-1.5 text-xs text-slate-300"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Enroll Trusted SSH CA</span>
-                </Button>
-              )}
+                )}
 
-              <div className="flex items-center gap-2 text-xs text-amber-400/90 bg-amber-950/20 border border-amber-900/40 p-2.5 rounded-lg">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>Certificates signed by registered CAs automatically inherit namespace role permissions on push/clone.</span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/30 border border-border p-2 rounded-md">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Certificates signed by registered CAs automatically inherit namespace role permissions on push/clone.</span>
+                </div>
               </div>
-            </div>
-          </Card>
+            </BoxBody>
+          </Box>
         </div>
       )}
     </div>

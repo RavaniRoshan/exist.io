@@ -13,6 +13,10 @@ export interface DialogProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }
 
+/**
+ * GitHub Primer Dialog/Modal.
+ * Features 8px (rounded-lg) corners, crisp 1px borders, and structured header/body.
+ */
 export const Dialog: React.FC<DialogProps> = ({
   isOpen,
   onClose,
@@ -47,41 +51,43 @@ export const Dialog: React.FC<DialogProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="fixed inset-0 bg-background/80 backdrop-blur-md"
+            className="fixed inset-0 bg-background/70 backdrop-blur-xs"
           />
 
-          {/* Modal Card */}
+          {/* Modal Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.98, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            exit={{ opacity: 0, scale: 0.98, y: 6 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 450 }}
             className={cn(
-              'relative w-full rounded-2xl border border-border bg-card/95 text-card-foreground p-6 shadow-2xl backdrop-blur-xl z-10 overflow-hidden',
-              'before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-gradient-to-b before:from-primary/10 before:to-transparent before:opacity-60',
+              'relative w-full rounded-lg border border-border bg-card text-card-foreground shadow-2xl z-10 overflow-hidden',
               maxW,
               className
             )}
           >
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-secondary/80 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Header */}
+            {/* Modal Header */}
             {(title || description) && (
-              <div className="mb-4 pr-6">
-                {title && <h3 className="text-lg font-semibold text-foreground">{title}</h3>}
-                {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+              <div className="px-4 py-3 border-b border-border bg-secondary/20 flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  {title && <h3 className="text-sm font-semibold text-foreground leading-tight">{title}</h3>}
+                  {description && <p className="text-xs text-muted-foreground leading-normal">{description}</p>}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
 
-            {children}
+            {/* Modal Body */}
+            <div className="p-4">
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

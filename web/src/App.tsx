@@ -1,12 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import {
-  Code2,
-  GitPullRequest,
-  GitCommit,
-  Bot,
-  Shield,
-  Webhook,
   Activity,
   Server,
   ShieldAlert,
@@ -24,168 +17,133 @@ import { ClusterHealth } from '@/components/views/admin/ClusterHealth'
 import { AuditLogs } from '@/components/views/admin/AuditLogs'
 import { SsoConfig } from '@/components/views/admin/SsoConfig'
 import { EnterpriseUsers } from '@/components/views/admin/EnterpriseUsers'
-import { Tabs } from '@/components/ui/Tabs'
 import { defaultRepo } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 export default function App() {
-  const [navSection, setNavSection] = useState<'forge' | 'admin'>('forge')
-  const [activeTab, setActiveTab] = useState('code')
+  const [activeTab, setActiveTab] = useState<'code' | 'prs' | 'commits' | 'agents' | 'rulesets' | 'webhooks' | 'admin'>('code')
+  const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
   const repo = defaultRepo
 
-  const forgeTabs = [
-    { id: 'code', label: 'Code', icon: <Code2 className="w-3.5 h-3.5" /> },
-    { id: 'pulls', label: 'Pull Requests', count: 1, icon: <GitPullRequest className="w-3.5 h-3.5" /> },
-    { id: 'commits', label: 'Commits', count: 148, icon: <GitCommit className="w-3.5 h-3.5" /> },
-    { id: 'agents', label: 'AI Agents & MCP', count: '34 tools', icon: <Bot className="w-3.5 h-3.5 text-sky-400" /> },
-    { id: 'rulesets', label: 'Rulesets & Policy', icon: <Shield className="w-3.5 h-3.5" /> },
-    { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-3.5 h-3.5" /> },
-  ]
-
-  const adminTabs = [
-    { id: 'cluster', label: 'Cluster Health', icon: <Server className="w-3.5 h-3.5 text-emerald-400" /> },
-    { id: 'audit', label: 'Compliance Audit Logs', icon: <ShieldAlert className="w-3.5 h-3.5 text-purple-400" /> },
-    { id: 'sso', label: 'Enterprise SSO & SCIM', icon: <KeyRound className="w-3.5 h-3.5 text-sky-400" /> },
-    { id: 'users', label: 'Users & RBAC', icon: <Users className="w-3.5 h-3.5 text-teal-400" /> },
-  ]
+  const adminNavItems = [
+    { id: 'cluster', label: 'Cluster Health & Metrics', icon: <Server className="w-4 h-4" /> },
+    { id: 'users', label: 'User Directory & SCIM', icon: <Users className="w-4 h-4" /> },
+    { id: 'sso', label: 'Single Sign-On (SAML/OIDC)', icon: <KeyRound className="w-4 h-4" /> },
+    { id: 'audit', label: 'Audit Log & Security', icon: <ShieldAlert className="w-4 h-4" /> },
+  ] as const
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/25 selection:text-primary">
-      {/* Space UI Subtle Mesh Grid Background */}
-      <div className="fixed inset-0 pointer-events-none bg-space-grid opacity-80 -z-10" />
-
-      {/* Top Application Header */}
+      {/* Top Application Header & UnderlineNav */}
       <Header
         repo={repo}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onOpenAgentConsole={() => {
-          setNavSection('forge')
-          setActiveTab('agents')
+        onTabChange={(tab) => {
+          if (tab === 'admin') {
+            setActiveTab('admin')
+          } else {
+            setActiveTab(tab as any)
+          }
         }}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Navigation Section Switcher: Forge vs Enterprise Admin */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 p-1 bg-card border border-border rounded-xl text-xs font-semibold">
-              <button
-                onClick={() => {
-                  setNavSection('forge')
-                  setActiveTab('code')
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                  navSection === 'forge'
-                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Forge Workspace
-              </button>
-              <button
-                onClick={() => {
-                  setNavSection('admin')
-                  setActiveTab('cluster')
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                  navSection === 'admin'
-                    ? 'bg-accent/25 text-foreground border border-accent/40 shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Enterprise Admin
-              </button>
-            </div>
-          </div>
-
-          {/* Sub-tabs for the active section */}
-          <Tabs
-            tabs={navSection === 'forge' ? forgeTabs : adminTabs}
-            activeTab={activeTab}
-            onChange={setActiveTab}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* 1. Code & File Tree View */}
+        {activeTab === 'code' && (
+          <RepoOverview
+            repo={repo}
+            onSelectCommits={() => setActiveTab('commits')}
+            onSelectAgentConsole={() => setActiveTab('agents')}
           />
-        </div>
+        )}
 
-        {/* Tab Content Panes with Fluid Transitions */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${navSection}-${activeTab}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-          >
-            {/* Forge Workspace Views */}
-            {navSection === 'forge' && activeTab === 'code' && (
-              <RepoOverview
-                repo={repo}
-                onSelectCommits={() => setActiveTab('commits')}
-                onSelectAgentConsole={() => setActiveTab('agents')}
-              />
-            )}
+        {/* 2. Pull Requests View */}
+        {activeTab === 'prs' && (
+          <PullRequestsView
+            repo={repo}
+            onSelectAgentConsole={() => setActiveTab('agents')}
+          />
+        )}
 
-            {navSection === 'forge' && activeTab === 'pulls' && (
-              <PullRequestsView
-                repo={repo}
-                onSelectAgentConsole={() => setActiveTab('agents')}
-              />
-            )}
+        {/* 3. Commits History View */}
+        {activeTab === 'commits' && (
+          <CommitsView repo={repo} />
+        )}
 
-            {navSection === 'forge' && activeTab === 'commits' && (
-              <CommitsView repo={repo} />
-            )}
+        {/* 4. Autonomous Agent Console & MCP Telemetry */}
+        {activeTab === 'agents' && (
+          <AgentConsoleView />
+        )}
 
-            {navSection === 'forge' && activeTab === 'agents' && (
-              <AgentConsoleView />
-            )}
+        {/* 5. Branch Rulesets & Policy View */}
+        {activeTab === 'rulesets' && (
+          <RulesetsView repo={repo} />
+        )}
 
-            {navSection === 'forge' && activeTab === 'rulesets' && (
-              <RulesetsView repo={repo} />
-            )}
+        {/* 6. Webhooks Delivery View */}
+        {activeTab === 'webhooks' && (
+          <WebhooksView />
+        )}
 
-            {navSection === 'forge' && activeTab === 'webhooks' && (
-              <WebhooksView />
-            )}
+        {/* 7. Enterprise Admin & Settings View (Classic 2-column layout) */}
+        {activeTab === 'admin' && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+            {/* Left Settings Sidebar (25%) */}
+            <aside className="md:col-span-1 space-y-1">
+              <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Enterprise Settings
+              </div>
+              <nav className="space-y-0.5">
+                {adminNavItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setAdminSection(item.id)}
+                    className={cn(
+                      'w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-md transition-colors text-left cursor-pointer',
+                      adminSection === item.id
+                        ? 'bg-secondary text-foreground font-semibold border-l-2 border-primary'
+                        : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                    )}
+                  >
+                    <span className={cn('w-4 h-4 shrink-0', adminSection === item.id ? 'text-primary' : 'text-muted-foreground')}>
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </aside>
 
-            {/* Enterprise Admin Console Views */}
-            {navSection === 'admin' && activeTab === 'cluster' && (
-              <ClusterHealth />
-            )}
-
-            {navSection === 'admin' && activeTab === 'audit' && (
-              <AuditLogs />
-            )}
-
-            {navSection === 'admin' && activeTab === 'sso' && (
-              <SsoConfig />
-            )}
-
-            {navSection === 'admin' && activeTab === 'users' && (
-              <EnterpriseUsers />
-            )}
-          </motion.div>
-        </AnimatePresence>
+            {/* Right Settings Content (75%) */}
+            <section className="md:col-span-3">
+              {adminSection === 'cluster' && <ClusterHealth />}
+              {adminSection === 'users' && <EnterpriseUsers />}
+              {adminSection === 'sso' && <SsoConfig />}
+              {adminSection === 'audit' && <AuditLogs />}
+            </section>
+          </div>
+        )}
       </main>
 
-      {/* Space UI Live Telemetry Footer */}
-      <footer className="border-t border-border bg-card/70 backdrop-blur-md py-4 mt-auto">
+      {/* GitHub Primer Footer */}
+      <footer className="border-t border-border bg-card/60 py-5 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-mono">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-foreground/80">
+            <span className="flex items-center gap-1.5 text-foreground">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
-              <span>existd 127.0.0.1:8080</span>
+              <span>existd (127.0.0.1:8080)</span>
             </span>
             <span>•</span>
-            <span className="text-foreground/80 flex items-center gap-1">
-              <Activity className="w-3 h-3 text-primary" />
+            <span className="text-foreground flex items-center gap-1">
+              <Activity className="w-3.5 h-3.5 text-primary" />
               <span>SQLite WAL</span>
             </span>
             <span>•</span>
-            <span className="text-foreground/80">35 MCP Tools Mounted</span>
+            <span className="text-foreground">35 MCP Tools Mounted</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -193,7 +151,7 @@ export default function App() {
               href="https://ravaniroshan.github.io/exist.io/"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors hover:underline"
             >
               Docs & Guide
             </a>
@@ -201,13 +159,13 @@ export default function App() {
               href="https://github.com/RavaniRoshan/exist.io"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors hover:underline"
             >
               GitHub
             </a>
             <span className="text-border">|</span>
-            <span className="flex items-center gap-1 text-foreground/80">
-              <span>Enterprise Ready v0.3.0</span>
+            <span className="text-foreground font-semibold">
+              exist.io v0.3.0
             </span>
           </div>
         </div>

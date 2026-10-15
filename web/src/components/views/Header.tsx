@@ -1,25 +1,52 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
-import { GitBranch, Terminal, ExternalLink, Copy, Check, ShieldCheck, Sparkles, BookOpen, Layers, LogIn, LogOut } from 'lucide-react'
+import {
+  GitBranch,
+  Terminal,
+  ExternalLink,
+  Copy,
+  Check,
+  Sparkles,
+  BookOpen,
+  Layers,
+  LogIn,
+  LogOut,
+  Star,
+  Eye,
+  GitFork,
+  Code2,
+  GitPullRequest,
+  GitCommit,
+  Bot,
+  ShieldCheck,
+  Webhook,
+  Settings,
+  ChevronDown,
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { SearchPill } from '@/components/ui/Input'
 import { Dialog } from '@/components/ui/Dialog'
+import { UnderlineNav, type NavTabItem } from '@/components/ui/UnderlineNav'
 import { isDemoModeActive, setDemoModeActive, checkActiveSession, logoutUser, type RepoInfo, type UserProfile } from '@/lib/api'
 import { AuthModal } from '@/components/views/AuthModal'
+import { cn } from '@/lib/utils'
 
 export interface HeaderProps {
   repo: RepoInfo
   activeTab: string
   onTabChange: (tab: string) => void
-  onOpenAgentConsole: () => void
+  openPrCount?: number
 }
 
+/**
+ * GitHub Primer Repository Header.
+ * Top bar (56px) + Repository Title Breadcrumb & Actions + UnderlineNav bar.
+ */
 export const Header: React.FC<HeaderProps> = ({
   repo,
-  activeTab: _activeTab,
-  onTabChange: _onTabChange,
-  onOpenAgentConsole,
+  activeTab,
+  onTabChange,
+  openPrCount = 1,
 }) => {
   const [cloneModalOpen, setCloneModalOpen] = useState(false)
   const [cloneType, setCloneType] = useState<'http' | 'ssh' | 'mcp'>('http')
@@ -27,6 +54,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [isDemo, setIsDemo] = useState(isDemoModeActive())
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [starred, setStarred] = useState(false)
+  const [starCount, setStarCount] = useState(14)
 
   useEffect(() => {
     checkActiveSession().then((res) => {
@@ -64,132 +93,114 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }
 
+  // Canonical Repository Tabs
+  const repoTabs: NavTabItem[] = [
+    { id: 'code', label: 'Code', icon: <Code2 className="w-4 h-4" /> },
+    { id: 'prs', label: 'Pull requests', count: openPrCount, icon: <GitPullRequest className="w-4 h-4" /> },
+    { id: 'commits', label: 'Commits', icon: <GitCommit className="w-4 h-4" /> },
+    { id: 'agents', label: 'Agent Console', count: '35', icon: <Bot className="w-4 h-4" /> },
+    { id: 'rulesets', label: 'Rulesets & Security', icon: <ShieldCheck className="w-4 h-4" /> },
+    { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-4 h-4" /> },
+    { id: 'admin', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+  ]
+
   return (
     <>
       {/* Sandbox Demo Mode Top Announcement Banner (Visible ONLY in Demo Mode) */}
       {isDemo && (
-        <div className="bg-gradient-to-r from-amber-600/20 via-orange-600/20 to-amber-600/20 border-b border-amber-500/30 px-4 py-1.5 text-center text-xs text-amber-300 font-medium flex items-center justify-center gap-2">
+        <div className="bg-amber-950/30 border-b border-amber-500/30 px-4 py-1.5 text-center text-xs text-amber-300 font-medium flex items-center justify-center gap-2">
           <Layers className="w-3.5 h-3.5 text-amber-400" />
           <span>Running in Offline Sandbox Demo Mode — Data is simulated for evaluation.</span>
           <button
             onClick={toggleDemoMode}
-            className="underline hover:text-white font-semibold ml-2 cursor-pointer"
+            className="underline hover:text-foreground font-semibold ml-2 cursor-pointer"
           >
             Switch to Live Production API
           </button>
         </div>
       )}
 
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/85 backdrop-blur-xl">
+      {/* 1. Global App Bar (56px) */}
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4">
-            {/* Logo & Breadcrumb */}
+          <div className="flex items-center justify-between h-14 gap-4">
+            {/* Left: Brand Glyph & Title */}
             <div className="flex items-center gap-3">
-              <motion.div
-                whileHover={{ rotate: 10, scale: 1.05 }}
-                className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground shadow-sm border border-primary/40"
+              <a
+                href="/"
+                className="flex items-center gap-2.5 text-foreground hover:opacity-90 transition-opacity"
               >
-                <GitBranch className="w-5 h-5 text-current" />
-              </motion.div>
-              <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-                <span className="text-muted-foreground hover:text-foreground cursor-pointer">{repo.ownerSlug}</span>
-                <span className="text-border">/</span>
-                <span className="text-foreground hover:text-primary cursor-pointer">{repo.name}</span>
-                <Badge variant="outline" className="ml-1 text-[10px] py-0 border-border text-muted-foreground">
-                  Public
-                </Badge>
-              </div>
-            </div>
+                <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-2xs">
+                  <GitBranch className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-sm tracking-tight text-foreground hidden sm:inline">exist.io</span>
+              </a>
 
-            {/* Central Search Pill */}
-            <div className="hidden md:flex flex-1 max-w-md mx-4">
-              <SearchPill />
-            </div>
-
-            {/* Right Action Bar */}
-            <div className="flex items-center gap-2.5">
-              {/* Mode Toggle: Production API vs Sandbox Demo */}
+              {/* Mode Toggle Capsule */}
               <button
                 onClick={toggleDemoMode}
-                className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer ${
                   isDemo
-                    ? 'bg-amber-950/40 text-amber-300 border-amber-500/40 hover:bg-amber-950/60'
-                    : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/40 hover:bg-emerald-950/60'
+                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                 }`}
                 title="Click to toggle between Live Production API and Offline Sandbox Demo mode"
               >
-                <span className={`w-2 h-2 rounded-full ${isDemo ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isDemo ? 'bg-amber-400' : 'bg-emerald-400'}`} />
                 <span>{isDemo ? 'Sandbox Demo' : 'Live Production'}</span>
               </button>
+            </div>
 
-              {/* Live MCP Agent Status Pill */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onOpenAgentConsole}
-                className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/30 hover:border-primary hover:bg-primary/20 transition-all shadow-xs"
+            {/* Central Search Bar */}
+            <div className="hidden md:flex flex-1 max-w-sm mx-4">
+              <SearchPill />
+            </div>
+
+            {/* Right Action Group */}
+            <div className="flex items-center gap-2">
+              {/* MCP Tool Status Badge */}
+              <button
+                onClick={() => onTabChange('agents')}
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-foreground border border-border hover:bg-secondary/80 transition-colors cursor-pointer"
+                title="35 Model Context Protocol tools active"
               >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                </span>
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="font-semibold">MCP Active</span>
-                <span className="text-[10px] text-primary bg-primary/20 px-1.5 py-0.2 rounded border border-primary/40">
-                  35 tools
-                </span>
-              </motion.button>
+                <span>MCP: 35 tools</span>
+              </button>
 
-              {/* Quick Clone Button */}
-              <Button
-                variant="glow"
-                size="sm"
-                onClick={() => setCloneModalOpen(true)}
-                className="gap-1.5"
-              >
-                <Terminal className="w-3.5 h-3.5" />
-                <span>Clone</span>
-              </Button>
-
-              {/* Documentation Site Link */}
+              {/* Documentation */}
               <a
                 href="https://ravaniroshan.github.io/exist.io/"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-colors"
-                title="Documentation Site"
+                className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors"
+                title="Documentation & Guides"
               >
                 <BookOpen className="w-4 h-4" />
               </a>
 
-              {/* GitHub Remote Link */}
+              {/* GitHub Link */}
               <a
                 href="https://github.com/RavaniRoshan/exist.io"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors"
                 title="GitHub Repository"
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
 
-              {/* Authentication Status / Sign In Button */}
+              {/* User Authentication Menu */}
               {currentUser ? (
                 <div className="flex items-center gap-2 pl-2 border-l border-border">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-xs">
-                      {currentUser.login.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="hidden lg:flex flex-col text-left">
-                      <span className="text-xs font-medium text-foreground leading-tight">{currentUser.name || currentUser.login}</span>
-                      <span className="text-[10px] text-muted-foreground capitalize">{currentUser.role}</span>
-                    </div>
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-2xs">
+                    {currentUser.login.charAt(0).toUpperCase()}
                   </div>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="xs"
                     onClick={handleLogout}
-                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                    className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     title="Sign Out"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -197,10 +208,10 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               ) : (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setAuthModalOpen(true)}
-                  className="gap-1.5 border-border bg-secondary hover:bg-secondary/80 text-foreground cursor-pointer"
+                  className="gap-1.5"
                 >
                   <LogIn className="w-3.5 h-3.5 text-primary" />
                   <span>Sign In</span>
@@ -209,81 +220,138 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Clone Instructions Modal */}
-        <Dialog
-          isOpen={cloneModalOpen}
-          onClose={() => setCloneModalOpen(false)}
-          title="Clone or Connect to exist.io"
-          description="Select your preferred transport protocol or connect an autonomous coding agent."
-        >
-          <div className="space-y-4 pt-2">
-            {/* Transport Selector Tabs */}
-            <div className="flex rounded-xl bg-background p-1 border border-border text-xs font-medium">
-              <button
-                onClick={() => setCloneType('http')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${
-                  cloneType === 'http' ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Smart-HTTP
-              </button>
-              <button
-                onClick={() => setCloneType('ssh')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${
-                  cloneType === 'ssh' ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                SSH
-              </button>
-              <button
-                onClick={() => setCloneType('mcp')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${
-                  cloneType === 'mcp' ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                MCP Agent
-              </button>
+      {/* 2. Repository Context Title Bar & UnderlineNav */}
+      <div className="w-full bg-card/50 border-b border-border pt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+          {/* Top Row: Breadcrumb & Repo Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Breadcrumb: owner / repo */}
+            <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+              <span className="text-muted-foreground hover:underline cursor-pointer">{repo.ownerSlug}</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-foreground hover:underline font-bold cursor-pointer text-base">{repo.name}</span>
+              <Badge variant="outline" className="ml-1 text-[11px] py-0 px-1.5 border-border text-muted-foreground">
+                Public
+              </Badge>
             </div>
 
-            {/* Code snippet display */}
-            <div className="relative rounded-xl bg-background border border-border p-3 font-mono text-xs text-primary overflow-x-auto flex items-center justify-between">
-              <code className="text-foreground select-all">{getCloneCommand()}</code>
+            {/* Action Group: Watch, Fork, Star, Code Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <Button variant="secondary" size="sm" className="gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Watch</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-background border border-border text-[10px] font-mono">1</span>
+              </Button>
+
+              <Button variant="secondary" size="sm" className="gap-1.5">
+                <GitFork className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Fork</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-background border border-border text-[10px] font-mono">0</span>
+              </Button>
+
               <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => copyToClipboard(getCloneCommand())}
-                className="shrink-0 ml-2"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setStarred(!starred)
+                  setStarCount(starred ? starCount - 1 : starCount + 1)
+                }}
+                className="gap-1.5"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <Star className={cn('w-3.5 h-3.5', starred ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground')} />
+                <span>{starred ? 'Starred' : 'Star'}</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-background border border-border text-[10px] font-mono">{starCount}</span>
+              </Button>
+
+              {/* Code Clone Button */}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setCloneModalOpen(true)}
+                className="gap-1.5 ml-1"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span>Code</span>
+                <ChevronDown className="w-3 h-3 ml-0.5" />
               </Button>
             </div>
-
-            {/* Protocol notes */}
-            <div className="text-xs text-slate-400 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-              {cloneType === 'http' && (
-                <p>Uses pure-Go Smart-HTTP transfer. Authenticate using your username and personal access token (PAT).</p>
-              )}
-              {cloneType === 'ssh' && (
-                <p>Enterprise SSH key transport. Enforces CIDR IP allowlists and ruleset bypass hierarchies.</p>
-              )}
-              {cloneType === 'mcp' && (
-                <div className="flex items-start gap-2 text-sky-300">
-                  <ShieldCheck className="w-4 h-4 shrink-0 text-sky-400 mt-0.5" />
-                  <p>Enables 34 forge tools (pull requests, reviews, diffs, checks, rulesets) for Claude, Cursor, and Codex.</p>
-                </div>
-              )}
-            </div>
           </div>
-        </Dialog>
 
-        {/* Authentication Modal */}
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-          onSuccess={(u) => setCurrentUser(u)}
-        />
-      </header>
+          {/* UnderlineNav Repository Tabs */}
+          <UnderlineNav
+            tabs={repoTabs}
+            activeTab={activeTab === 'cluster' || activeTab === 'users' || activeTab === 'sso' || activeTab === 'audit' ? 'admin' : activeTab}
+            onChange={onTabChange}
+          />
+        </div>
+      </div>
+
+      {/* Clone Instructions Modal (Primer Dialog) */}
+      <Dialog
+        isOpen={cloneModalOpen}
+        onClose={() => setCloneModalOpen(false)}
+        title="Clone repository"
+        description="Select your preferred transport protocol to clone or interact with autonomous agents."
+      >
+        <div className="space-y-4 pt-1">
+          {/* Transport Selector Tabs */}
+          <div className="flex rounded-md bg-secondary/50 p-1 border border-border text-xs font-semibold">
+            <button
+              onClick={() => setCloneType('http')}
+              className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer ${
+                cloneType === 'http' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Smart-HTTP
+            </button>
+            <button
+              onClick={() => setCloneType('ssh')}
+              className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer ${
+                cloneType === 'ssh' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              SSH (Port 2222)
+            </button>
+            <button
+              onClick={() => setCloneType('mcp')}
+              className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer ${
+                cloneType === 'mcp' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              MCP Agent
+            </button>
+          </div>
+
+          {/* Code snippet display */}
+          <div className="relative rounded-md bg-input border border-border p-2.5 font-mono text-xs text-foreground overflow-x-auto flex items-center justify-between gap-2">
+            <code className="select-all text-[11px] truncate flex-1">{getCloneCommand()}</code>
+            <Button
+              variant="secondary"
+              size="xs"
+              onClick={() => copyToClipboard(getCloneCommand())}
+              className="shrink-0"
+            >
+              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+              <span>{copied ? 'Copied' : 'Copy'}</span>
+            </Button>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground">
+            {cloneType === 'http' && 'Clone using Git Smart-HTTP transfer over standard HTTPS/HTTP.'}
+            {cloneType === 'ssh' && 'Clone using embedded zero-cgo pure-Go SSH server with enrolled keys.'}
+            {cloneType === 'mcp' && 'Add exist.io Model Context Protocol endpoint to Claude Desktop or cursor-agent.'}
+          </p>
+        </div>
+      </Dialog>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={(user) => setCurrentUser(user)}
+      />
     </>
   )
 }

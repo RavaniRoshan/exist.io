@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Zap,
 } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { Box, BoxHeader, BoxBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
@@ -92,223 +92,221 @@ export const SsoConfig: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 text-slate-500 font-mono text-xs">
-        <RefreshCw className="w-4 h-4 animate-spin mr-2 text-sky-400" />
+      <Box className="p-12 text-center text-muted-foreground font-mono text-xs">
+        <RefreshCw className="w-4 h-4 animate-spin mr-2 inline text-primary" />
         <span>Loading enterprise federation configuration...</span>
-      </div>
+      </Box>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Banner */}
-      <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
-            <KeyRound className="w-5 h-5" />
+    <div className="space-y-4 max-w-4xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-primary" />
+              <span>Enterprise Single Sign-On (SSO)</span>
+            </h2>
+            <Badge variant={config.configured && config.enabled ? 'success' : 'default'} className="text-[10px]">
+              {config.configured && config.enabled ? 'Active' : 'Unconfigured'}
+            </Badge>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-white">Enterprise Single Sign-On (SSO)</h3>
-              <Badge variant={config.configured && config.enabled ? 'success' : 'default'} className="text-[10px]">
-                {config.configured && config.enabled ? 'Active' : 'Unconfigured'}
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Federate developer and team accounts with corporate IdPs via SAML 2.0 or OpenID Connect (OIDC).
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Federate developer and team accounts with corporate IdPs via SAML 2.0 or OpenID Connect (OIDC).
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs text-slate-300 font-mono">
-            RFC 7643 / 7644 SCIM
-          </Badge>
-        </div>
+        <Badge variant="outline" className="text-xs font-mono">
+          RFC 7643 / 7644 SCIM
+        </Badge>
       </div>
 
       {statusMsg && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
+          className={`p-3 rounded-md border text-xs flex items-center gap-2 ${
             statusMsg.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+              : 'bg-destructive/10 border-destructive/30 text-destructive'
           }`}
         >
-          {statusMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-rose-400" />}
+          {statusMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <AlertCircle className="w-4 h-4 text-destructive" />}
           <span>{statusMsg.text}</span>
         </div>
       )}
 
       {/* Main Configuration Form */}
-      <Card className="border-slate-800 bg-slate-950/70 p-6 space-y-6">
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3">
-            <div>
-              <h4 className="text-sm font-semibold text-white">Identity Provider (IdP) Setup</h4>
-              <p className="text-xs text-slate-400">Works with Okta, Microsoft Entra ID / Azure AD, Keycloak, Ping, and Google Workspace.</p>
-            </div>
-            <div className="flex items-center gap-2 p-1 bg-slate-900 border border-slate-800 rounded-lg text-xs">
-              <button
-                type="button"
-                onClick={() => setConfig((p) => ({ ...p, provider_type: 'oidc' }))}
-                className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                  config.provider_type === 'oidc'
-                    ? 'bg-sky-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                OpenID Connect (OIDC)
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfig((p) => ({ ...p, provider_type: 'saml' }))}
-                className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                  config.provider_type === 'saml'
-                    ? 'bg-sky-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                SAML 2.0
-              </button>
-            </div>
+      <Box>
+        <BoxHeader className="bg-secondary/35 py-2.5">
+          <span className="font-semibold text-foreground text-xs">Identity Provider (IdP) Setup</span>
+          <div className="flex items-center gap-1.5 p-0.5 bg-background border border-border rounded-md text-xs">
+            <button
+              type="button"
+              onClick={() => setConfig((p) => ({ ...p, provider_type: 'oidc' }))}
+              className={`px-2.5 py-1 rounded transition-colors ${
+                config.provider_type === 'oidc'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              OpenID Connect (OIDC)
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfig((p) => ({ ...p, provider_type: 'saml' }))}
+              className={`px-2.5 py-1 rounded transition-colors ${
+                config.provider_type === 'saml'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              SAML 2.0
+            </button>
           </div>
+        </BoxHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-sky-400" />
-                <span>IdP Issuer URL</span>
-              </label>
-              <Input
-                placeholder="https://login.microsoftonline.com/{tenant-id}/v2.0"
-                value={config.issuer_url || ''}
-                onChange={(e) => setConfig((p) => ({ ...p, issuer_url: e.target.value }))}
-                required
-                className="bg-slate-900 border-slate-700 text-xs font-mono"
-              />
-              <span className="text-[10px] text-slate-500">The canonical entity ID / discovery base URL of your identity provider.</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-teal-400" />
-                <span>Client ID (App ID)</span>
-              </label>
-              <Input
-                placeholder="00000000-0000-0000-0000-000000000000"
-                value={config.client_id || ''}
-                onChange={(e) => setConfig((p) => ({ ...p, client_id: e.target.value }))}
-                required
-                className="bg-slate-900 border-slate-700 text-xs font-mono"
-              />
-              <span className="text-[10px] text-slate-500">Registered application client identifier.</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Client Secret</label>
-              <Input
-                type="password"
-                placeholder="••••••••••••••••••••••••"
-                value={config.client_secret || ''}
-                onChange={(e) => setConfig((p) => ({ ...p, client_secret: e.target.value }))}
-                className="bg-slate-900 border-slate-700 text-xs font-mono"
-              />
-              <span className="text-[10px] text-slate-500">Encrypted and stored in SQLite WAL store.</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Authorized Callback URL (Read-only)</label>
-              <Input
-                value={`${window.location.origin}/api/v1/auth/sso/callback`}
-                readOnly
-                className="bg-slate-950 border-slate-800 text-xs font-mono text-slate-400 cursor-copy"
-                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/v1/auth/sso/callback`)}
-              />
-              <span className="text-[10px] text-slate-500">Register this exact callback URL in your IdP application settings.</span>
-            </div>
-          </div>
-
-          {config.provider_type === 'saml' && (
-            <div className="space-y-1.5 pt-2">
-              <label className="text-xs font-medium text-slate-300">SAML IdP Metadata XML (Optional)</label>
-              <textarea
-                rows={3}
-                placeholder="<EntityDescriptor xmlns='urn:oasis:names:tc:SAML:2.0:metadata'..."
-                value={config.metadata_xml || ''}
-                onChange={(e) => setConfig((p) => ({ ...p, metadata_xml: e.target.value }))}
-                className="w-full rounded-xl bg-slate-900 border border-slate-700 p-2.5 text-xs font-mono text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-              />
-            </div>
-          )}
-
-          {/* Policy Toggles */}
-          <div className="pt-4 border-t border-slate-800/80 space-y-3">
-            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-slate-800 cursor-pointer">
-              <div className="space-y-0.5">
-                <span className="text-xs font-medium text-slate-200">Enable Single Sign-On</span>
-                <p className="text-[11px] text-slate-400">Allows users to sign in with corporate credentials.</p>
+        <BoxBody className="p-4 space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-primary" />
+                  <span>IdP Issuer URL</span>
+                </label>
+                <Input
+                  placeholder="https://login.microsoftonline.com/{tenant-id}/v2.0"
+                  value={config.issuer_url || ''}
+                  onChange={(e) => setConfig((p) => ({ ...p, issuer_url: e.target.value }))}
+                  required
+                  className="text-xs font-mono"
+                />
+                <span className="text-[10px] text-muted-foreground">The canonical entity ID / discovery base URL of your identity provider.</span>
               </div>
-              <input
-                type="checkbox"
-                checked={config.enabled ?? true}
-                onChange={(e) => setConfig((p) => ({ ...p, enabled: e.target.checked }))}
-                className="w-4 h-4 rounded text-sky-500 accent-sky-500 cursor-pointer"
-              />
-            </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-slate-800 cursor-pointer">
-              <div className="space-y-0.5">
-                <span className="text-xs font-medium text-slate-200">Enforce SSO (Strict Mode)</span>
-                <p className="text-[11px] text-slate-400">Disables local password login for non-admin accounts to ensure corporate compliance.</p>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-primary" />
+                  <span>Client ID (App ID)</span>
+                </label>
+                <Input
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  value={config.client_id || ''}
+                  onChange={(e) => setConfig((p) => ({ ...p, client_id: e.target.value }))}
+                  required
+                  className="text-xs font-mono"
+                />
+                <span className="text-[10px] text-muted-foreground">Registered application client identifier.</span>
               </div>
-              <input
-                type="checkbox"
-                checked={config.enforce_sso ?? false}
-                onChange={(e) => setConfig((p) => ({ ...p, enforce_sso: e.target.checked }))}
-                className="w-4 h-4 rounded text-sky-500 accent-sky-500 cursor-pointer"
-              />
-            </label>
-          </div>
 
-          <div className="flex justify-end pt-2">
-            <Button type="submit" variant="glow" disabled={saving} className="gap-2">
-              <Save className="w-4 h-4" />
-              <span>{saving ? 'Saving...' : 'Save Configuration'}</span>
-            </Button>
-          </div>
-        </form>
-      </Card>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Client Secret</label>
+                <Input
+                  type="password"
+                  placeholder="••••••••••••••••••••••••"
+                  value={config.client_secret || ''}
+                  onChange={(e) => setConfig((p) => ({ ...p, client_secret: e.target.value }))}
+                  className="text-xs font-mono"
+                />
+                <span className="text-[10px] text-muted-foreground">Encrypted and stored in SQLite WAL store.</span>
+              </div>
 
-      {/* SCIM 2.0 User Provisioning Card */}
-      <Card className="border-slate-800 bg-slate-950/70 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Zap className="w-4 h-4 text-amber-400" />
-            <h4 className="text-sm font-semibold text-white">SCIM 2.0 Automatic User Provisioning</h4>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Authorized Callback URL (Read-only)</label>
+                <Input
+                  value={`${window.location.origin}/api/v1/auth/sso/callback`}
+                  readOnly
+                  className="text-xs font-mono text-muted-foreground cursor-copy bg-secondary/30"
+                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/v1/auth/sso/callback`)}
+                />
+                <span className="text-[10px] text-muted-foreground">Register this exact callback URL in your IdP application settings.</span>
+              </div>
+            </div>
+
+            {config.provider_type === 'saml' && (
+              <div className="space-y-1 pt-1">
+                <label className="text-xs font-medium text-foreground">SAML IdP Metadata XML (Optional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="<EntityDescriptor xmlns='urn:oasis:names:tc:SAML:2.0:metadata'..."
+                  value={config.metadata_xml || ''}
+                  onChange={(e) => setConfig((p) => ({ ...p, metadata_xml: e.target.value }))}
+                  className="w-full rounded-md bg-input border border-border p-2.5 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            )}
+
+            {/* Policy Toggles */}
+            <div className="pt-3 border-t border-border space-y-2.5">
+              <label className="flex items-center justify-between p-2.5 rounded-md bg-secondary/30 border border-border cursor-pointer">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-medium text-foreground">Enable Single Sign-On</span>
+                  <p className="text-[11px] text-muted-foreground">Allows users to sign in with corporate credentials.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={config.enabled ?? true}
+                  onChange={(e) => setConfig((p) => ({ ...p, enabled: e.target.checked }))}
+                  className="w-4 h-4 rounded text-primary accent-primary cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-2.5 rounded-md bg-secondary/30 border border-border cursor-pointer">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-medium text-foreground">Enforce SSO (Strict Mode)</span>
+                  <p className="text-[11px] text-muted-foreground">Disables local password login for non-admin accounts to ensure corporate compliance.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={config.enforce_sso ?? false}
+                  onChange={(e) => setConfig((p) => ({ ...p, enforce_sso: e.target.checked }))}
+                  className="w-4 h-4 rounded text-primary accent-primary cursor-pointer"
+                />
+              </label>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="submit" variant="primary" size="sm" disabled={saving} className="gap-2 text-xs">
+                <Save className="w-3.5 h-3.5" />
+                <span>{saving ? 'Saving...' : 'Save Configuration'}</span>
+              </Button>
+            </div>
+          </form>
+        </BoxBody>
+      </Box>
+
+      {/* SCIM 2.0 User Provisioning Box */}
+      <Box>
+        <BoxHeader className="bg-secondary/35 py-2.5">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold text-foreground">SCIM 2.0 Automatic User Provisioning</span>
           </div>
-          <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30">
+          <Badge variant="outline" className="text-[10px]">
             Active on Server
           </Badge>
-        </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          `exist.io` implements RFC 7643 and RFC 7644 SCIM 2.0. Users provisioned in Okta or Azure AD are automatically synchronized here, and departing employees have their repository access instantly revoked upon IdP suspension.
-        </p>
+        </BoxHeader>
 
-        <div className="space-y-1.5 pt-2">
-          <label className="text-xs font-medium text-slate-300">SCIM 2.0 Base URL</label>
-          <div className="flex items-center gap-2">
-            <Input
-              value={scimEndpoint}
-              readOnly
-              className="bg-slate-900 border-slate-700 text-xs font-mono text-slate-200"
-            />
-            <Button variant="outline" size="sm" onClick={handleCopySCIM} className="shrink-0 gap-1.5">
-              {copiedSCIM ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedSCIM ? 'Copied' : 'Copy'}</span>
-            </Button>
+        <BoxBody className="p-4 space-y-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            <code>exist.io</code> implements RFC 7643 and RFC 7644 SCIM 2.0. Users provisioned in Okta or Azure AD are automatically synchronized here, and departing employees have their repository access instantly revoked upon IdP suspension.
+          </p>
+
+          <div className="space-y-1 pt-1">
+            <label className="text-xs font-medium text-foreground">SCIM 2.0 Base URL</label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={scimEndpoint}
+                readOnly
+                className="text-xs font-mono text-muted-foreground bg-secondary/30"
+              />
+              <Button variant="outline" size="sm" onClick={handleCopySCIM} className="shrink-0 gap-1.5 text-xs">
+                {copiedSCIM ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedSCIM ? 'Copied' : 'Copy'}</span>
+              </Button>
+            </div>
           </div>
-        </div>
-      </Card>
+        </BoxBody>
+      </Box>
     </div>
   )
 }

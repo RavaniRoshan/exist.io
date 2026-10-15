@@ -6,7 +6,6 @@ import {
   MessageSquare,
   CheckCircle2,
   AlertCircle,
-  ArrowRight,
   ShieldCheck,
   FileDiff,
   Sparkles,
@@ -16,13 +15,20 @@ import {
   Terminal,
   Loader2,
   RefreshCw,
+  GitCommit,
+  Lock,
+  Tag,
+  Users,
+  ChevronDown,
+  Search,
+  CheckCheck,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
+import { Box, BoxHeader, BoxBody, BoxRow, BoxFooter } from '@/components/ui/Card'
+import { Badge, StateLabel } from '@/components/ui/Badge'
 import { LivingAvatar } from '@/components/ui/LivingAvatar'
-import { SlideToConfirm } from '@/components/ui/SlideToConfirm'
+import { MergeBox } from '@/components/ui/MergeBox'
 import {
   type PullRequest,
   type RepoInfo,
@@ -48,13 +54,14 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
 
   const [prs, setPrs] = useState<PullRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeFilter, setActiveFilter] = useState<'all' | 'open' | 'merged' | 'closed'>('open')
+  const [activeFilter, setActiveFilter] = useState<'open' | 'merged' | 'all'>('open')
   const [selectedPr, setSelectedPr] = useState<PullRequest | null>(null)
   const [activeSubTab, setActiveSubTab] = useState<'conversation' | 'diff' | 'checks'>('conversation')
   const [newCommentText, setNewCommentText] = useState('')
-  const [mergeMethod, setMergeMethod] = useState<'squash' | 'merge'>('squash')
+  const [commentTab, setCommentTab] = useState<'write' | 'preview'>('write')
   const [isReviewing, setIsReviewing] = useState(false)
   const [reviewResult, setReviewResult] = useState<AgentReviewResult | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [copiedCli, setCopiedCli] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -67,7 +74,7 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
       if (data.length > 0 && !selectedPr) {
         setSelectedPr(data[0])
       }
-    } catch (err: any) {
+    } catch {
       if (isDemoModeActive()) {
         setPrs(samplePullRequests)
         setSelectedPr(samplePullRequests[0])
@@ -89,17 +96,30 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
     return () => window.removeEventListener('exist_mode_changed', onModeChange)
   }, [owner, repoName])
 
+  const openPrsCount = prs.filter((p) => p.state === 'open').length
+  const mergedPrsCount = prs.filter((p) => p.state === 'merged').length
+
   const filteredPrs = prs.filter((pr) => {
-    if (activeFilter === 'all') return true
-    return pr.state === activeFilter
+    if (activeFilter === 'open' && pr.state !== 'open') return false
+    if (activeFilter === 'merged' && pr.state !== 'merged') return false
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const matchesTitle = pr.title.toLowerCase().includes(q)
+      const matchesAuthor = (pr.author || '').toLowerCase().includes(q)
+      const matchesNumber = pr.number.toString().includes(q)
+      return matchesTitle || matchesAuthor || matchesNumber
+    }
+    return true
   })
 
-  const handleMergePr = async (prNumber: number) => {
+  const handleMergePr = async (method: 'merge' | 'squash' | 'rebase') => {
+    if (!selectedPr) return
     setErrorMessage(null)
-    try {
-      await mergePullRequest(owner, repoName, prNumber, mergeMethod)
+    const prNumber = selectedPr.number
 
-      // Fire festive celebration
+    try {
+      await mergePullRequest(owner, repoName, prNumber, method === 'rebase' ? 'squash' : method)
+
       confetti({
         particleCount: 80,
         spread: 70,
@@ -107,13 +127,12 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
         colors: ['#38bdf8', '#818cf8', '#c084fc', '#34d399'],
       })
 
-      // Update state to merged
       const mergeComment = {
         id: `c-merge-${Date.now()}`,
         author: 'Roshan Ravani',
         isAgent: false,
         createdAt: 'Just now',
-        body: `Merged pull request #${prNumber} via ${mergeMethod.toUpperCase()} merge. Ruleset gates and security checks satisfied.`,
+        body: `Merged pull request #${prNumber} via ${method.toUpperCase()} merge. Ruleset branch protection and cryptographic checks verified.`,
       }
 
       setPrs((prev) =>
@@ -129,17 +148,15 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
         })
       )
 
-      if (selectedPr && selectedPr.number === prNumber) {
-        setSelectedPr((prev) =>
-          prev
-            ? {
-                ...prev,
-                state: 'merged',
-                comments: [...(prev.comments || []), mergeComment],
-              }
-            : null
-        )
-      }
+      setSelectedPr((prev) =>
+        prev
+          ? {
+              ...prev,
+              state: 'merged',
+              comments: [...(prev.comments || []), mergeComment],
+            }
+          : null
+      )
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to merge pull request')
     }
@@ -154,7 +171,6 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
       const res = await triggerAgentReview(owner, repoName, selectedPr.number)
       setReviewResult(res)
 
-      // Append agent review finding to conversation
       const agentComment = {
         id: res.reviewId || `rev-${Date.now()}`,
         author: 'Exist Agent Reviewer',
@@ -208,7 +224,7 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
   }
 
   const samplePushCommand = `git checkout -b feature/agent-capabilities
-# ... apply code enhancements ...
+# ... apply code changes ...
 git commit -m "feat: implement autonomous capability leases"
 git push origin feature/agent-capabilities`
 
@@ -219,474 +235,631 @@ git push origin feature/agent-capabilities`
   }
 
   return (
-    <div className="space-y-6">
-      {/* Sub-navigation Filters & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/60 border border-slate-800 rounded-xl">
-          <button
-            onClick={() => {
-              setActiveFilter('open')
-              setSelectedPr(null)
-            }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-              activeFilter === 'open' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <GitPullRequest className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Open</span>
-            <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full">
-              {prs.filter((p) => p.state === 'open').length}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveFilter('merged')
-              setSelectedPr(null)
-            }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-              activeFilter === 'merged' ? 'bg-purple-500/20 text-purple-300 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <GitMerge className="w-3.5 h-3.5 text-purple-400" />
-            <span>Merged</span>
-            <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full">
-              {prs.filter((p) => p.state === 'merged').length}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveFilter('all')
-              setSelectedPr(null)
-            }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              activeFilter === 'all' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            All
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={loadPRs} disabled={loading} className="gap-1.5 text-slate-400">
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </Button>
-
-          <Button variant="glow" size="sm" className="gap-1.5">
-            <GitPullRequest className="w-3.5 h-3.5" />
-            <span>New Pull Request</span>
-          </Button>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {errorMessage && (
-        <div className="p-3 bg-rose-950/40 border border-rose-800/80 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       <AnimatePresence mode="wait">
         {selectedPr ? (
-          /* PR Detail View */
+          /* =========================================================================
+             PR DETAIL VIEW: Canonical GitHub Two-Column Architecture
+             ========================================================================= */
           <motion.div
             key="pr-detail"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
           >
-            {/* PR Header Card */}
-            <Card className="border-slate-800 bg-slate-950/60 p-6 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <button
-                      onClick={() => setSelectedPr(null)}
-                      className="text-xs text-sky-400 hover:underline mr-1 flex items-center gap-1"
-                    >
-                      ← Back to list
-                    </button>
-                    <span className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                      {selectedPr.title}
-                    </span>
-                    <span className="text-xl font-light text-slate-500">#{selectedPr.number}</span>
-                  </div>
-
-                  {/* Branch and author meta */}
-                  <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-                    <Badge variant={selectedPr.state === 'merged' ? 'merged' : 'open'} pulse={selectedPr.state === 'open'}>
-                      {selectedPr.state === 'merged' ? (
-                        <>
-                          <GitMerge className="w-3 h-3 mr-1" /> Merged
-                        </>
-                      ) : (
-                        <>
-                          <GitPullRequest className="w-3 h-3 mr-1" /> Open
-                        </>
-                      )}
-                    </Badge>
-
-                    <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                      <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-sky-300">
-                        {selectedPr.headRef}
-                      </span>
-                      <ArrowRight className="w-3 h-3 text-slate-600" />
-                      <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
-                        {selectedPr.baseRef}
-                      </span>
-                    </div>
-
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      opened by <strong className="text-foreground">{selectedPr.author || 'dev'}</strong> {selectedPr.createdAt || 'recently'}
-                    </span>
-                  </div>
+            {/* PR Header */}
+            <div className="space-y-3 pb-3 border-b border-border">
+              <div className="flex items-center justify-between gap-4">
+                <button
+                  onClick={() => setSelectedPr(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                >
+                  ← Back to pull requests
+                </button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={loadPRs} disabled={loading} className="gap-1.5 text-xs">
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </Button>
                 </div>
-
-                {/* Agent Review Action Button */}
-                {selectedPr.state === 'open' && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRunAgentReview}
-                      disabled={isReviewing}
-                      className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5"
-                    >
-                      {isReviewing ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                          <span>Reviewing Diff & Security...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5 text-primary" />
-                          <span>Run AI Agent Review</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
               </div>
 
-              {/* Review result summary banner if just executed */}
-              {reviewResult && (
-                <div
-                  className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 ${
-                    reviewResult.conclusion === 'success'
-                      ? 'bg-emerald-950/30 border-emerald-800/80 text-emerald-300'
-                      : reviewResult.conclusion === 'failure'
-                      ? 'bg-destructive/15 border-destructive/30 text-destructive'
-                      : 'bg-amber-950/30 border-amber-800/80 text-amber-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>{reviewResult.summary}</span>
-                  </div>
-                  <Badge variant={reviewResult.conclusion === 'success' ? 'success' : 'warning'}>
-                    Score: {reviewResult.score}/100
-                  </Badge>
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <h1 className="text-2xl font-normal text-foreground tracking-tight">
+                    {selectedPr.title}
+                  </h1>
+                  <span className="text-2xl font-light text-muted-foreground">
+                    #{selectedPr.number}
+                  </span>
                 </div>
-              )}
-
-              {/* Sub-tabs inside PR */}
-              <div className="flex items-center gap-4 pt-3 border-t border-border text-xs font-medium">
-                <button
-                  onClick={() => setActiveSubTab('conversation')}
-                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${
-                    activeSubTab === 'conversation'
-                      ? 'border-primary text-primary font-semibold'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Conversation</span>
-                  <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">
-                    {(selectedPr.comments || []).length}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setActiveSubTab('diff')}
-                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${
-                    activeSubTab === 'diff'
-                      ? 'border-primary text-primary font-semibold'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <FileDiff className="w-3.5 h-3.5" />
-                  <span>Files Changed</span>
-                  <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">
-                    {(selectedPr.diffHunks || []).length}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setActiveSubTab('checks')}
-                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${
-                    activeSubTab === 'checks'
-                      ? 'border-primary text-primary font-semibold'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Checks & Policy</span>
-                  <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">
-                    {(selectedPr.checks || []).length}
-                  </span>
-                </button>
               </div>
-            </Card>
 
-            {/* Sub-tab 1: Conversation & Discussion */}
-            {activeSubTab === 'conversation' && (
-              <div className="space-y-4">
-                {(selectedPr.comments || []).map((comment) => (
-                  <Card key={comment.id} className="border-slate-800 bg-slate-950/70 p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <LivingAvatar
-                          name={comment.author}
-                          isAgent={comment.isAgent}
-                          status={comment.isAgent ? 'online' : 'offline'}
-                          size="sm"
-                        />
+              {/* State Badge and Branch Description */}
+              <div className="flex items-center gap-2 text-xs flex-wrap">
+                <StateLabel state={selectedPr.state === 'merged' ? 'merged' : 'open'}>
+                  {selectedPr.state === 'merged' ? 'Merged' : 'Open'}
+                </StateLabel>
+
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground font-medium">{selectedPr.author || 'dev'}</strong> wants to merge 1 commit into{' '}
+                  <code className="px-1.5 py-0.5 rounded bg-secondary font-mono text-xs text-foreground border border-border">
+                    {selectedPr.baseRef}
+                  </code>{' '}
+                  from{' '}
+                  <code className="px-1.5 py-0.5 rounded bg-secondary font-mono text-xs text-foreground border border-border">
+                    {selectedPr.headRef}
+                  </code>
+                </span>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">{selectedPr.createdAt || 'recently'}</span>
+              </div>
+            </div>
+
+            {/* Sub-Navigation UnderlineNav */}
+            <div className="flex items-center gap-2 border-b border-border -mb-px text-xs font-medium">
+              <button
+                onClick={() => setActiveSubTab('conversation')}
+                className={`flex items-center gap-2 px-3 py-2 border-b-2 transition-colors ${
+                  activeSubTab === 'conversation'
+                    ? 'border-primary text-foreground font-semibold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Conversation</span>
+                <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.2 rounded-full font-mono">
+                  {(selectedPr.comments || []).length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveSubTab('checks')}
+                className={`flex items-center gap-2 px-3 py-2 border-b-2 transition-colors ${
+                  activeSubTab === 'checks'
+                    ? 'border-primary text-foreground font-semibold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Checks</span>
+                <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.2 rounded-full font-mono">
+                  {(selectedPr.checks || []).length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveSubTab('diff')}
+                className={`flex items-center gap-2 px-3 py-2 border-b-2 transition-colors ${
+                  activeSubTab === 'diff'
+                    ? 'border-primary text-foreground font-semibold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <FileDiff className="w-3.5 h-3.5" />
+                <span>Files changed</span>
+                <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.2 rounded-full font-mono">
+                  {(selectedPr.diffHunks || []).length}
+                </span>
+              </button>
+            </div>
+
+            {/* GitHub Canonical Two-Column Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+              {/* Left Column: Timeline, Merge Box, Discussion, Diff (9 cols) */}
+              <div className="lg:col-span-9 space-y-4">
+                {activeSubTab === 'conversation' && (
+                  <div className="space-y-4">
+                    {/* Initial PR Description Box */}
+                    <Box>
+                      <BoxHeader className="bg-secondary/25 py-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-200">{comment.author}</span>
-                          {comment.isAgent && (
-                            <Badge variant="agent" className="text-[9px] py-0 px-1.5">
-                              Agent Reviewer
-                            </Badge>
-                          )}
-                          <span className="text-[11px] text-slate-500">{comment.createdAt}</span>
+                          <LivingAvatar
+                            name={selectedPr.author || 'dev'}
+                            isAgent={false}
+                            status="offline"
+                            size="sm"
+                          />
+                          <span className="font-semibold text-foreground">{selectedPr.author || 'dev'}</span>
+                          <span className="text-muted-foreground">commented {selectedPr.createdAt || 'recently'}</span>
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="text-xs sm:text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-sans pl-8 border-l border-slate-800/60 ml-3">
-                      {comment.body}
-                    </div>
-                  </Card>
-                ))}
-
-                {/* Merge Action Card */}
-                {selectedPr.state === 'open' && (
-                  <Card className="border-sky-500/20 bg-slate-950/80 p-5 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                          <GitMerge className="w-4 h-4 text-sky-400" />
-                          <span>Merge Pull Request</span>
-                        </h4>
-                        <p className="text-xs text-slate-400">
-                          Merges branches safely into <code className="text-sky-300 font-mono">{selectedPr.baseRef}</code>.
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs">
-                        <button
-                          onClick={() => setMergeMethod('squash')}
-                          className={`px-2.5 py-1 rounded-lg transition-colors ${
-                            mergeMethod === 'squash' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400'
-                          }`}
-                        >
-                          Squash
-                        </button>
-                        <button
-                          onClick={() => setMergeMethod('merge')}
-                          className={`px-2.5 py-1 rounded-lg transition-colors ${
-                            mergeMethod === 'merge' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400'
-                          }`}
-                        >
-                          Create Commit
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
-                      <SlideToConfirm
-                        onConfirm={() => handleMergePr(selectedPr.number)}
-                        label={`Slide to ${mergeMethod === 'squash' ? 'Squash & Merge' : 'Merge'} Pull Request`}
-                      />
-                    </div>
-                  </Card>
-                )}
-
-                {/* New Comment Box */}
-                <Card className="border-slate-800 bg-slate-950/60 p-4 space-y-3">
-                  <textarea
-                    value={newCommentText}
-                    onChange={(e) => setNewCommentText(e.target.value)}
-                    placeholder="Leave a comment or review suggestion..."
-                    className="w-full bg-slate-900/80 text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 rounded-xl border border-slate-800 p-3 outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/50 resize-y min-h-[90px]"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="glow"
-                      size="sm"
-                      onClick={handleAddComment}
-                      disabled={!newCommentText.trim()}
-                      className="gap-1.5"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Comment</span>
-                    </Button>
-                  </div>
-                </Card>
-              </div>
-            )}
-
-            {/* Sub-tab 2: Diff View */}
-            {activeSubTab === 'diff' && (
-              <div className="space-y-4">
-                {(selectedPr.diffHunks || []).length === 0 ? (
-                  <Card className="border-slate-800 bg-slate-950/60 p-8 text-center text-slate-400 text-xs">
-                    No individual diff hunks recorded for this pull request.
-                  </Card>
-                ) : (
-                  (selectedPr.diffHunks || []).map((diff, idx) => (
-                    <Card key={idx} className="p-0 overflow-hidden border-slate-800 bg-slate-950/70">
-                      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/80 border-b border-slate-800 text-xs font-mono">
-                        <span className="text-slate-200 font-medium">{diff.newPath}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-emerald-400 font-semibold">+{diff.additions}</span>
-                          <span className="text-rose-400 font-semibold">-{diff.deletions}</span>
-                        </div>
-                      </div>
-
-                      <div className="p-3 font-mono text-xs overflow-x-auto leading-relaxed bg-slate-950">
-                        <pre>
-                          {diff.hunk.split('\n').map((line, lIdx) => {
-                            const isAdd = line.startsWith('+')
-                            const isDel = line.startsWith('-')
-                            const isHeader = line.startsWith('@@')
-                            return (
-                              <div
-                                key={lIdx}
-                                className={`px-2 py-0.5 rounded ${
-                                  isAdd
-                                    ? 'bg-emerald-950/40 text-emerald-300'
-                                    : isDel
-                                    ? 'bg-rose-950/40 text-rose-300'
-                                    : isHeader
-                                    ? 'text-sky-400/80 bg-sky-950/20'
-                                    : 'text-slate-300'
-                                }`}
-                              >
-                                {line}
-                              </div>
-                            )
-                          })}
-                        </pre>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Sub-tab 3: Checks View */}
-            {activeSubTab === 'checks' && (
-              <Card className="border-slate-800 bg-slate-950/60 p-5 space-y-4">
-                <h4 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-sky-400" />
-                  <span>CI & Security Check Runs</span>
-                </h4>
-                <div className="divide-y divide-slate-800/80">
-                  {(selectedPr.checks || []).map((chk) => (
-                    <div key={chk.id} className="flex items-center justify-between py-3">
-                      <div className="flex items-center gap-2.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-medium text-slate-200">{chk.name}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-400">
-                        <span>duration: {chk.duration}</span>
-                        <Badge variant="success" className="text-[10px] py-0">
-                          Passed
+                        <Badge variant="outline" className="text-[10px]">
+                          Author
                         </Badge>
+                      </BoxHeader>
+                      <BoxBody className="p-4 text-xs sm:text-sm text-foreground leading-relaxed">
+                        <p>
+                          Proposes branch updates to incorporate verified capabilities and enterprise ruleset requirements into <code className="font-mono text-xs bg-secondary px-1 py-0.5 rounded">{selectedPr.baseRef}</code>.
+                        </p>
+                      </BoxBody>
+                    </Box>
+
+                    {/* Timeline Event: Branch created */}
+                    <div className="flex items-center gap-3 pl-4 py-1 text-xs text-muted-foreground">
+                      <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 border border-border">
+                        <GitCommit className="w-3 h-3 text-muted-foreground" />
                       </div>
+                      <span>
+                        <strong className="text-foreground">{selectedPr.author || 'dev'}</strong> added 1 commit from branch <code className="font-mono">{selectedPr.headRef}</code>
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </Card>
-            )}
+
+                    {/* Discussion Comments */}
+                    {(selectedPr.comments || []).map((comment) => (
+                      <Box key={comment.id}>
+                        <BoxHeader className="bg-secondary/25 py-2">
+                          <div className="flex items-center gap-2">
+                            <LivingAvatar
+                              name={comment.author}
+                              isAgent={comment.isAgent}
+                              status={comment.isAgent ? 'online' : 'offline'}
+                              size="sm"
+                            />
+                            <span className="font-semibold text-foreground">{comment.author}</span>
+                            {comment.isAgent && (
+                              <Badge variant="agent" className="text-[9px] py-0 px-1.5">
+                                AI Agent
+                              </Badge>
+                            )}
+                            <span className="text-muted-foreground">commented {comment.createdAt}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {comment.isAgent ? 'Automated Review' : 'Contributor'}
+                          </Badge>
+                        </BoxHeader>
+                        <BoxBody className="p-4 text-xs sm:text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                          {comment.body}
+                        </BoxBody>
+                      </Box>
+                    ))}
+
+                    {/* Check runs status box */}
+                    <Box>
+                      <BoxHeader className="bg-secondary/25 py-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <span className="font-semibold text-foreground">
+                            All checks have passed ({ (selectedPr.checks || []).length } successful checks)
+                          </span>
+                        </div>
+                      </BoxHeader>
+                      <BoxBody className="p-0 divide-y divide-border">
+                        {(selectedPr.checks || []).map((chk) => (
+                          <div key={chk.id} className="flex items-center justify-between px-4 py-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="font-medium text-foreground">{chk.name}</span>
+                              <span className="text-muted-foreground">— Successful in {chk.duration}</span>
+                            </div>
+                            <span className="text-muted-foreground font-mono text-[11px]">Details</span>
+                          </div>
+                        ))}
+                      </BoxBody>
+                    </Box>
+
+                    {/* GitHub Canonical Merge Box */}
+                    <MergeBox
+                      onMerge={handleMergePr}
+                      isMerged={selectedPr.state === 'merged'}
+                      checksPassed={true}
+                      defaultTitle={`${selectedPr.title} (#${selectedPr.number})`}
+                      defaultMessage={`Squash and merge pull request #${selectedPr.number} into ${selectedPr.baseRef}.`}
+                    />
+
+                    {/* New Comment Box */}
+                    <Box>
+                      <BoxHeader className="bg-secondary/25 py-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          <button
+                            onClick={() => setCommentTab('write')}
+                            className={`px-2 py-1 rounded-md transition-colors ${
+                              commentTab === 'write' ? 'bg-background text-foreground font-semibold shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Write
+                          </button>
+                          <button
+                            onClick={() => setCommentTab('preview')}
+                            className={`px-2 py-1 rounded-md transition-colors ${
+                              commentTab === 'preview' ? 'bg-background text-foreground font-semibold shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Preview
+                          </button>
+                        </div>
+                      </BoxHeader>
+                      <BoxBody className="p-3">
+                        {commentTab === 'write' ? (
+                          <textarea
+                            value={newCommentText}
+                            onChange={(e) => setNewCommentText(e.target.value)}
+                            placeholder="Leave a comment or review suggestion..."
+                            className="w-full bg-input text-foreground placeholder:text-muted-foreground rounded-md border border-border p-3 text-xs outline-none focus:border-ring focus:ring-1 focus:ring-ring resize-y min-h-[90px]"
+                          />
+                        ) : (
+                          <div className="min-h-[90px] p-3 text-xs text-muted-foreground">
+                            {newCommentText.trim() ? (
+                              <p className="text-foreground whitespace-pre-wrap">{newCommentText}</p>
+                            ) : (
+                              'Nothing to preview'
+                            )}
+                          </div>
+                        )}
+                      </BoxBody>
+                      <BoxFooter className="justify-end gap-2 bg-secondary/15 py-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleAddComment}
+                          disabled={!newCommentText.trim()}
+                          className="gap-1.5"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Comment</span>
+                        </Button>
+                      </BoxFooter>
+                    </Box>
+                  </div>
+                )}
+
+                {/* Sub-tab: Files Changed (Diff View) */}
+                {activeSubTab === 'diff' && (
+                  <div className="space-y-4">
+                    {(selectedPr.diffHunks || []).length === 0 ? (
+                      <Box className="p-8 text-center text-muted-foreground text-xs">
+                        No modified files found for this pull request.
+                      </Box>
+                    ) : (
+                      (selectedPr.diffHunks || []).map((diff, idx) => (
+                        <Box key={idx}>
+                          <BoxHeader className="bg-secondary/35 py-2 font-mono text-xs">
+                            <span className="font-semibold text-foreground">{diff.newPath}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-emerald-500 font-semibold">+{diff.additions}</span>
+                              <span className="text-rose-500 font-semibold">-{diff.deletions}</span>
+                            </div>
+                          </BoxHeader>
+                          <div className="p-3 font-mono text-xs overflow-x-auto leading-relaxed bg-background">
+                            <pre>
+                              {diff.hunk.split('\n').map((line, lIdx) => {
+                                const isAdd = line.startsWith('+')
+                                const isDel = line.startsWith('-')
+                                const isHeader = line.startsWith('@@')
+                                return (
+                                  <div
+                                    key={lIdx}
+                                    className={`px-2 py-0.5 rounded-sm ${
+                                      isAdd
+                                        ? 'bg-emerald-500/10 text-emerald-400'
+                                        : isDel
+                                        ? 'bg-rose-500/10 text-rose-400'
+                                        : isHeader
+                                        ? 'text-muted-foreground bg-secondary/50 font-semibold'
+                                        : 'text-foreground/90'
+                                    }`}
+                                  >
+                                    {line}
+                                  </div>
+                                )
+                              })}
+                            </pre>
+                          </div>
+                        </Box>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-tab: Checks & CI Policy */}
+                {activeSubTab === 'checks' && (
+                  <Box>
+                    <BoxHeader className="bg-secondary/35 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <span className="font-semibold text-foreground">CI & Policy Check Runs</span>
+                      </div>
+                    </BoxHeader>
+                    <BoxBody className="p-0 divide-y divide-border">
+                      {(selectedPr.checks || []).map((chk) => (
+                        <div key={chk.id} className="flex items-center justify-between p-3.5 text-xs">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <div>
+                              <div className="font-semibold text-foreground">{chk.name}</div>
+                              <div className="text-muted-foreground text-[11px]">
+                                Completed in {chk.duration} • GitHub Actions Enterprise Agent
+                              </div>
+                            </div>
+                          </div>
+                          <Badge variant="success" className="text-[10px]">
+                            Passed
+                          </Badge>
+                        </div>
+                      ))}
+                    </BoxBody>
+                  </Box>
+                )}
+              </div>
+
+              {/* Right Column: Reviewers, Assignees, Labels, Rulesets (3 cols) */}
+              <div className="lg:col-span-3 space-y-4">
+                {/* Reviewers Box */}
+                <Box>
+                  <BoxHeader className="py-2 text-xs font-semibold text-foreground flex items-center justify-between">
+                    <span>Reviewers</span>
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                  </BoxHeader>
+                  <BoxBody className="p-3 space-y-2.5 text-xs">
+                    {/* Trigger Agent Review Action */}
+                    {selectedPr.state === 'open' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRunAgentReview}
+                        disabled={isReviewing}
+                        className="w-full text-xs gap-1.5 justify-center border-primary/30 text-primary hover:bg-primary/10"
+                      >
+                        {isReviewing ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Inspecting Diff...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Run AI Agent Review</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    {reviewResult && (
+                      <div className="p-2.5 rounded-md bg-secondary/50 border border-border text-xs space-y-1">
+                        <div className="flex items-center justify-between font-semibold">
+                          <span className="text-foreground">AI Reviewer</span>
+                          <span className="text-emerald-500 text-[11px] font-mono">{reviewResult.score}/100</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">{reviewResult.summary}</p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-muted-foreground pt-1">
+                      <div className="flex items-center gap-2">
+                        <LivingAvatar name="Exist Review Bot" isAgent={true} size="sm" />
+                        <span className="text-foreground">Exist Review Bot</span>
+                      </div>
+                      <CheckCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                  </BoxBody>
+                </Box>
+
+                {/* Assignees Box */}
+                <Box>
+                  <BoxHeader className="py-2 text-xs font-semibold text-foreground">
+                    <span>Assignees</span>
+                  </BoxHeader>
+                  <BoxBody className="p-3 text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <LivingAvatar name={selectedPr.author || 'dev'} isAgent={false} size="sm" />
+                      <span className="text-foreground font-medium">{selectedPr.author || 'dev'}</span>
+                    </div>
+                  </BoxBody>
+                </Box>
+
+                {/* Labels Box */}
+                <Box>
+                  <BoxHeader className="py-2 text-xs font-semibold text-foreground flex items-center justify-between">
+                    <span>Labels</span>
+                    <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                  </BoxHeader>
+                  <BoxBody className="p-3 text-xs">
+                    <div className="flex flex-wrap gap-1.5">
+                      {(selectedPr.labels || []).length > 0 ? (
+                        (selectedPr.labels || []).map((lbl) => (
+                          <span
+                            key={lbl.name}
+                            className="px-2 py-0.5 rounded-md text-[11px] font-medium border"
+                            style={{
+                              backgroundColor: `${lbl.color}15`,
+                              borderColor: `${lbl.color}35`,
+                              color: lbl.color,
+                            }}
+                          >
+                            {lbl.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">None yet</span>
+                      )}
+                    </div>
+                  </BoxBody>
+                </Box>
+
+                {/* Enterprise Ruleset Protection */}
+                <Box>
+                  <BoxHeader className="py-2 text-xs font-semibold text-foreground flex items-center justify-between">
+                    <span>Ruleset Protection</span>
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  </BoxHeader>
+                  <BoxBody className="p-3 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>Require linear history</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>Require signed commits</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>1 approving review</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                  </BoxBody>
+                </Box>
+              </div>
+            </div>
           </motion.div>
         ) : (
-          /* PR List Overview */
-          <motion.div key="pr-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-            {filteredPrs.length === 0 ? (
-              /* Authentic High-Craft Empty State */
-              <Card className="border-slate-800 bg-slate-950/60 p-8 text-center space-y-5">
-                <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mx-auto text-sky-400">
-                  <GitPullRequest className="w-6 h-6" />
+          /* =========================================================================
+             PR LIST VIEW: GitHub Primer Table & Filter System
+             ========================================================================= */
+          <motion.div
+            key="pr-list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            {/* Filter Search Bar & Action Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="relative flex-1 max-w-lg">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter pull requests..."
+                  className="w-full h-8 pl-9 pr-3 text-xs bg-input border border-border rounded-md text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={loadPRs} disabled={loading} className="gap-1.5 text-xs">
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </Button>
+
+                <Button variant="primary" size="sm" className="gap-1.5 text-xs">
+                  <GitPullRequest className="w-3.5 h-3.5" />
+                  <span>New pull request</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Primer Box PR Table */}
+            <Box>
+              {/* BoxHeader with Open / Closed Filter and Column Dropdowns */}
+              <BoxHeader className="bg-secondary/35 py-2.5">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setActiveFilter('open')}
+                    className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                      activeFilter === 'open' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <GitPullRequest className="w-4 h-4 text-emerald-500" />
+                    <span>{openPrsCount} Open</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveFilter('merged')}
+                    className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                      activeFilter === 'merged' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Check className="w-4 h-4 text-purple-500" />
+                    <span>{mergedPrsCount} Closed</span>
+                  </button>
                 </div>
 
-                <div className="max-w-md mx-auto space-y-1.5">
-                  <h3 className="text-base font-semibold text-slate-100">
-                    {activeFilter === 'open'
-                      ? 'No open pull requests'
-                      : activeFilter === 'merged'
-                      ? 'No merged pull requests yet'
-                      : 'No pull requests found'}
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Pull requests allow team members and autonomous AI agents to propose features, review cryptographic diffs,
-                    and enforce enterprise branch protection rulesets before merging.
-                  </p>
+                <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground">
+                  <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                    <span>Author</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                    <span>Label</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                    <span>Projects</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                    <span>Sort</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
                 </div>
+              </BoxHeader>
 
-                {/* Copyable CLI Instructions */}
-                <div className="max-w-lg mx-auto text-left bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1.5 font-mono">
-                      <Terminal className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Push a branch to open a pull request</span>
-                    </span>
-                    <button
-                      onClick={handleCopyCli}
-                      className="hover:text-white transition-colors flex items-center gap-1 text-[10px] text-sky-400"
-                    >
-                      {copiedCli ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedCli ? 'Copied' : 'Copy'}</span>
-                    </button>
+              {/* Rows */}
+              <BoxBody className="p-0">
+                {filteredPrs.length === 0 ? (
+                  <div className="p-8 text-center space-y-4">
+                    <div className="w-10 h-10 rounded-md bg-secondary border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                      <GitPullRequest className="w-5 h-5" />
+                    </div>
+
+                    <div className="max-w-md mx-auto space-y-1">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        {activeFilter === 'open'
+                          ? 'No open pull requests'
+                          : activeFilter === 'merged'
+                          ? 'No closed pull requests'
+                          : 'No pull requests found'}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Pull requests allow team members and autonomous AI agents to propose features and enforce enterprise branch protection rulesets.
+                      </p>
+                    </div>
+
+                    {/* Push branch command box */}
+                    <div className="max-w-md mx-auto text-left bg-secondary/40 border border-border rounded-md p-3 space-y-2">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1.5 font-mono">
+                          <Terminal className="w-3.5 h-3.5 text-primary" />
+                          <span>Push a branch to open a pull request</span>
+                        </span>
+                        <button
+                          onClick={handleCopyCli}
+                          className="hover:text-foreground transition-colors flex items-center gap-1 text-[10px] text-primary"
+                        >
+                          {copiedCli ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCli ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                      <pre className="font-mono text-xs text-foreground leading-relaxed overflow-x-auto whitespace-pre p-2 bg-background rounded border border-border">
+                        {samplePushCommand}
+                      </pre>
+                    </div>
                   </div>
-                  <pre className="font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto whitespace-pre p-2 bg-slate-950 rounded-lg">
-                    {samplePushCommand}
-                  </pre>
-                </div>
-              </Card>
-            ) : (
-              <Card className="p-0 overflow-hidden border-slate-800 bg-slate-950/50">
-                <div className="divide-y divide-slate-850/70">
-                  {filteredPrs.map((pr) => (
-                    <div
+                ) : (
+                  filteredPrs.map((pr) => (
+                    <BoxRow
                       key={pr.number}
                       onClick={() => setSelectedPr(pr)}
-                      className="flex items-start justify-between p-4 hover:bg-slate-900/50 transition-colors cursor-pointer group"
+                      className="flex items-start justify-between p-3.5 hover:bg-secondary/20 transition-colors cursor-pointer group"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="mt-1">
+                        <div className="mt-0.5 shrink-0">
                           {pr.state === 'merged' ? (
-                            <GitMerge className="w-4 h-4 text-purple-400" />
+                            <GitMerge className="w-4 h-4 text-purple-500" />
                           ) : (
-                            <GitPullRequest className="w-4 h-4 text-emerald-400" />
+                            <GitPullRequest className="w-4 h-4 text-emerald-500" />
                           )}
                         </div>
+
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-semibold text-slate-100 group-hover:text-sky-400 transition-colors">
+                            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                               {pr.title}
                             </span>
                             {(pr.labels || []).map((lbl) => (
                               <span
                                 key={lbl.name}
-                                className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                                className="text-[10px] px-1.5 py-0.5 rounded-md font-medium border"
                                 style={{
-                                  backgroundColor: `${lbl.color}20`,
+                                  backgroundColor: `${lbl.color}15`,
+                                  borderColor: `${lbl.color}35`,
                                   color: lbl.color,
-                                  border: `1px solid ${lbl.color}40`,
                                 }}
                               >
                                 {lbl.name}
@@ -694,28 +867,27 @@ git push origin feature/agent-capabilities`
                             ))}
                           </div>
 
-                          <div className="text-xs text-slate-500 flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                             <span>#{pr.number}</span>
                             <span>•</span>
                             <span>
-                              opened by <strong className="text-slate-400">{pr.author || 'dev'}</strong>
+                              opened {pr.createdAt || 'recently'} by <strong className="text-foreground font-medium">{pr.author || 'dev'}</strong>
                             </span>
-                            <span>{pr.createdAt || 'recently'}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs text-slate-500 shrink-0">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0 pt-0.5">
                         <div className="flex items-center gap-1">
                           <MessageSquare className="w-3.5 h-3.5" />
-                          <span>{(pr.comments || []).length}</span>
+                          <span className="font-mono text-[11px]">{(pr.comments || []).length}</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
+                    </BoxRow>
+                  ))
+                )}
+              </BoxBody>
+            </Box>
           </motion.div>
         )}
       </AnimatePresence>

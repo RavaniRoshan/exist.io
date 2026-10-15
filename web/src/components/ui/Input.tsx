@@ -7,6 +7,10 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   error?: string
 }
 
+/**
+ * GitHub Primer TextInput.
+ * Features 6px (rounded-md) corners, 32px height, inset surface fill, and crisp focus ring.
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(({
   className,
   type = 'text',
@@ -17,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   return (
     <div className="relative w-full">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-muted-foreground">
           {icon}
         </div>
       )}
@@ -25,15 +29,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         ref={ref}
         type={type}
         className={cn(
-          'w-full bg-input text-foreground placeholder:text-muted-foreground text-sm rounded-xl border border-border py-2 transition-all duration-200 outline-none',
-          'focus:border-primary focus:ring-1 focus:ring-ring focus:shadow-xs',
-          icon ? 'pl-9 pr-3' : 'px-3',
+          'w-full h-8 bg-input text-foreground placeholder:text-muted-foreground text-xs rounded-md border border-border py-1 transition-colors duration-150 outline-none',
+          'focus:border-primary focus:ring-1 focus:ring-ring shadow-2xs',
+          icon ? 'pl-8 pr-2.5' : 'px-2.5',
           error && 'border-destructive focus:border-destructive',
           className
         )}
         {...props}
       />
-      {error && <span className="text-xs text-destructive mt-1 block">{error}</span>}
+      {error && <span className="text-[11px] text-destructive mt-1 block">{error}</span>}
     </div>
   )
 })
@@ -44,23 +48,26 @@ export interface SearchPillProps extends React.InputHTMLAttributes<HTMLInputElem
   onSearch?: (value: string) => void
 }
 
+/**
+ * GitHub Primer Search Bar.
+ */
 export const SearchPill: React.FC<SearchPillProps> = ({
   className,
-  placeholder = 'Search branches, commits, PRs... (⌘K)',
+  placeholder = 'Type / to search...',
   ...props
 }) => {
   return (
-    <div className={cn('relative flex items-center w-full max-w-md', className)}>
-      <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+    <div className={cn('relative flex items-center w-full max-w-sm', className)}>
+      <Search className="absolute left-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
       <input
         type="text"
         placeholder={placeholder}
-        className="w-full bg-card/80 hover:bg-card text-foreground placeholder:text-muted-foreground text-xs rounded-full border border-border py-1.5 pl-9 pr-12 transition-all duration-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-ring"
+        className="w-full h-8 bg-input text-foreground placeholder:text-muted-foreground text-xs rounded-md border border-border py-1 pl-8 pr-8 transition-colors duration-150 focus:outline-none focus:border-primary focus:ring-1 focus:ring-ring shadow-2xs"
         {...props}
       />
-      <div className="absolute right-2.5 flex items-center gap-0.5 pointer-events-none">
-        <kbd className="text-[10px] bg-secondary border border-border text-muted-foreground px-1.5 py-0.5 rounded shadow-2xs">
-          ⌘K
+      <div className="absolute right-2 flex items-center pointer-events-none">
+        <kbd className="text-[10px] bg-secondary border border-border text-muted-foreground px-1.5 py-0.2 rounded font-mono shadow-2xs">
+          /
         </kbd>
       </div>
     </div>
