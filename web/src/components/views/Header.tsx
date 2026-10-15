@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Tag,
   Compass,
+  Archive,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -377,9 +378,20 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-muted-foreground hover:underline cursor-pointer">{repo.ownerSlug}</span>
               <span className="text-muted-foreground">/</span>
               <span className="text-foreground hover:underline font-bold cursor-pointer text-base">{repo.name}</span>
-              <Badge variant="outline" className="ml-1 text-[11px] py-0 px-1.5 border-border text-muted-foreground">
-                Public
-              </Badge>
+              {repo.isArchived ? (
+                <Badge variant="outline" className="ml-1 text-[11px] py-0 px-2 border-amber-500/40 text-amber-400 bg-amber-500/10 inline-flex items-center gap-1 font-medium">
+                  <Archive className="w-3 h-3 text-amber-400" />
+                  <span>{repo.isPrivate ? 'Private archive' : 'Public archive'}</span>
+                </Badge>
+              ) : repo.isPrivate ? (
+                <Badge variant="outline" className="ml-1 text-[11px] py-0 px-1.5 border-border text-muted-foreground">
+                  Private
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="ml-1 text-[11px] py-0 px-1.5 border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+                  Public
+                </Badge>
+              )}
             </div>
 
             {/* Action Group: Watch, Fork, Star, Code Dropdown */}
@@ -433,6 +445,26 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </div>
       </div>
+
+      {/* Read-Only Archival Banner */}
+      {repo.isArchived && (
+        <div className="w-full bg-amber-500/10 border-b border-amber-500/30 py-2.5 px-4 text-xs text-amber-200">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Archive className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>This repository has been archived.</strong> It is now in read-only mode. All commits, issues, pull requests, and pushes are frozen.
+              </span>
+            </div>
+            <button
+              onClick={() => onTabChange('settings')}
+              className="text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer shrink-0"
+            >
+              Repository Settings
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Clone Instructions Modal (Primer Dialog) */}
       <Dialog

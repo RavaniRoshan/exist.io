@@ -12,12 +12,17 @@ import {
   Plus,
   AlertCircle,
   GitMerge,
+  Archive,
+  Edit3,
 } from 'lucide-react'
 import { Box, BoxHeader, BoxBody, BoxRow, BoxFooter } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Dialog } from '@/components/ui/Dialog'
 import { LivingAvatar } from '@/components/ui/LivingAvatar'
+import { ChangeVisibilityModal } from '@/components/modals/ChangeVisibilityModal'
+import { ArchiveRepoModal } from '@/components/modals/ArchiveRepoModal'
+import { RenameRepoModal } from '@/components/modals/RenameRepoModal'
 import {
   type RepoInfo,
   type BranchItem,
@@ -50,6 +55,8 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
   // General Settings State
   const [branches, setBranches] = useState<BranchItem[]>([])
   const [defaultBranch, setDefaultBranch] = useState(repo.defaultBranch || 'main')
+  const [repoDescription, setRepoDescription] = useState(repo.description || '')
+  const [savingDescription, setSavingDescription] = useState(false)
   const [allowSquash, setAllowSquash] = useState(true)
   const [allowMergeCommit, setAllowMergeCommit] = useState(true)
   const [deleteBranchOnMerge, setDeleteBranchOnMerge] = useState(false)
@@ -65,13 +72,23 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
   const [addingCollab, setAddingCollab] = useState(false)
   const [collabError, setCollabError] = useState<string | null>(null)
 
-  // Danger Zone / Visibility & Deletion State
+  // Danger Zone / Visibility, Archival, Rename, and Deletion Modals State
   const [isPrivate, setIsPrivate] = useState(Boolean(repo.isPrivate))
-  const [togglingVisibility, setTogglingVisibility] = useState(false)
+  const [isArchived, setIsArchived] = useState(Boolean(repo.isArchived))
+  const [changeVisModalOpen, setChangeVisModalOpen] = useState(false)
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false)
+  const [renameModalOpen, setRenameModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [confirmDeleteInput, setConfirmDeleteInput] = useState('')
   const [deletingRepo, setDeletingRepo] = useState(false)
   const [dangerError, setDangerError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setIsPrivate(Boolean(repo.isPrivate))
+    setIsArchived(Boolean(repo.isArchived))
+    setRepoDescription(repo.description || '')
+    setDefaultBranch(repo.defaultBranch || 'main')
+  }, [repo])
 
   useEffect(() => {
     getBranches(owner, repoName).then((data) => {
@@ -115,20 +132,20 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
     }
   }
 
-  const handleToggleVisibility = async () => {
-    setTogglingVisibility(true)
-    setDangerError(null)
-    const newVis = isPrivate ? 'public' : 'private'
+  const handleSaveDescription = async () => {
+    setSavingDescription(true)
+    setGeneralFeedback(null)
     try {
       await updateRepoSettings(owner, repoName, {
-        visibility: newVis,
+        description: repoDescription.trim(),
       })
-      setIsPrivate(!isPrivate)
+      setGeneralFeedback('Repository description saved successfully.')
       if (onRepoUpdated) onRepoUpdated()
+      setTimeout(() => setGeneralFeedback(null), 3500)
     } catch (err: any) {
-      setDangerError(err.message || 'Failed to toggle visibility')
+      setGeneralFeedback(err.message || 'Failed to update description')
     } finally {
-      setTogglingVisibility(false)
+      setSavingDescription(false)
     }
   }
 
@@ -269,13 +286,48 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">Repository Name</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-foreground">Repository Name</label>
+                      <button
+                        type="button"
+                        data-testid="repo-rename-open-btn"
+                        onClick={() => setRenameModalOpen(true)}
+                        className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Rename</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       disabled
                       value={repoName}
-                      className="w-full h-8 px-3 text-xs bg-secondary/50 border border-border rounded-md text-muted-foreground font-mono outline-none"
+                      className="w-full h-8 px-3 text-xs bg-secondary/50 border border-border rounded-md text-foreground font-mono outline-none"
                     />
+                  </div>
+                </div>
+
+                {/* Repository Description */}
+                <div className="space-y-1.5 pt-2 border-t border-border">
+                  <label className="text-xs font-semibold text-foreground">Description</label>
+                  <p className="text-xs text-muted-foreground">Short summary of this repository displayed across forge lists and headers.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={repoDescription}
+                      onChange={(e) => setRepoDescription(e.target.value)}
+                      placeholder="Enterprise repository on exist.io"
+                      className="flex-1 h-8 px-3 text-xs bg-input border border-border rounded-md text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSaveDescription}
+                      disabled={savingDescription || repoDescription === (repo.description || '')}
+                    >
+                      {savingDescription ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save description'}
+                    </Button>
                   </div>
                 </div>
 
@@ -451,15 +503,35 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleToggleVisibility}
-                  disabled={togglingVisibility}
+                  data-testid="repo-change-visibility-btn"
+                  onClick={() => setChangeVisModalOpen(true)}
                   className="shrink-0 text-xs text-foreground hover:bg-secondary border-border"
                 >
-                  {togglingVisibility ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    `Change to ${isPrivate ? 'Public' : 'Private'}`
-                  )}
+                  Change visibility
+                </Button>
+              </div>
+
+              {/* Archive Repository Row */}
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Archive className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{isArchived ? 'Unarchive this repository' : 'Archive this repository'}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isArchived
+                      ? 'This repository is currently archived and read-only. Unarchiving restores push and issue operations.'
+                      : 'Mark this repository as archived and read-only. Commits, issues, and pull requests will be locked.'}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="repo-archive-btn"
+                  onClick={() => setArchiveModalOpen(true)}
+                  className="shrink-0 text-xs text-amber-500 hover:bg-amber-500/10 border-amber-500/30"
+                >
+                  {isArchived ? 'Unarchive this repository' : 'Archive this repository'}
                 </Button>
               </div>
 
@@ -477,6 +549,7 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
+                  data-testid="repo-delete-btn"
                   onClick={() => {
                     setConfirmDeleteInput('')
                     setDangerError(null)
@@ -590,6 +663,44 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
           </div>
         </div>
       </Dialog>
+
+      {/* Change Visibility Modal */}
+      <ChangeVisibilityModal
+        isOpen={changeVisModalOpen}
+        onClose={() => setChangeVisModalOpen(false)}
+        owner={owner}
+        repoName={repoName}
+        isCurrentlyPrivate={isPrivate}
+        onSuccess={() => {
+          setIsPrivate(!isPrivate)
+          if (onRepoUpdated) onRepoUpdated()
+        }}
+      />
+
+      {/* Archive Repository Modal */}
+      <ArchiveRepoModal
+        isOpen={archiveModalOpen}
+        onClose={() => setArchiveModalOpen(false)}
+        owner={owner}
+        repoName={repoName}
+        isCurrentlyArchived={isArchived}
+        onSuccess={() => {
+          setIsArchived(!isArchived)
+          if (onRepoUpdated) onRepoUpdated()
+        }}
+      />
+
+      {/* Rename Repository Modal */}
+      <RenameRepoModal
+        isOpen={renameModalOpen}
+        onClose={() => setRenameModalOpen(false)}
+        owner={owner}
+        currentName={repoName}
+        onSuccess={(newName) => {
+          if (onRepoUpdated) onRepoUpdated()
+          window.location.hash = `#/${owner}/${newName}/settings`
+        }}
+      />
     </div>
   )
 }

@@ -31,7 +31,22 @@ func PreReceiveHook(r io.Reader, stderr io.Writer) error {
 
 		// Ref deletion: all zeros
 		if strings.Trim(newRev, "0") == "" {
+			if refName == "refs/heads/main" || refName == "refs/heads/master" {
+				fmt.Fprintf(stderr, "remote: error: GH006: Protected branch update failed for %s\n", refName)
+				fmt.Fprintf(stderr, "remote: error: Deletion of protected default branch is prohibited\n")
+				return fmt.Errorf("protected branch deletion rejected")
+			}
 			continue
+		}
+
+		// Force-push detection (non-fast-forward) on protected default branches
+		if strings.Trim(oldRev, "0") != "" && (refName == "refs/heads/main" || refName == "refs/heads/master") {
+			ancestorCheck := exec.Command("git", "merge-base", "--is-ancestor", oldRev, newRev)
+			if err := ancestorCheck.Run(); err != nil {
+				fmt.Fprintf(stderr, "remote: error: GH006: Protected branch update failed for %s\n", refName)
+				fmt.Fprintf(stderr, "remote: error: Force-push (non-fast-forward update) to protected branch is not permitted\n")
+				return fmt.Errorf("protected branch force-push rejected")
+			}
 		}
 
 		var cmd *exec.Cmd

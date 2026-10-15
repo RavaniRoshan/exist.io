@@ -93,7 +93,13 @@ Achieving pixel-accurate developer ergonomics and end-user workflow parity with 
 - [x] **Releases & Tags Distribution (`ReleasesView`):** Tagged binary distribution, cryptographic checksum validation, downloadable source code archives, and draft release publishing.
 - [x] **Enterprise Administration Suites:** Dedicated cluster health telemetry inspector, SSO configuration form, enterprise user seat management, and audit log compliance query engine.
 - [x] **Zero-Mock Production & Interactive User Guide:** Live Git and SQLite WAL aggregation with authentic GitHub Primer empty states, interactive 5-step onboarding walkthrough (`ProductTour`), and comprehensive architectural manual (`UserManualModal`).
-- [x] **100% Comprehensive Unit Test Coverage:** 114 automated unit tests across 32 suites in Vitest with zero failures and verified production bundle build.
+- [x] **Multi-Repository Catalog & Dynamic Filters:** Enterprise-wide repository listings with real-time filters (`Type: All / Public / Private / Archived`), sorting (`Last updated / Name / Stars`), language indicators, and SPDX license tags.
+- [x] **Repository Creation & Preset Templates Engine:** In-modal creation with automated README initialization, `.gitignore` templates (Go, Node, Python, Rust), and SPDX license generation (MIT, Apache-2.0, BSD-3-Clause).
+- [x] **Danger Zone Sudo Mode Security (`ChangeVisibilityModal`):** Multi-step consequence warnings, repository path confirmation string, and Sudo Mode credential challenge (password, API key, cluster admin token).
+- [x] **Atomic Repository Rename (`RenameRepoModal`):** Atomic rename across SQLite WAL and bare Git object directories on disk with full audit logging.
+- [x] **Repository Archival Read-Only Freeze (`ArchiveRepoModal`):** Complete repository lock preventing pushes and edits, accompanied by read-only notice banner in repository header.
+- [x] **Git Hook Branch Protection Engine:** Pre-receive hook rejecting branch deletions of default branches and non-fast-forward force-pushes (`GH006: Protected branch update failed`).
+- [x] **100% Comprehensive Unit Test Coverage:** 126 automated unit tests across 35 suites in Vitest with zero failures and verified production bundle build.
 
 ---
 

@@ -22,6 +22,9 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<'public' | 'private'>('public')
   const [defaultBranch, setDefaultBranch] = useState('main')
+  const [initReadme, setInitReadme] = useState(false)
+  const [gitignoreTemplate, setGitignoreTemplate] = useState('none')
+  const [licenseTemplate, setLicenseTemplate] = useState('none')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,6 +45,9 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({
       description: description.trim(),
       visibility,
       default_branch: defaultBranch.trim() || 'main',
+      init_readme: initReadme,
+      gitignore_template: gitignoreTemplate !== 'none' ? gitignoreTemplate : undefined,
+      license_template: licenseTemplate !== 'none' ? licenseTemplate : undefined,
     })
     setIsSubmitting(false)
 
@@ -49,6 +55,9 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({
       onSuccess(result.repo)
       setName('')
       setDescription('')
+      setInitReadme(false)
+      setGitignoreTemplate('none')
+      setLicenseTemplate('none')
       onClose()
     } else {
       setError(result.error || 'Failed to create repository')
@@ -173,6 +182,58 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({
             className="w-32 px-2.5 py-1 text-xs rounded-md bg-input border border-border text-foreground font-mono"
             placeholder="main"
           />
+        </div>
+
+        {/* Initialization Options */}
+        <div className="space-y-3 pt-2 border-t border-border">
+          <label className="text-xs font-medium text-foreground block">Initialize this repository with:</label>
+
+          <label className="flex items-start gap-2.5 cursor-pointer text-xs select-none">
+            <input
+              type="checkbox"
+              data-testid="init-readme-checkbox"
+              checked={initReadme}
+              onChange={(e) => setInitReadme(e.target.checked)}
+              className="mt-0.5 rounded border-border text-primary focus:ring-primary"
+            />
+            <div className="space-y-0.5">
+              <span className="font-medium text-foreground">Add a README file</span>
+              <p className="text-[11px] text-muted-foreground">This is where you can write a long description for your project.</p>
+            </div>
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-foreground">Add .gitignore</label>
+              <select
+                data-testid="gitignore-select"
+                value={gitignoreTemplate}
+                onChange={(e) => setGitignoreTemplate(e.target.value)}
+                className="w-full h-8 px-2.5 text-xs bg-input border border-border rounded-md text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              >
+                <option value="none">.gitignore template: None</option>
+                <option value="go">Go</option>
+                <option value="node">Node</option>
+                <option value="python">Python</option>
+                <option value="rust">Rust</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-foreground">Choose a license</label>
+              <select
+                data-testid="license-select"
+                value={licenseTemplate}
+                onChange={(e) => setLicenseTemplate(e.target.value)}
+                className="w-full h-8 px-2.5 text-xs bg-input border border-border rounded-md text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              >
+                <option value="none">License: None</option>
+                <option value="MIT">MIT License</option>
+                <option value="Apache-2.0">Apache License 2.0</option>
+                <option value="BSD-3-Clause">BSD 3-Clause License</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="pt-2">

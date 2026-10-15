@@ -108,6 +108,7 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
         description: data.description || 'Enterprise repository on exist.io',
         defaultBranch: data.defaultBranch || data.default_branch || 'main',
         isPrivate: Boolean(data.isPrivate || data.is_private || data.visibility === 'private'),
+        isArchived: Boolean(data.archived || data.is_archived || data.isArchived),
         starsCount: data.starsCount || data.stars_count || 0,
         forksCount: data.forksCount || data.forks_count || 0,
         updatedAt: data.updatedAt || data.updated_at || 'Recently',
@@ -131,6 +132,7 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
       description: data.description || 'Enterprise repository on exist.io',
       defaultBranch: data.defaultBranch || data.default_branch || 'main',
       isPrivate: Boolean(data.isPrivate || data.is_private || data.visibility === 'private'),
+      isArchived: Boolean(data.archived || data.is_archived || data.isArchived),
       starsCount: data.starsCount || data.stars_count || 0,
       forksCount: data.forksCount || data.forks_count || 0,
       updatedAt: data.updatedAt || data.updated_at || 'Recently',
@@ -234,6 +236,9 @@ export async function createRepository(params: {
   description?: string
   default_branch?: string
   visibility?: 'public' | 'private'
+  init_readme?: boolean
+  gitignore_template?: string
+  license_template?: string
 }): Promise<{ ok: boolean; repo?: RepositoryRecord; error?: string }> {
   try {
     const res = await fetch('/api/v1/repos', {
@@ -1667,11 +1672,16 @@ export interface CollaboratorItem {
 }
 
 export interface RepoSettingsPayload {
+  new_name?: string
+  description?: string
   default_branch?: string
   visibility?: string
   allow_merge_commit?: boolean
   allow_squash_merge?: boolean
   delete_branch_on_merge?: boolean
+  archived?: boolean
+  confirm_name?: string
+  sudo_secret?: string
 }
 
 export async function updateRepoSettings(

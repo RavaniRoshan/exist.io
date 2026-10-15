@@ -6,6 +6,7 @@ export interface RepoInfo {
   description: string
   defaultBranch: string
   isPrivate: boolean
+  isArchived?: boolean
   starsCount: number
   forksCount: number
   commitsCount?: number
@@ -319,6 +320,7 @@ export interface RepositoryRecord {
   web_url: string
   updated_at: string
   description?: string
+  archived?: boolean
   stars?: number
   forks?: number
   language?: string

@@ -108,6 +108,7 @@ type Repo struct {
 	NamespaceID         string
 	Name                string
 	FullName            string
+	Description         string
 	DefaultBranch       string
 	Visibility          string
 	CloneURL            string
@@ -118,6 +119,7 @@ type Repo struct {
 	AllowMergeCommit    bool
 	AllowSquashMerge    bool
 	DeleteBranchOnMerge bool
+	Archived            bool
 	CreatedAt           string
 	UpdatedAt           string
 	PushedAt            string
@@ -128,11 +130,13 @@ func (db *DB) CreateRepo(ctx context.Context, r Repo) error {
 	_, err := db.sql.ExecContext(ctx, `INSERT INTO repos
 		(id, namespace_id, name, full_name, default_branch, visibility, clone_url, web_url,
 		 mirror_source, mirror_source_id, mirror_status,
-		 allow_merge_commit, allow_squash_merge, delete_branch_on_merge, created_at, updated_at, pushed_at)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		 allow_merge_commit, allow_squash_merge, delete_branch_on_merge,
+		 description, archived, created_at, updated_at, pushed_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		r.ID, r.NamespaceID, r.Name, r.FullName, r.DefaultBranch, r.Visibility,
 		nullStr(r.CloneURL), nullStr(r.WebURL), nullStr(r.MirrorSource), nullStr(r.MirrorSourceID), nullStr(r.MirrorStatus),
 		b2i(r.AllowMergeCommit), b2i(r.AllowSquashMerge), b2i(r.DeleteBranchOnMerge),
+		r.Description, b2i(r.Archived),
 		now(), now(), nullStr(r.PushedAt))
 	if err != nil {
 		if isConflict(err) {
@@ -148,7 +152,8 @@ func (db *DB) GetRepo(ctx context.Context, ownerSlug, name string) (Repo, error)
 	row := db.sql.QueryRowContext(ctx, `SELECT r.id, r.namespace_id, r.name, r.full_name, r.default_branch,
 		r.visibility, r.clone_url, r.web_url, r.mirror_source, r.mirror_source_id, r.mirror_status,
 		r.allow_merge_commit, r.allow_squash_merge, r.delete_branch_on_merge,
-		r.created_at, r.updated_at, r.pushed_at
+		r.created_at, r.updated_at, r.pushed_at,
+		COALESCE(r.description, ''), COALESCE(r.archived, 0)
 		FROM repos r JOIN namespaces n ON n.id = r.namespace_id
 		WHERE n.slug = ? AND r.name = ?`, ownerSlug, name)
 	return scanRepo(row)
@@ -159,7 +164,8 @@ func (db *DB) GetRepoByID(ctx context.Context, id string) (Repo, error) {
 	row := db.sql.QueryRowContext(ctx, `SELECT id, namespace_id, name, full_name, default_branch,
 		visibility, clone_url, web_url, mirror_source, mirror_source_id, mirror_status,
 		allow_merge_commit, allow_squash_merge, delete_branch_on_merge,
-		created_at, updated_at, pushed_at FROM repos WHERE id = ?`, id)
+		created_at, updated_at, pushed_at,
+		COALESCE(description, ''), COALESCE(archived, 0) FROM repos WHERE id = ?`, id)
 	return scanRepo(row)
 }
 
@@ -177,7 +183,8 @@ func (db *DB) ListRepos(ctx context.Context, ownerSlug string, pageSize int, pag
 	rows, err := db.sql.QueryContext(ctx, `SELECT r.id, r.namespace_id, r.name, r.full_name, r.default_branch,
 		r.visibility, r.clone_url, r.web_url, r.mirror_source, r.mirror_source_id, r.mirror_status,
 		r.allow_merge_commit, r.allow_squash_merge, r.delete_branch_on_merge,
-		r.created_at, r.updated_at, r.pushed_at
+		r.created_at, r.updated_at, r.pushed_at,
+		COALESCE(r.description, ''), COALESCE(r.archived, 0)
 		FROM repos r JOIN namespaces n ON n.id = r.namespace_id
 		WHERE n.slug = ? AND (? = '' OR r.id > ?)
 		ORDER BY r.id ASC LIMIT ?`, ownerSlug, pageToken, pageToken, pageSize+1)
@@ -213,7 +220,8 @@ func (db *DB) ListAllRepos(ctx context.Context, limit int) ([]Repo, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT r.id, r.namespace_id, r.name, r.full_name, r.default_branch,
 		r.visibility, r.clone_url, r.web_url, r.mirror_source, r.mirror_source_id, r.mirror_status,
 		r.allow_merge_commit, r.allow_squash_merge, r.delete_branch_on_merge,
-		r.created_at, r.updated_at, r.pushed_at
+		r.created_at, r.updated_at, r.pushed_at,
+		COALESCE(r.description, ''), COALESCE(r.archived, 0)
 		FROM repos r ORDER BY r.updated_at DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
@@ -239,6 +247,15 @@ func (db *DB) UpdateRepo(ctx context.Context, ownerSlug, name string, u RepoUpda
 		sets = append(sets, col+" = ?")
 		args = append(args, v)
 	}
+	if u.Name != nil {
+		add("name", *u.Name)
+	}
+	if u.FullName != nil {
+		add("full_name", *u.FullName)
+	}
+	if u.Description != nil {
+		add("description", *u.Description)
+	}
 	if u.DefaultBranch != nil {
 		add("default_branch", *u.DefaultBranch)
 	}
@@ -254,6 +271,9 @@ func (db *DB) UpdateRepo(ctx context.Context, ownerSlug, name string, u RepoUpda
 	if u.DeleteBranchOnMerge != nil {
 		add("delete_branch_on_merge", b2i(*u.DeleteBranchOnMerge))
 	}
+	if u.Archived != nil {
+		add("archived", b2i(*u.Archived))
+	}
 	args = append(args, ownerSlug, name)
 	query := "UPDATE repos SET " + join(sets, ", ") +
 		" WHERE namespace_id = (SELECT id FROM namespaces WHERE slug = ?) AND name = ?"
@@ -267,13 +287,39 @@ func (db *DB) UpdateRepo(ctx context.Context, ownerSlug, name string, u RepoUpda
 	return nil
 }
 
+// RenameRepo renames a repository in a namespace, updating its name and full_name.
+func (db *DB) RenameRepo(ctx context.Context, ownerSlug, oldName, newName string) error {
+	newName = strings.TrimSpace(newName)
+	if newName == "" {
+		return fmt.Errorf("repository name cannot be empty")
+	}
+	newFullName := ownerSlug + "/" + newName
+	res, err := db.sql.ExecContext(ctx, `UPDATE repos SET name = ?, full_name = ?, updated_at = ?
+		WHERE namespace_id = (SELECT id FROM namespaces WHERE slug = ?) AND name = ?`,
+		newName, newFullName, now(), ownerSlug, oldName)
+	if err != nil {
+		if isConflict(err) {
+			return fmt.Errorf("%w: repository %s already exists", ErrConflict, newFullName)
+		}
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // RepoUpdate is a partial repo update; nil fields are left unchanged.
 type RepoUpdate struct {
+	Name                *string
+	FullName            *string
+	Description         *string
 	DefaultBranch       *string
 	Visibility          *string
 	AllowMergeCommit    *bool
 	AllowSquashMerge    *bool
 	DeleteBranchOnMerge *bool
+	Archived            *bool
 }
 
 // DeleteRepo deletes a repository by owner slug + name.
@@ -306,11 +352,12 @@ func scanRepoRows(rows *sql.Rows) (Repo, error) {
 
 func scanRepoCols(scan func(dest ...any) error) (Repo, error) {
 	var r Repo
-	var cloneURL, webURL, mSrc, mSrcID, mStatus, pushedAt sql.NullString
-	var amc, asm, dbom int
+	var cloneURL, webURL, mSrc, mSrcID, mStatus, pushedAt, desc sql.NullString
+	var amc, asm, dbom, arch int
 	err := scan(&r.ID, &r.NamespaceID, &r.Name, &r.FullName, &r.DefaultBranch,
 		&r.Visibility, &cloneURL, &webURL, &mSrc, &mSrcID, &mStatus,
-		&amc, &asm, &dbom, &r.CreatedAt, &r.UpdatedAt, &pushedAt)
+		&amc, &asm, &dbom, &r.CreatedAt, &r.UpdatedAt, &pushedAt,
+		&desc, &arch)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Repo{}, ErrNotFound
 	}
@@ -323,9 +370,11 @@ func scanRepoCols(scan func(dest ...any) error) (Repo, error) {
 	r.MirrorSourceID = mSrcID.String
 	r.MirrorStatus = mStatus.String
 	r.PushedAt = pushedAt.String
+	r.Description = desc.String
 	r.AllowMergeCommit = amc != 0
 	r.AllowSquashMerge = asm != 0
 	r.DeleteBranchOnMerge = dbom != 0
+	r.Archived = arch != 0
 	return r, nil
 }
 

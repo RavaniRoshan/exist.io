@@ -105,6 +105,38 @@ func TestRepoUpdate(t *testing.T) {
 	if err := db.UpdateRepo(ctx, "acme", "ghost", RepoUpdate{DefaultBranch: &branch}); err != ErrNotFound {
 		t.Errorf("UpdateRepo(missing) = %v, want ErrNotFound", err)
 	}
+
+	// Test description and archived status
+	desc := "Enterprise quantum computing engine"
+	arch := true
+	if err := db.UpdateRepo(ctx, "acme", "w", RepoUpdate{Description: &desc, Archived: &arch}); err != nil {
+		t.Fatalf("UpdateRepo(desc, arch): %v", err)
+	}
+	updated, err := db.GetRepo(ctx, "acme", "w")
+	if err != nil {
+		t.Fatalf("GetRepo: %v", err)
+	}
+	if updated.Description != desc {
+		t.Errorf("got Description %q, want %q", updated.Description, desc)
+	}
+	if !updated.Archived {
+		t.Errorf("got Archived %v, want true", updated.Archived)
+	}
+
+	// Test repository rename
+	if err := db.RenameRepo(ctx, "acme", "w", "quantum"); err != nil {
+		t.Fatalf("RenameRepo: %v", err)
+	}
+	renamed, err := db.GetRepo(ctx, "acme", "quantum")
+	if err != nil {
+		t.Fatalf("GetRepo(quantum): %v", err)
+	}
+	if renamed.Name != "quantum" || renamed.FullName != "acme/quantum" {
+		t.Errorf("got name %q fullName %q, want quantum and acme/quantum", renamed.Name, renamed.FullName)
+	}
+	if _, err := db.GetRepo(ctx, "acme", "w"); err != ErrNotFound {
+		t.Errorf("GetRepo(oldName) = %v, want ErrNotFound", err)
+	}
 }
 
 func TestListReposPagination(t *testing.T) {

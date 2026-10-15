@@ -33,3 +33,24 @@ func TestPreReceiveHookRejection(t *testing.T) {
 		t.Errorf("expected rejection header, got: %s", rejectionMsg)
 	}
 }
+
+func TestPreReceiveHook_ProtectedBranchProtection(t *testing.T) {
+	// Attempting to delete protected default branch refs/heads/main
+	input := bytes.NewBufferString("1111111111111111111111111111111111111111 0000000000000000000000000000000000000000 refs/heads/main\n")
+	var stderr bytes.Buffer
+	err := PreReceiveHook(input, &stderr)
+	if err == nil {
+		t.Fatalf("expected error rejecting deletion of protected branch main, got nil")
+	}
+	if !strings.Contains(stderr.String(), "GH006") {
+		t.Errorf("expected GH006 error code in stderr, got: %s", stderr.String())
+	}
+
+	// Deleting a feature branch should not trigger the protected branch deletion error
+	inputFeat := bytes.NewBufferString("1111111111111111111111111111111111111111 0000000000000000000000000000000000000000 refs/heads/feature-x\n")
+	var stderrFeat bytes.Buffer
+	errFeat := PreReceiveHook(inputFeat, &stderrFeat)
+	if errFeat != nil {
+		t.Fatalf("expected feature branch deletion to succeed without error, got: %v", errFeat)
+	}
+}

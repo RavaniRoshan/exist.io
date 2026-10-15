@@ -238,11 +238,14 @@ func Open(cfg config.Config) (*App, error) {
 			return
 		}
 		var req struct {
-			Owner         string `json:"owner"`
-			Name          string `json:"name"`
-			Description   string `json:"description"`
-			DefaultBranch string `json:"default_branch"`
-			Visibility    string `json:"visibility"`
+			Owner             string `json:"owner"`
+			Name              string `json:"name"`
+			Description       string `json:"description"`
+			DefaultBranch     string `json:"default_branch"`
+			Visibility        string `json:"visibility"`
+			InitReadme        bool   `json:"init_readme"`
+			GitignoreTemplate string `json:"gitignore_template"`
+			LicenseTemplate   string `json:"license_template"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -285,6 +288,7 @@ func Open(cfg config.Config) (*App, error) {
 			NamespaceID:         ns.ID,
 			Name:                req.Name,
 			FullName:            fullName,
+			Description:         req.Description,
 			DefaultBranch:       req.DefaultBranch,
 			Visibility:          req.Visibility,
 			CloneURL:            cloneHTTP,
@@ -303,6 +307,41 @@ func Open(cfg config.Config) (*App, error) {
 		if _, err := git.Init(req.Owner, req.Name, req.DefaultBranch); err != nil {
 			http.Error(w, "Failed to init bare repo on disk: "+err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		// Pre-populate with initial commit if requested
+		var initialChanges []gitstore.FileChange
+		if req.InitReadme {
+			content := fmt.Sprintf("# %s\n\n%s\n", req.Name, req.Description)
+			initialChanges = append(initialChanges, gitstore.FileChange{
+				Path:    "README.md",
+				Content: content,
+			})
+		}
+		if req.GitignoreTemplate != "" {
+			if tmpl, ok := gitignorePresets[strings.ToLower(req.GitignoreTemplate)]; ok {
+				initialChanges = append(initialChanges, gitstore.FileChange{
+					Path:    ".gitignore",
+					Content: tmpl,
+				})
+			}
+		}
+		if req.LicenseTemplate != "" {
+			if tmpl := getLicenseTemplate(strings.ToUpper(req.LicenseTemplate), req.Owner); tmpl != "" {
+				initialChanges = append(initialChanges, gitstore.FileChange{
+					Path:    "LICENSE",
+					Content: tmpl,
+				})
+			}
+		}
+
+		if len(initialChanges) > 0 {
+			sig := object.Signature{
+				Name:  "exist.io",
+				Email: "admin@exist.io",
+				When:  time.Now().UTC(),
+			}
+			_, _ = git.WriteFiles(req.Owner, req.Name, req.DefaultBranch, initialChanges, sig, "Initial commit")
 		}
 
 		w.WriteHeader(http.StatusCreated)
@@ -519,24 +558,134 @@ func Open(cfg config.Config) (*App, error) {
 		owner := r.PathValue("owner")
 		name := r.PathValue("name")
 
+		existingRepo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found: "+err.Error(), http.StatusNotFound)
+			return
+		}
+
 		var req struct {
+			NewName             *string `json:"new_name"`
+			Description         *string `json:"description"`
 			DefaultBranch       *string `json:"default_branch"`
 			Visibility          *string `json:"visibility"`
 			AllowMergeCommit    *bool   `json:"allow_merge_commit"`
 			AllowSquashMerge    *bool   `json:"allow_squash_merge"`
 			DeleteBranchOnMerge *bool   `json:"delete_branch_on_merge"`
+			Archived            *bool   `json:"archived"`
+			ConfirmName         string  `json:"confirm_name"`
+			SudoSecret          string  `json:"sudo_secret"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 
+		expectedConfirm := owner + "/" + name
+
+		// 1. Danger Zone: Visibility Change (Public <-> Private)
+		if req.Visibility != nil && *req.Visibility != existingRepo.Visibility {
+			cleanConfirm := strings.TrimSpace(req.ConfirmName)
+			if cleanConfirm != expectedConfirm && cleanConfirm != name {
+				http.Error(w, fmt.Sprintf("Confirmation required: please type %q to change repository visibility", expectedConfirm), http.StatusBadRequest)
+				return
+			}
+			cleanSecret := strings.TrimSpace(req.SudoSecret)
+			if cleanSecret == "" {
+				http.Error(w, "Sudo mode security authentication (password or personal access key) is required to change repository visibility", http.StatusForbidden)
+				return
+			}
+			// Sudo mode verification
+			count, _ := db.CountUsers(r.Context())
+			if count > 0 {
+				var valid bool
+				if _, err := db.GetAPIKeyByHash(r.Context(), auth.HashCredential(cleanSecret)); err == nil {
+					valid = true
+				}
+				if !valid {
+					if user, uerr := db.GetUserByLogin(r.Context(), owner); uerr == nil && user.PasswordHash != "" {
+						if auth.CheckPassword(cleanSecret, user.PasswordHash) {
+							valid = true
+						}
+					}
+				}
+				if !valid {
+					http.Error(w, "Invalid security credentials for sudo mode", http.StatusForbidden)
+					return
+				}
+			}
+			_ = audit.Log(audit.Event{
+				Actor:     "web-user",
+				ActorType: "user",
+				Action:    "repo.visibility_change",
+				Resource:  expectedConfirm,
+				Severity:  audit.SeverityWarning,
+				Details:   fmt.Sprintf("Repository visibility changed from %s to %s", existingRepo.Visibility, *req.Visibility),
+			})
+		}
+
+		// 2. Danger Zone: Archive / Unarchive
+		if req.Archived != nil && *req.Archived != existingRepo.Archived {
+			cleanConfirm := strings.TrimSpace(req.ConfirmName)
+			if cleanConfirm != expectedConfirm && cleanConfirm != name {
+				http.Error(w, fmt.Sprintf("Confirmation required: please type %q to alter archival state", expectedConfirm), http.StatusBadRequest)
+				return
+			}
+			action := "repo.archived"
+			if !*req.Archived {
+				action = "repo.unarchived"
+			}
+			_ = audit.Log(audit.Event{
+				Actor:     "web-user",
+				ActorType: "user",
+				Action:    action,
+				Resource:  expectedConfirm,
+				Severity:  audit.SeverityWarning,
+				Details:   fmt.Sprintf("Repository archival status changed to %v", *req.Archived),
+			})
+		}
+
+		// 3. Danger Zone: Repository Rename
+		if req.NewName != nil {
+			targetName := strings.TrimSpace(*req.NewName)
+			if targetName != "" && targetName != name {
+				cleanConfirm := strings.TrimSpace(req.ConfirmName)
+				if cleanConfirm != expectedConfirm && cleanConfirm != name {
+					http.Error(w, fmt.Sprintf("Confirmation required: please type %q to rename repository", expectedConfirm), http.StatusBadRequest)
+					return
+				}
+				if _, err := db.GetRepo(r.Context(), owner, targetName); err == nil {
+					http.Error(w, fmt.Sprintf("Repository %s/%s already exists", owner, targetName), http.StatusConflict)
+					return
+				}
+				if err := git.Rename(owner, name, targetName); err != nil {
+					http.Error(w, "Failed to rename Git repository on disk: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if err := db.RenameRepo(r.Context(), owner, name, targetName); err != nil {
+					http.Error(w, "Failed to rename repository in database: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+				_ = audit.Log(audit.Event{
+					Actor:     "web-user",
+					ActorType: "user",
+					Action:    "repo.renamed",
+					Resource:  owner + "/" + targetName,
+					Severity:  audit.SeverityWarning,
+					Details:   fmt.Sprintf("Repository renamed from %s to %s", name, targetName),
+				})
+				name = targetName
+			}
+		}
+
 		u := store.RepoUpdate{
+			Description:         req.Description,
 			DefaultBranch:       req.DefaultBranch,
 			Visibility:          req.Visibility,
 			AllowMergeCommit:    req.AllowMergeCommit,
 			AllowSquashMerge:    req.AllowSquashMerge,
 			DeleteBranchOnMerge: req.DeleteBranchOnMerge,
+			Archived:            req.Archived,
 		}
 
 		if err := db.UpdateRepo(r.Context(), owner, name, u); err != nil {

@@ -98,6 +98,19 @@ func (s *Store) Exists(namespaceSlug, repoName string) bool {
 	return err == nil
 }
 
+// Rename renames a bare repository directory on disk from oldName.git to newName.git.
+func (s *Store) Rename(namespaceSlug, oldName, newName string) error {
+	oldPath := s.repoPath(namespaceSlug, oldName)
+	newPath := s.repoPath(namespaceSlug, newName)
+	if _, err := os.Stat(oldPath); err != nil {
+		return fmt.Errorf("gitstore: source repo %s/%s does not exist: %w", namespaceSlug, oldName, err)
+	}
+	if _, err := os.Stat(newPath); err == nil {
+		return fmt.Errorf("gitstore: destination repo %s/%s already exists", namespaceSlug, newName)
+	}
+	return os.Rename(oldPath, newPath)
+}
+
 // Clone clones a remote repository into the store as a bare repo and returns it.
 // This is used by GitHub mirroring (Phase 5).
 func (s *Store) Clone(namespaceSlug, repoName, remoteURL string, auth *Auth) (*git.Repository, error) {

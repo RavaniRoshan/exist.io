@@ -168,6 +168,8 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
 }) => {
   const [filterType, setFilterType] = useState<'all' | 'agent' | 'pr' | 'commit'>('all')
   const [repoSearch, setRepoSearch] = useState('')
+  const [repoTypeFilter, setRepoTypeFilter] = useState<'all' | 'public' | 'private' | 'archived'>('all')
+  const [repoSortOrder, setRepoSortOrder] = useState<'updated' | 'name' | 'stars'>('updated')
   const [copiedClone, setCopiedClone] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
@@ -274,11 +276,26 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
     }
   }, [])
 
-  const filteredRepos = repos.filter((r) =>
-    r.full_name?.toLowerCase().includes(repoSearch.toLowerCase()) ||
-    r.name.toLowerCase().includes(repoSearch.toLowerCase()) ||
-    (r.description && r.description.toLowerCase().includes(repoSearch.toLowerCase()))
-  )
+  const filteredRepos = repos
+    .filter((r) => {
+      const q = repoSearch.toLowerCase().trim()
+      const matchesSearch =
+        !q ||
+        r.full_name?.toLowerCase().includes(q) ||
+        r.name.toLowerCase().includes(q) ||
+        (r.description && r.description.toLowerCase().includes(q))
+      if (!matchesSearch) return false
+
+      if (repoTypeFilter === 'public') return !r.is_private && r.visibility !== 'private'
+      if (repoTypeFilter === 'private') return Boolean(r.is_private || r.visibility === 'private')
+      if (repoTypeFilter === 'archived') return Boolean((r as any).archived || (r as any).isArchived)
+      return true
+    })
+    .sort((a, b) => {
+      if (repoSortOrder === 'name') return a.name.localeCompare(b.name)
+      if (repoSortOrder === 'stars') return ((b as any).stars || 0) - ((a as any).stars || 0)
+      return 0
+    })
 
   const filteredEvents = events.filter((evt) => {
     if (filterType === 'all') return true
@@ -331,6 +348,32 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
             />
           </div>
 
+          {/* Filters & Sorting */}
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <select
+              data-testid="repo-type-filter"
+              value={repoTypeFilter}
+              onChange={(e) => setRepoTypeFilter(e.target.value as any)}
+              className="h-7 px-2 bg-input border border-border rounded text-foreground outline-none focus:border-ring"
+            >
+              <option value="all">Type: All</option>
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+              <option value="archived">Archived</option>
+            </select>
+
+            <select
+              data-testid="repo-sort-order"
+              value={repoSortOrder}
+              onChange={(e) => setRepoSortOrder(e.target.value as any)}
+              className="h-7 px-2 bg-input border border-border rounded text-foreground outline-none focus:border-ring"
+            >
+              <option value="updated">Sort: Updated</option>
+              <option value="name">Name</option>
+              <option value="stars">Stars</option>
+            </select>
+          </div>
+
           {/* Repos list */}
           <div className="space-y-1">
             {filteredRepos.length > 0 ? (
@@ -353,9 +396,17 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
                       </div>
                     )}
                   </div>
-                  {repo.is_private && (
+                  {repo.archived || (repo as any).isArchived ? (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/40 text-amber-500">
+                      Archived
+                    </Badge>
+                  ) : repo.is_private || repo.visibility === 'private' ? (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 border-border text-muted-foreground">
                       Private
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-emerald-500/30 text-emerald-500">
+                      Public
                     </Badge>
                   )}
                 </div>
