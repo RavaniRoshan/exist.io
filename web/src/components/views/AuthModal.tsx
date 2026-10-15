@@ -69,6 +69,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         <div className="flex rounded-md bg-secondary p-0.5 border border-border text-xs font-medium">
           <button
             type="button"
+            data-testid="auth-tab-login"
             onClick={() => { setTab('login'); setError(null) }}
             className={`flex-1 py-1 rounded transition-colors ${
               tab === 'login' ? 'bg-background text-foreground font-semibold shadow-2xs' : 'text-muted-foreground hover:text-foreground'
@@ -78,6 +79,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </button>
           <button
             type="button"
+            data-testid="auth-tab-register"
             onClick={() => { setTab('register'); setError(null) }}
             className={`flex-1 py-1 rounded transition-colors ${
               tab === 'register' ? 'bg-background text-foreground font-semibold shadow-2xs' : 'text-muted-foreground hover:text-foreground'
@@ -181,6 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               variant="primary"
               disabled={loading}
               className="w-full justify-center gap-2"
+              data-testid="auth-submit-btn"
             >
               <KeyRound className="w-4 h-4" />
               <span>{loading ? 'Authenticating...' : tab === 'login' ? 'Sign In' : 'Create Account'}</span>

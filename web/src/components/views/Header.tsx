@@ -30,7 +30,17 @@ import { Badge } from '@/components/ui/Badge'
 import { SearchPill } from '@/components/ui/Input'
 import { Dialog } from '@/components/ui/Dialog'
 import { UnderlineNav, type NavTabItem } from '@/components/ui/UnderlineNav'
-import { isDemoModeActive, setDemoModeActive, checkActiveSession, logoutUser, type RepoInfo, type UserProfile } from '@/lib/api'
+import {
+  isDemoModeActive,
+  setDemoModeActive,
+  checkActiveSession,
+  logoutUser,
+  getIssues,
+  getPullRequests,
+  getReleases,
+  type RepoInfo,
+  type UserProfile,
+} from '@/lib/api'
 import { AuthModal } from '@/components/views/AuthModal'
 import { cn } from '@/lib/utils'
 
@@ -62,9 +72,43 @@ export const Header: React.FC<HeaderProps> = ({
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [starred, setStarred] = useState(false)
-  const [starCount, setStarCount] = useState(14)
+  const [starCount, setStarCount] = useState(repo?.starsCount ?? (isDemoModeActive() ? 14 : 0))
+  const [liveIssueCount, setLiveIssueCount] = useState<number | undefined>(() => isDemoModeActive() ? 2 : undefined)
+  const [livePrCount, setLivePrCount] = useState<number | undefined>(() => isDemoModeActive() ? (openPrCount ?? 1) : undefined)
+  const [liveReleaseCount, setLiveReleaseCount] = useState<number | undefined>(() => isDemoModeActive() ? 2 : undefined)
 
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  useEffect(() => {
+    setStarCount(repo?.starsCount ?? (isDemoModeActive() ? 14 : 0))
+  }, [repo?.starsCount])
+
+  useEffect(() => {
+    if (isDemoModeActive()) {
+      setLiveIssueCount(2)
+      setLivePrCount(openPrCount ?? 1)
+      setLiveReleaseCount(2)
+      return
+    }
+
+    let isMounted = true
+    Promise.all([
+      getIssues(repo.ownerSlug, repo.name).catch(() => []),
+      getPullRequests(repo.ownerSlug, repo.name).catch(() => []),
+      getReleases(repo.ownerSlug, repo.name).catch(() => []),
+    ]).then(([issues, prs, releases]) => {
+      if (!isMounted) return
+      const openIssues = issues.filter((i) => i.state === 'open').length
+      const openPrs = prs.filter((p) => p.state === 'open').length
+      setLiveIssueCount(openIssues)
+      setLivePrCount(openPrs)
+      setLiveReleaseCount(releases.length)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [repo.ownerSlug, repo.name, openPrCount])
 
   useEffect(() => {
     checkActiveSession().then((res) => {
@@ -117,10 +161,10 @@ export const Header: React.FC<HeaderProps> = ({
   // Canonical Repository Tabs
   const repoTabs: NavTabItem[] = [
     { id: 'code', label: 'Code', icon: <Code2 className="w-4 h-4" /> },
-    { id: 'issues', label: 'Issues', count: 2, icon: <AlertCircle className="w-4 h-4" /> },
-    { id: 'prs', label: 'Pull requests', count: openPrCount, icon: <GitPullRequest className="w-4 h-4" /> },
+    { id: 'issues', label: 'Issues', count: liveIssueCount, icon: <AlertCircle className="w-4 h-4" /> },
+    { id: 'prs', label: 'Pull requests', count: livePrCount, icon: <GitPullRequest className="w-4 h-4" /> },
     { id: 'commits', label: 'Commits', icon: <GitCommit className="w-4 h-4" /> },
-    { id: 'releases', label: 'Releases', count: 2, icon: <Tag className="w-4 h-4" /> },
+    { id: 'releases', label: 'Releases', count: liveReleaseCount, icon: <Tag className="w-4 h-4" /> },
     { id: 'agents', label: 'Agent Console', count: '35', icon: <Bot className="w-4 h-4" /> },
     { id: 'rulesets', label: 'Rulesets & Security', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-4 h-4" /> },
@@ -349,7 +393,7 @@ export const Header: React.FC<HeaderProps> = ({
               <Button variant="secondary" size="sm" className="gap-1.5">
                 <GitFork className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Fork</span>
-                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-background border border-border text-[10px] font-mono">0</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-background border border-border text-[10px] font-mono">{repo?.forksCount ?? 0}</span>
               </Button>
 
               <Button
@@ -372,6 +416,7 @@ export const Header: React.FC<HeaderProps> = ({
                 size="sm"
                 onClick={() => setCloneModalOpen(true)}
                 className="gap-1.5 ml-1"
+                data-testid="repo-clone-btn"
               >
                 <Terminal className="w-3.5 h-3.5" />
                 <span>Code</span>

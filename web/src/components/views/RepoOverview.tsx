@@ -28,8 +28,10 @@ import {
   type RepoInfo,
   type FileItem,
   type SymbolItem,
+  type ReleaseItem,
   getFiles,
   getFileContent,
+  getReleases,
   searchRepoSymbols,
   isDemoModeActive,
   sampleFiles,
@@ -75,6 +77,10 @@ export const RepoOverview: React.FC<RepoOverviewProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [symbolResults, setSymbolResults] = useState<SymbolItem[]>([])
   const [isSearchingSymbols, setIsSearchingSymbols] = useState(false)
+
+  // Releases Sidebar State
+  const [latestRelease, setLatestRelease] = useState<ReleaseItem | null>(null)
+  const [releaseCount, setReleaseCount] = useState<number>(0)
 
   const owner = repo.ownerSlug || 'acme'
   const name = repo.name || 'rocket'
@@ -123,6 +129,23 @@ export const RepoOverview: React.FC<RepoOverviewProps> = ({
     window.addEventListener('exist_mode_changed', onModeChange)
     return () => window.removeEventListener('exist_mode_changed', onModeChange)
   }, [owner, name, currentBranch])
+
+  useEffect(() => {
+    getReleases(owner, name)
+      .then((rels) => {
+        if (rels && rels.length > 0) {
+          setLatestRelease(rels[0])
+          setReleaseCount(rels.length)
+        } else {
+          setLatestRelease(null)
+          setReleaseCount(0)
+        }
+      })
+      .catch(() => {
+        setLatestRelease(null)
+        setReleaseCount(0)
+      })
+  }, [owner, name])
 
   const handleSelectFile = async (file: FileItem) => {
     if (file.type !== 'blob') return
@@ -811,14 +834,14 @@ git push -u origin main`}
                   <span>Releases</span>
                 </h3>
                 <span className="text-[11px] text-muted-foreground font-mono">
-                  {isDemoModeActive() ? 1 : 0}
+                  {releaseCount}
                 </span>
               </div>
-              {isDemoModeActive() ? (
+              {latestRelease ? (
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-emerald-400" />
                   <div>
-                    <span className="font-semibold text-foreground">v0.4.1</span>
+                    <span className="font-semibold text-foreground">{latestRelease.tagName}</span>
                     <span className="ml-1.5 text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/30">
                       Latest
                     </span>
