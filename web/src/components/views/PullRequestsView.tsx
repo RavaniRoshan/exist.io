@@ -29,12 +29,14 @@ import { Box, BoxHeader, BoxBody, BoxRow, BoxFooter } from '@/components/ui/Card
 import { Badge, StateLabel } from '@/components/ui/Badge'
 import { LivingAvatar } from '@/components/ui/LivingAvatar'
 import { MergeBox } from '@/components/ui/MergeBox'
+import { CreatePullRequestModal } from '@/components/modals/CreatePullRequestModal'
 import {
   type PullRequest,
   type RepoInfo,
   type AgentReviewResult,
   getPullRequests,
   mergePullRequest,
+  addPullRequestComment,
   triggerAgentReview,
   isDemoModeActive,
   samplePullRequests,
@@ -70,6 +72,7 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedCli, setCopiedCli] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const loadPRs = async () => {
     setLoading(true)
@@ -205,24 +208,30 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
     }
   }
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newCommentText.trim() || !selectedPr) return
-    const newComment = {
-      id: `c-${Date.now()}`,
-      author: 'Current Operator',
-      isAgent: false,
-      createdAt: 'Just now',
-      body: newCommentText,
-    }
-
-    const updated = {
-      ...selectedPr,
-      comments: [...(selectedPr.comments || []), newComment],
-    }
-
-    setSelectedPr(updated)
-    setPrs((prev) => prev.map((p) => (p.number === selectedPr.number ? updated : p)))
+    const text = newCommentText
     setNewCommentText('')
+    try {
+      const added = await addPullRequestComment(owner, repoName, selectedPr.number, text)
+      const newComment = {
+        id: added?.id || `c-${Date.now()}`,
+        author: added?.author || 'Current Operator',
+        isAgent: false,
+        createdAt: added?.createdAt || 'Just now',
+        body: text,
+      }
+
+      const updated = {
+        ...selectedPr,
+        comments: [...(selectedPr.comments || []), newComment],
+      }
+
+      setSelectedPr(updated)
+      setPrs((prev) => prev.map((p) => (p.number === selectedPr.number ? updated : p)))
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to post comment')
+    }
   }
 
   const samplePushCommand = `git checkout -b feature/agent-capabilities
@@ -739,7 +748,7 @@ git push origin feature/agent-capabilities`
                   <span>Refresh</span>
                 </Button>
 
-                <Button variant="primary" size="sm" className="gap-1.5 text-xs">
+                <Button variant="primary" size="sm" onClick={() => setIsCreateModalOpen(true)} className="gap-1.5 text-xs">
                   <GitPullRequest className="w-3.5 h-3.5" />
                   <span>New pull request</span>
                 </Button>
@@ -832,6 +841,18 @@ git push origin feature/agent-capabilities`
                         {samplePushCommand}
                       </pre>
                     </div>
+
+                    <div>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="gap-1.5 text-xs mx-auto"
+                      >
+                        <GitPullRequest className="w-3.5 h-3.5" />
+                        <span>Create pull request</span>
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   filteredPrs.map((pr) => (
@@ -893,6 +914,16 @@ git push origin feature/agent-capabilities`
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CreatePullRequestModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        repo={repo}
+        onPullRequestCreated={(newPr) => {
+          setPrs((prev) => [newPr, ...prev])
+          setSelectedPr(newPr)
+        }}
+      />
     </div>
   )
 }

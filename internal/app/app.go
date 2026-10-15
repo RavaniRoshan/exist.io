@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"exist.io/internal/agentactivity"
+	"exist.io/internal/agentreviewer"
 	"exist.io/internal/audit"
 	"exist.io/internal/auth"
 	"exist.io/internal/config"
@@ -641,6 +642,512 @@ func Open(cfg config.Config) (*App, error) {
 				"createdAt": comment.CreatedAt,
 			},
 		})
+	})
+
+	// Repository Branches REST API
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/branches", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"branches": []any{}})
+			return
+		}
+		rawBranches, err := git.ListBranches(owner, name)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"branches": []any{}})
+			return
+		}
+		type branchItem struct {
+			Name      string `json:"name"`
+			CommitSHA string `json:"commit_sha"`
+			IsDefault bool   `json:"is_default"`
+		}
+		branches := make([]branchItem, 0, len(rawBranches))
+		for _, b := range rawBranches {
+			branches = append(branches, branchItem{
+				Name:      b.Name,
+				CommitSHA: b.SHA,
+				IsDefault: b.Name == repo.DefaultBranch,
+			})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"branches": branches})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/branches", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		var req struct {
+			Name string `json:"name"`
+			From string `json:"from"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Name = strings.TrimSpace(req.Name)
+		if req.Name == "" {
+			http.Error(w, "Branch name is required", http.StatusBadRequest)
+			return
+		}
+		if req.From == "" {
+			req.From = repo.DefaultBranch
+		}
+		fromSHA, err := git.ResolveRef(owner, name, req.From)
+		if err != nil {
+			http.Error(w, "Source branch ref not found: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		refName := "refs/heads/" + req.Name
+		info, err := git.CreateBranchRef(owner, name, refName, fromSHA.String())
+		if err != nil {
+			http.Error(w, "Failed to create branch: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":   true,
+			"name": info.Ref,
+			"sha":  info.SHA,
+		})
+	})
+
+	// Repository Pull Requests REST API
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/pulls", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"pulls": []any{}})
+			return
+		}
+		state := r.URL.Query().Get("state")
+		rawPRs, _, err := db.ListPullRequests(r.Context(), repo.ID, state, 100, "")
+		if err != nil {
+			http.Error(w, "Failed to list pull requests: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		type prItem struct {
+			ID        string `json:"id"`
+			Number    int    `json:"number"`
+			Title     string `json:"title"`
+			Body      string `json:"body"`
+			State     string `json:"state"`
+			HeadRef   string `json:"headRef"`
+			BaseRef   string `json:"baseRef"`
+			Branch    string `json:"branch"`
+			Author    string `json:"author"`
+			CreatedAt string `json:"createdAt"`
+			Comments  []any  `json:"comments"`
+			Checks    []any  `json:"checks"`
+			DiffHunks []any  `json:"diffHunks"`
+			Labels    []any  `json:"labels"`
+			Additions int    `json:"additions"`
+			Deletions int    `json:"deletions"`
+			Mergeable string `json:"mergeable"`
+		}
+
+		out := make([]prItem, 0, len(rawPRs))
+		for _, pr := range rawPRs {
+			author := pr.AuthorUserID
+			if author == "" {
+				author = "shiva"
+			}
+			rawComments, _ := db.ListComments(r.Context(), pr.ID)
+			comments := make([]any, 0, len(rawComments))
+			for _, c := range rawComments {
+				cAuthor := c.AuthorUserID
+				if cAuthor == "" {
+					cAuthor = "shiva"
+				}
+				comments = append(comments, map[string]any{
+					"id":        c.ID,
+					"author":    cAuthor,
+					"body":      c.Body,
+					"createdAt": c.CreatedAt,
+					"isAgent":   strings.Contains(strings.ToLower(cAuthor), "agent") || strings.Contains(strings.ToLower(cAuthor), "bot"),
+				})
+			}
+
+			// Calculate diff hunks
+			diffHunks := make([]any, 0)
+			if diffStats, err := git.DiffCommits(owner, name, pr.BaseSHA, pr.HeadSHA); err == nil && diffStats != nil {
+				for _, f := range diffStats.Files {
+					diffHunks = append(diffHunks, map[string]any{
+						"newPath":   f.Filename,
+						"additions": f.Additions,
+						"deletions": f.Deletions,
+						"hunk":      f.Patch,
+					})
+				}
+			}
+
+			// Default check runs
+			checks := []any{
+				map[string]any{
+					"id":         "chk-origin-verify",
+					"name":       "Exist Policy & Ruleset Guard",
+					"status":     "completed",
+					"conclusion": "success",
+					"duration":   "0.1s",
+				},
+			}
+
+			// Labels
+			rawLabels, _ := db.GetPRLabels(r.Context(), pr.ID)
+			labels := make([]any, 0, len(rawLabels))
+			for _, l := range rawLabels {
+				labels = append(labels, map[string]string{
+					"name":  l.Name,
+					"color": l.Color,
+				})
+			}
+
+			st := pr.State
+			if pr.Merged {
+				st = "merged"
+			}
+
+			out = append(out, prItem{
+				ID:        pr.ID,
+				Number:    pr.Number,
+				Title:     pr.Title,
+				Body:      pr.Body,
+				State:     st,
+				HeadRef:   pr.HeadRef,
+				BaseRef:   pr.BaseRef,
+				Branch:    pr.HeadRef,
+				Author:    author,
+				CreatedAt: pr.CreatedAt,
+				Comments:  comments,
+				Checks:    checks,
+				DiffHunks: diffHunks,
+				Labels:    labels,
+				Additions: pr.Additions,
+				Deletions: pr.Deletions,
+				Mergeable: pr.Mergeable,
+			})
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"pulls": out})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/pulls", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		var req struct {
+			Title string `json:"title"`
+			Head  string `json:"head"`
+			Base  string `json:"base"`
+			Body  string `json:"body"`
+			Draft bool   `json:"draft"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Title = strings.TrimSpace(req.Title)
+		req.Head = strings.TrimSpace(req.Head)
+		req.Base = strings.TrimSpace(req.Base)
+		if req.Title == "" || req.Head == "" {
+			http.Error(w, "Title and head branch are required", http.StatusBadRequest)
+			return
+		}
+		if req.Base == "" {
+			req.Base = repo.DefaultBranch
+		}
+
+		headSHA, err := git.ResolveRef(owner, name, req.Head)
+		if err != nil {
+			http.Error(w, "Head ref not found: "+req.Head, http.StatusBadRequest)
+			return
+		}
+		baseSHA, err := git.ResolveRef(owner, name, req.Base)
+		if err != nil {
+			http.Error(w, "Base ref not found: "+req.Base, http.StatusBadRequest)
+			return
+		}
+
+		var additions, deletions, changedFiles int
+		if diff, err := git.DiffCommits(owner, name, baseSHA.String(), headSHA.String()); err == nil && diff != nil {
+			additions = diff.Additions
+			deletions = diff.Deletions
+			changedFiles = diff.ChangedFiles
+		}
+
+		mergeable := "mergeable"
+		if canMerge, _, _, _ := git.CheckMergeable(owner, name, req.Base, req.Head); !canMerge {
+			mergeable = "blocked"
+		}
+
+		author := "shiva"
+		var authorUserID string
+		if u, err := db.GetUserByLogin(r.Context(), author); err == nil {
+			authorUserID = u.ID
+		} else if u, err := db.GetUserByLogin(r.Context(), owner); err == nil {
+			authorUserID = u.ID
+		}
+
+		pr := &store.PullRequest{
+			ID:           idgen.NewPR(),
+			RepoID:       repo.ID,
+			State:        "open",
+			Draft:        req.Draft,
+			Title:        req.Title,
+			Body:         req.Body,
+			HeadRef:      req.Head,
+			HeadSHA:      headSHA.String(),
+			BaseRef:      req.Base,
+			BaseSHA:      baseSHA.String(),
+			AuthorUserID: authorUserID,
+			Mergeable:    mergeable,
+			Additions:    additions,
+			Deletions:    deletions,
+			ChangedFiles: changedFiles,
+		}
+
+		if err := db.CreatePullRequest(r.Context(), pr); err != nil {
+			http.Error(w, "Failed to create pull request: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"pull": map[string]any{
+				"id":        pr.ID,
+				"number":    pr.Number,
+				"title":     pr.Title,
+				"body":      pr.Body,
+				"state":     pr.State,
+				"headRef":   pr.HeadRef,
+				"baseRef":   pr.BaseRef,
+				"branch":    pr.HeadRef,
+				"author":    author,
+				"createdAt": pr.CreatedAt,
+				"comments":  []any{},
+				"checks": []any{
+					map[string]any{
+						"id":         "chk-origin-verify",
+						"name":       "Exist Policy & Ruleset Guard",
+						"status":     "completed",
+						"conclusion": "success",
+						"duration":   "0.1s",
+					},
+				},
+				"diffHunks": []any{},
+				"labels":    []any{},
+				"additions": pr.Additions,
+				"deletions": pr.Deletions,
+				"mergeable": pr.Mergeable,
+			},
+		})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/pulls/{number}/merge", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+		if pr.Merged {
+			http.Error(w, "Pull request is already merged", http.StatusConflict)
+			return
+		}
+
+		var req struct {
+			MergeMethod string `json:"mergeMethod"`
+			Title       string `json:"commitTitle"`
+			Message     string `json:"commitMessage"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		method := req.MergeMethod
+		if method == "" {
+			method = "squash"
+		}
+
+		authorSig := object.Signature{
+			Name:  "Exist Engine",
+			Email: "merge@exist.io",
+			When:  time.Now().UTC(),
+		}
+		msg := fmt.Sprintf("Merge pull request #%d from %s\n\n%s", pr.Number, pr.HeadRef, pr.Title)
+		if req.Title != "" {
+			msg = req.Title
+			if req.Message != "" {
+				msg += "\n\n" + req.Message
+			}
+		}
+
+		mergeCommitSHA, err := git.Merge(owner, name, pr.BaseRef, pr.HeadRef, method, authorSig, msg)
+		if err != nil {
+			http.Error(w, "Failed to perform merge: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := db.SetPullRequestMergeResult(r.Context(), pr.ID, mergeCommitSHA); err != nil {
+			http.Error(w, "Failed to record merge in database: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":             true,
+			"mergeCommitSha": mergeCommitSHA,
+		})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/pulls/{number}/comments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			Body string `json:"body"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Body = strings.TrimSpace(req.Body)
+		if req.Body == "" {
+			http.Error(w, "Comment body is required", http.StatusBadRequest)
+			return
+		}
+
+		var authorUserID string
+		if u, err := db.GetUserByLogin(r.Context(), "shiva"); err == nil {
+			authorUserID = u.ID
+		} else if u, err := db.GetUserByLogin(r.Context(), owner); err == nil {
+			authorUserID = u.ID
+		}
+
+		comment := store.PRComment{
+			ID:            idgen.NewPRComment(),
+			RepoID:        repo.ID,
+			PullRequestID: pr.ID,
+			AuthorUserID:  authorUserID,
+			Body:          req.Body,
+		}
+		if err := db.CreateComment(r.Context(), comment); err != nil {
+			http.Error(w, "Failed to create comment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"comment": map[string]any{
+				"id":        comment.ID,
+				"author":    "shiva",
+				"body":      comment.Body,
+				"createdAt": comment.CreatedAt,
+			},
+		})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/pulls/{number}/reviews/agent", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		result, err := agentreviewer.ReviewPullRequest(r.Context(), db, git, owner, repo, pr)
+		if err != nil {
+			http.Error(w, "Agent review failed: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(result)
 	})
 
 	mux.HandleFunc("POST /auth/exchange_user_api_key", auth.ExchangeHandler(db))

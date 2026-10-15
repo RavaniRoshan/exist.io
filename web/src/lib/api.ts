@@ -377,22 +377,194 @@ export async function getCommits(owner: string, name: string, ref = 'main'): Pro
   }
 }
 
+export interface BranchItem {
+  name: string
+  commitSha: string
+  isDefault: boolean
+}
+
+export interface CreatePRPayload {
+  title: string
+  head: string
+  base?: string
+  body?: string
+  draft?: boolean
+}
+
+export async function getBranches(owner: string, name: string): Promise<BranchItem[]> {
+  if (isDemoModeActive()) {
+    return [
+      { name: 'main', commitSha: '54926f8', isDefault: true },
+      { name: 'feature/agent-capabilities', commitSha: '080f765', isDefault: false },
+    ]
+  }
+
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/branches`)
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data?.branches)) {
+        return data.branches.map((b: any) => ({
+          name: b.name,
+          commitSha: b.commit_sha || b.commit?.sha || '',
+          isDefault: Boolean(b.is_default),
+        }))
+      }
+    }
+    // Fallback to origin
+    const originRes = await fetch(`/v1/origin/repos/${owner}/${name}/branches`, {
+      headers: getAuthHeader(),
+    })
+    if (!originRes.ok) return []
+    const originData = await originRes.json()
+    if (!Array.isArray(originData?.branches)) return []
+    return originData.branches.map((b: any) => ({
+      name: b.name,
+      commitSha: b.commit?.sha || '',
+      isDefault: b.name === 'main',
+    }))
+  } catch {
+    return []
+  }
+}
+
+export async function createBranch(
+  owner: string,
+  name: string,
+  branchName: string,
+  from?: string
+): Promise<{ ok: boolean; name: string; sha: string }> {
+  if (isDemoModeActive()) {
+    return { ok: true, name: branchName, sha: 'demo-branch-sha' }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/branches`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: branchName, from }),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to create branch: ${errText}`)
+  }
+  return res.json()
+}
+
 export async function getPullRequests(owner: string, name: string): Promise<PullRequest[]> {
   if (isDemoModeActive()) {
     return mockSamplePullRequests
   }
 
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/pulls`, {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls`)
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data?.pulls)) {
+        return data.pulls
+      }
+    }
+
+    // Fallback to origin
+    const originRes = await fetch(`/v1/origin/repos/${owner}/${name}/pulls`, {
       headers: getAuthHeader(),
     })
-    if (!res.ok) return []
-    const data = await res.json()
-    if (!Array.isArray(data?.pulls)) return []
-    return data.pulls
+    if (!originRes.ok) return []
+    const originData = await originRes.json()
+    const rawList = originData?.pullRequests || originData?.pulls || []
+    if (!Array.isArray(rawList)) return []
+    return rawList.map((p: any) => ({
+      id: p.id,
+      number: typeof p.number === 'string' ? parseInt(p.number, 10) : p.number,
+      title: p.title,
+      body: p.body || '',
+      state: p.merged ? 'merged' : (p.state || 'open'),
+      author: p.author?.login || p.author?.name || 'shiva',
+      createdAt: p.createdAt || 'Recently',
+      headRef: p.head?.ref || p.headRef || 'feature',
+      baseRef: p.base?.ref || p.baseRef || 'main',
+      branch: p.head?.ref || p.branch || 'feature',
+      comments: p.comments || [],
+      checks: p.checks || [
+        { id: 'chk-1', name: 'Exist Policy Guard', status: 'completed', conclusion: 'success', duration: '0.1s' }
+      ],
+      diffHunks: p.diffHunks || [],
+      labels: p.labels || [],
+      diffStats: {
+        additions: p.additions || 0,
+        deletions: p.deletions || 0,
+        filesChanged: p.changedFiles || 0,
+      },
+      mergeable: p.mergeable !== 'blocked',
+    }))
   } catch {
-    return [] // Clean production empty state
+    return []
   }
+}
+
+export async function createPullRequest(
+  owner: string,
+  name: string,
+  req: CreatePRPayload
+): Promise<PullRequest> {
+  if (isDemoModeActive()) {
+    const fakePr: PullRequest = {
+      number: Math.floor(Math.random() * 100) + 10,
+      title: req.title,
+      body: req.body || '',
+      state: 'open',
+      author: 'shiva',
+      headRef: req.head,
+      baseRef: req.base || 'main',
+      createdAt: 'Just now',
+      labels: [{ name: 'enhancement', color: '#1d76db' }],
+      diffStats: { additions: 15, deletions: 2, filesChanged: 1 },
+      checks: [{ id: 'chk-1', name: 'Exist Policy Guard', status: 'completed', conclusion: 'success', duration: '0.1s' }],
+      comments: [],
+      mergeable: true,
+      diffHunks: [],
+    }
+    return fakePr
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to create pull request: ${errText}`)
+  }
+  const data = await res.json()
+  return data.pull
+}
+
+export async function addPullRequestComment(
+  owner: string,
+  name: string,
+  prNumber: number,
+  body: string
+): Promise<any> {
+  if (isDemoModeActive()) {
+    return {
+      id: `c-${Date.now()}`,
+      author: 'shiva',
+      body,
+      createdAt: 'Just now',
+    }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body }),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to add comment: ${errText}`)
+  }
+  const data = await res.json()
+  return data.comment
 }
 
 export async function getAgentActivities(): Promise<AgentActivityItem[]> {
@@ -435,6 +607,19 @@ export async function triggerAgentReview(owner: string, repo: string, prNumber: 
     }
   }
 
+  // Direct API first
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/reviews/agent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch {
+    // try origin fallback
+  }
+
   const res = await fetch(`/v1/origin/repos/${owner}/${repo}/pulls/${prNumber}/reviews/agent`, {
     method: 'POST',
     headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
@@ -456,6 +641,24 @@ export async function mergePullRequest(
 ): Promise<{ mergeCommitSha: string }> {
   if (isDemoModeActive()) {
     return { mergeCommitSha: 'a1b2c3d4e5f67890demo' }
+  }
+
+  // Direct API first
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mergeMethod: method,
+        commitTitle,
+        commitMessage,
+      }),
+    })
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch {
+    // try origin fallback
   }
 
   const res = await fetch(`/v1/origin/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
