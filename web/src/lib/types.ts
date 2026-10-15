@@ -337,4 +337,43 @@ export interface ClusterSystemInfo {
   engine: string
 }
 
+export interface DeployKeyItem {
+  id: string
+  repo_id: string
+  title: string
+  key: string
+  fingerprint: string
+  read_only: boolean
+  last_used_at?: string
+  created_at: string
+}
+
+export interface RepoWebhookItem {
+  id: string
+  repo_id: string
+  url: string
+  content_type: string
+  secret?: string
+  events: string
+  active: boolean
+  insecure_ssl: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface RepoWebhookDeliveryItem {
+  id: string
+  webhook_id: string
+  event: string
+  guid: string
+  request_headers: string
+  request_payload: string
+  response_status_code: number
+  response_headers: string
+  response_body: string
+  duration_ms: number
+  delivered: boolean
+  created_at: string
+}
+
 

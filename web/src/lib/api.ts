@@ -26,6 +26,9 @@ import type {
   ReleaseItem,
   RepositoryRecord,
   ClusterSystemInfo,
+  DeployKeyItem,
+  RepoWebhookItem,
+  RepoWebhookDeliveryItem,
 } from './types'
 
 import {
@@ -1769,6 +1772,224 @@ export async function removeCollaborator(
     const errText = await res.text()
     throw new Error(`Failed to remove collaborator: ${errText}`)
   }
+}
+
+// ==========================================
+// Deploy Keys API
+// ==========================================
+
+export async function getDeployKeys(owner: string, name: string): Promise<DeployKeyItem[]> {
+  if (isDemoModeActive()) {
+    return [
+      {
+        id: 'depk-demo-1',
+        repo_id: 'repo-demo',
+        title: 'Production CI Runner',
+        key: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG7n2X6B4m1j0k8c9p2r3s4t5u6v7w8x9y0z1a2b3c4d ci-runner@exist.io',
+        fingerprint: 'SHA256:7uK+N9xL2pQ1rT5wV8yZ4bA6cD8eF0gH2jK4mN6pQ8s',
+        read_only: true,
+        last_used_at: '2026-10-15T12:00:00Z',
+        created_at: '2026-10-01T00:00:00Z',
+      },
+    ]
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/keys`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch deploy keys')
+  }
+  return res.json()
+}
+
+export async function createDeployKey(
+  owner: string,
+  name: string,
+  payload: { title: string; key: string; read_only: boolean }
+): Promise<DeployKeyItem> {
+  if (isDemoModeActive()) {
+    return {
+      id: `depk-${Date.now()}`,
+      repo_id: 'repo-demo',
+      title: payload.title,
+      key: payload.key,
+      fingerprint: 'SHA256:demoFingerprint' + Math.random().toString(36).substring(7),
+      read_only: payload.read_only,
+      created_at: new Date().toISOString(),
+    }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/keys`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || 'Failed to create deploy key')
+  }
+  return res.json()
+}
+
+export async function deleteDeployKey(owner: string, name: string, id: string): Promise<void> {
+  if (isDemoModeActive()) {
+    return
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/keys/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || 'Failed to delete deploy key')
+  }
+}
+
+// ==========================================
+// Repository Webhooks API
+// ==========================================
+
+export async function getRepoWebhooks(owner: string, name: string): Promise<RepoWebhookItem[]> {
+  if (isDemoModeActive()) {
+    return [
+      {
+        id: 'rwhk-demo-1',
+        repo_id: 'repo-demo',
+        url: 'https://ci.acme.corp/webhook',
+        content_type: 'json',
+        events: '["push", "pull_request"]',
+        active: true,
+        insecure_ssl: false,
+        created_at: '2026-10-10T00:00:00Z',
+        updated_at: '2026-10-10T00:00:00Z',
+      },
+    ]
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/hooks`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch repository webhooks')
+  }
+  return res.json()
+}
+
+export async function createRepoWebhook(
+  owner: string,
+  name: string,
+  payload: {
+    url: string
+    content_type?: string
+    secret?: string
+    events?: string[]
+    active?: boolean
+    insecure_ssl?: boolean
+  }
+): Promise<RepoWebhookItem> {
+  if (isDemoModeActive()) {
+    return {
+      id: `rwhk-${Date.now()}`,
+      repo_id: 'repo-demo',
+      url: payload.url,
+      content_type: payload.content_type || 'json',
+      events: JSON.stringify(payload.events || ['push']),
+      active: payload.active ?? true,
+      insecure_ssl: payload.insecure_ssl ?? false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/hooks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || 'Failed to create webhook')
+  }
+  return res.json()
+}
+
+export async function deleteRepoWebhook(owner: string, name: string, id: string): Promise<void> {
+  if (isDemoModeActive()) {
+    return
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/hooks/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || 'Failed to delete webhook')
+  }
+}
+
+export async function testRepoWebhook(
+  owner: string,
+  name: string,
+  id: string
+): Promise<{ ok: boolean; status: string }> {
+  if (isDemoModeActive()) {
+    return { ok: true, status: 'dispatched' }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/hooks/${id}/tests`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    throw new Error('Failed to test webhook')
+  }
+  return res.json()
+}
+
+export async function getRepoWebhookDeliveries(
+  owner: string,
+  name: string,
+  id: string
+): Promise<RepoWebhookDeliveryItem[]> {
+  if (isDemoModeActive()) {
+    return [
+      {
+        id: 'del-demo-1',
+        webhook_id: id,
+        event: 'push',
+        guid: 'c5b8e912-4029-41e9-b570-3d84920b7ea1',
+        request_headers: '{"Content-Type": "application/json", "X-GitHub-Event": "push"}',
+        request_payload: '{"ref": "refs/heads/main", "commits": 1}',
+        response_status_code: 200,
+        response_headers: '{"Content-Type": "application/json"}',
+        response_body: '{"status": "ok"}',
+        duration_ms: 32,
+        delivered: true,
+        created_at: 'Just now',
+      },
+    ]
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/hooks/${id}/deliveries`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch webhook deliveries')
+  }
+  return res.json()
+}
+
+export async function redeliverRepoWebhook(
+  owner: string,
+  name: string,
+  id: string,
+  deliveryId: string
+): Promise<{ ok: boolean; redelivery_id: string }> {
+  if (isDemoModeActive()) {
+    return { ok: true, redelivery_id: 'redel-' + Date.now() }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/hooks/${id}/deliveries/${deliveryId}/redeliver`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    throw new Error('Failed to redeliver webhook')
+  }
+  return res.json()
 }
 
 // Export initial fallback values for components that need synchronous defaults

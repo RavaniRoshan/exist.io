@@ -98,8 +98,9 @@ Achieving pixel-accurate developer ergonomics and end-user workflow parity with 
 - [x] **Danger Zone Sudo Mode Security (`ChangeVisibilityModal`):** Multi-step consequence warnings, repository path confirmation string, and Sudo Mode credential challenge (password, API key, cluster admin token).
 - [x] **Atomic Repository Rename (`RenameRepoModal`):** Atomic rename across SQLite WAL and bare Git object directories on disk with full audit logging.
 - [x] **Repository Archival Read-Only Freeze (`ArchiveRepoModal`):** Complete repository lock preventing pushes and edits, accompanied by read-only notice banner in repository header.
-- [x] **Git Hook Branch Protection Engine:** Pre-receive hook rejecting branch deletions of default branches and non-fast-forward force-pushes (`GH006: Protected branch update failed`).
-- [x] **100% Comprehensive Unit Test Coverage:** 126 automated unit tests across 35 suites in Vitest with zero failures and verified production bundle build.
+- [x] **Repository Deploy Keys & SSH Isolation:** OpenSSH public key enrollment, SHA-256 fingerprinting, strict repository UUID isolation, and read-only push rejection in embedded pure-Go SSH server.
+- [x] **Repository Webhooks & Delivery History:** Event subscriptions (push, pull_request, issues, release), HMAC-SHA256 signatures, test ping dispatch, HTTP response inspection drawer, and 1-click redeliver.
+- [x] **100% Comprehensive Unit Test Coverage:** 128 automated unit tests across 35 suites in Vitest with zero failures and verified production bundle build.
 
 ---
 

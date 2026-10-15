@@ -50,6 +50,70 @@ vi.mock('@/lib/api', async () => {
     }),
     removeCollaborator: vi.fn().mockResolvedValue(undefined),
     deleteRepository: vi.fn().mockResolvedValue(undefined),
+    getDeployKeys: vi.fn().mockResolvedValue([
+      {
+        id: 'depk-1',
+        repo_id: 'repo-1',
+        title: 'CI Runner',
+        key: 'ssh-ed25519 AAAAC3N... runner@ci',
+        fingerprint: 'SHA256:abcd1234efgh5678',
+        read_only: true,
+        created_at: '2026-10-10T00:00:00Z',
+      },
+    ]),
+    createDeployKey: vi.fn().mockImplementation(async (owner, repo, payload) => ({
+      id: 'depk-new',
+      repo_id: 'repo-1',
+      title: payload.title,
+      key: payload.key,
+      fingerprint: 'SHA256:newfingerprint123',
+      read_only: payload.read_only,
+      created_at: new Date().toISOString(),
+    })),
+    deleteDeployKey: vi.fn().mockResolvedValue(undefined),
+    getRepoWebhooks: vi.fn().mockResolvedValue([
+      {
+        id: 'rwhk-1',
+        repo_id: 'repo-1',
+        url: 'https://ci.example.com/webhook',
+        content_type: 'json',
+        events: '["push"]',
+        active: true,
+        insecure_ssl: false,
+        created_at: '2026-10-10T00:00:00Z',
+        updated_at: '2026-10-10T00:00:00Z',
+      },
+    ]),
+    createRepoWebhook: vi.fn().mockImplementation(async (owner, repo, payload) => ({
+      id: 'rwhk-new',
+      repo_id: 'repo-1',
+      url: payload.url,
+      content_type: payload.content_type || 'json',
+      events: JSON.stringify(payload.events || ['push']),
+      active: true,
+      insecure_ssl: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })),
+    deleteRepoWebhook: vi.fn().mockResolvedValue(undefined),
+    testRepoWebhook: vi.fn().mockResolvedValue({ ok: true, status: 'dispatched' }),
+    getRepoWebhookDeliveries: vi.fn().mockResolvedValue([
+      {
+        id: 'del-1',
+        webhook_id: 'rwhk-1',
+        event: 'push',
+        guid: 'test-guid',
+        request_headers: '{}',
+        request_payload: '{}',
+        response_status_code: 200,
+        response_headers: '{}',
+        response_body: '{}',
+        duration_ms: 25,
+        delivered: true,
+        created_at: 'Just now',
+      },
+    ]),
+    redeliverRepoWebhook: vi.fn().mockResolvedValue({ ok: true, redelivery_id: 'del-2' }),
   }
 })
 
@@ -119,7 +183,6 @@ describe('RepoSettingsView', () => {
     fireEvent.change(input, { target: { value: 'new-dev' } })
 
     const allAddButtons = screen.getAllByRole('button', { name: /add collaborator/i })
-    // The modal submit button is the second one
     fireEvent.click(allAddButtons[1])
 
     await waitFor(() => {
@@ -127,10 +190,48 @@ describe('RepoSettingsView', () => {
     })
   })
 
+  it('switches to Deploy Keys section, displays active keys, and opens Add Deploy Key modal', async () => {
+    render(<RepoSettingsView repo={mockRepo} />)
+
+    const deployKeysTab = screen.getByRole('button', { name: /deploy keys/i })
+    fireEvent.click(deployKeysTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('CI Runner')).toBeInTheDocument()
+      expect(screen.getByText('SHA256:abcd1234efgh5678')).toBeInTheDocument()
+      expect(screen.getByText('Read-only')).toBeInTheDocument()
+    })
+
+    const addBtn = screen.getByTestId('add-deploy-key-btn')
+    fireEvent.click(addBtn)
+
+    expect(screen.getByTestId('deploy-key-title-input')).toBeInTheDocument()
+    expect(screen.getByTestId('deploy-key-content-input')).toBeInTheDocument()
+    expect(screen.getByTestId('deploy-key-submit-btn')).toBeInTheDocument()
+  })
+
+  it('switches to Webhooks section, displays registered webhooks, and dispatches ping test', async () => {
+    render(<RepoSettingsView repo={mockRepo} />)
+
+    const webhooksTab = screen.getByRole('button', { name: /webhooks/i })
+    fireEvent.click(webhooksTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('https://ci.example.com/webhook')).toBeInTheDocument()
+      expect(screen.getByText('Ping')).toBeInTheDocument()
+    })
+
+    const pingBtn = screen.getByText('Ping')
+    fireEvent.click(pingBtn)
+
+    await waitFor(() => {
+      expect(api.testRepoWebhook).toHaveBeenCalledWith('shiva', 'rocket', 'rwhk-1')
+    })
+  })
+
   it('switches to Danger Zone section and opens repository deletion modal', async () => {
     render(<RepoSettingsView repo={mockRepo} />)
 
-    // Switch to danger zone
     const dangerTab = screen.getByRole('button', { name: /danger zone/i })
     fireEvent.click(dangerTab)
 
@@ -138,7 +239,6 @@ describe('RepoSettingsView', () => {
     const deleteRepoBtn = screen.getByRole('button', { name: /delete this repository/i })
     fireEvent.click(deleteRepoBtn)
 
-    // Confirmation modal should be open
     expect(screen.getByText('Delete repository confirmation')).toBeInTheDocument()
     expect(screen.getByText('This action cannot be undone.')).toBeInTheDocument()
 

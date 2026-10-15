@@ -73,6 +73,19 @@ func New(addr string, db *store.DB, git *gitstore.Store, hostKeyPath string) (*S
 				}, nil
 			}
 
+			// 1b. Look up deploy key by public key fingerprint
+			deployKey, depRepo, err := s.store.GetDeployKeyByFingerprint(ctx, fingerprint)
+			if err == nil {
+				return &ssh.Permissions{
+					Extensions: map[string]string{
+						"deploy_key_id": deployKey.ID,
+						"repo_id":       depRepo.ID,
+						"read_only":     fmt.Sprintf("%t", deployKey.ReadOnly),
+						"fingerprint":   fingerprint,
+					},
+				}, nil
+			}
+
 			// 2. Check trusted SSH Certificate Authorities
 			// If key is an OpenSSH certificate, check against enrolled CAs
 			cert, ok := key.(*ssh.Certificate)
@@ -246,19 +259,42 @@ func (s *Server) executeGitCommand(conn *ssh.ServerConn, channel ssh.Channel, ra
 	}
 
 	userID := conn.Permissions.Extensions["user_id"]
-	allowed, err := s.store.CheckRepoAccess(ctx, repo, userID, isReceive)
-	if err != nil || !allowed {
-		fmt.Fprintf(channel.Stderr(), "exist.io: access denied to %s/%s\n", ownerSlug, repoName)
-		sendExitStatus(channel, 1)
-		return
+	deployKeyID := conn.Permissions.Extensions["deploy_key_id"]
+	if deployKeyID != "" {
+		userID = "deploy_key:" + deployKeyID
+		boundRepoID := conn.Permissions.Extensions["repo_id"]
+		if boundRepoID != repo.ID {
+			fmt.Fprintf(channel.Stderr(), "exist.io: deploy key is not authorized for repository %s/%s\n", ownerSlug, repoName)
+			sendExitStatus(channel, 1)
+			return
+		}
+		if isReceive && conn.Permissions.Extensions["read_only"] == "true" {
+			fmt.Fprintf(channel.Stderr(), "exist.io: deploy key does not have write access to repository %s/%s\n", ownerSlug, repoName)
+			sendExitStatus(channel, 1)
+			return
+		}
+		_ = s.store.TouchDeployKey(ctx, deployKeyID)
+	} else {
+		allowed, err := s.store.CheckRepoAccess(ctx, repo, userID, isReceive)
+		if err != nil || !allowed {
+			fmt.Fprintf(channel.Stderr(), "exist.io: access denied to %s/%s\n", ownerSlug, repoName)
+			sendExitStatus(channel, 1)
+			return
+		}
 	}
 
 	targetDir := filepath.Join(s.git.Root(), ownerSlug, repoName+".git")
 	if isReceive {
 		_ = gitstore.EnsureHooks(targetDir)
+		actor := conn.Permissions.Extensions["user_email"]
+		actorType := "user"
+		if deployKeyID != "" {
+			actor = "deploy_key:" + deployKeyID
+			actorType = "deploy_key"
+		}
 		_ = audit.Log(audit.Event{
-			Actor:     conn.Permissions.Extensions["user_email"],
-			ActorType: "user",
+			Actor:     actor,
+			ActorType: actorType,
 			Action:    "git.ssh_push",
 			Resource:  ownerSlug + "/" + repoName,
 			ClientIP:  conn.RemoteAddr().String(),
