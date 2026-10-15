@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
@@ -14,28 +15,27 @@ import (
 	"github.com/go-git/go-git/v6/plumbing/object"
 )
 
-// Tarball produces a gzip-compressed tar of the tree at ref. Equivalent to
-// GitHub's tarball endpoint.
-func (s *Store) Tarball(namespaceSlug, repoName, ref string) ([]byte, error) {
+// StreamTarball streams a gzip-compressed tar of the tree at ref directly to w.
+// This prevents in-memory heap buffering of large repository snapshots.
+func (s *Store) StreamTarball(w io.Writer, namespaceSlug, repoName, ref string) error {
 	repo, err := s.Open(namespaceSlug, repoName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	h, err := resolveRefInRepo(repo, ref)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	commit, err := repo.CommitObject(h)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	tree, err := commit.Tree()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
+	gz := gzip.NewWriter(w)
 	tw := tar.NewWriter(gz)
 
 	err = walkTreeFiles(tree, "", func(path string, mode filemode.FileMode, data []byte) error {
@@ -48,12 +48,22 @@ func (s *Store) Tarball(namespaceSlug, repoName, ref string) ([]byte, error) {
 		return err
 	})
 	if err != nil {
-		return nil, err
+		_ = tw.Close()
+		_ = gz.Close()
+		return err
 	}
 	if err := tw.Close(); err != nil {
-		return nil, err
+		_ = gz.Close()
+		return err
 	}
-	if err := gz.Close(); err != nil {
+	return gz.Close()
+}
+
+// Tarball produces a gzip-compressed tar of the tree at ref. Equivalent to
+// GitHub's tarball endpoint.
+func (s *Store) Tarball(namespaceSlug, repoName, ref string) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := s.StreamTarball(&buf, namespaceSlug, repoName, ref); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

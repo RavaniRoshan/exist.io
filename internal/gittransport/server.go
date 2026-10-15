@@ -35,6 +35,7 @@ type Server struct {
 	git         *gitstore.Store
 	lfs         *gitlfs.Server
 	backendPath string
+	sem         chan struct{}
 }
 
 // NewServer returns an initialized Git Smart HTTP transport Server.
@@ -48,6 +49,7 @@ func NewServer(store *store.DB, git *gitstore.Store, lfs ...*gitlfs.Server) *Ser
 		git:         git,
 		lfs:         lfsServer,
 		backendPath: findGitBackend(),
+		sem:         make(chan struct{}, 64),
 	}
 }
 
@@ -261,6 +263,14 @@ func (s *Server) checkCredential(ctx context.Context, cred string) (string, erro
 }
 
 func (s *Server) execBackend(w http.ResponseWriter, r *http.Request, ownerSlug, repoName, subPath, userID string) {
+	select {
+	case s.sem <- struct{}{}:
+		defer func() { <-s.sem }()
+	default:
+		http.Error(w, "server busy: git concurrency limit reached", http.StatusServiceUnavailable)
+		return
+	}
+
 	pathInfo := "/" + ownerSlug + "/" + repoName + ".git" + subPath
 
 	cmd := exec.CommandContext(r.Context(), s.backendPath)

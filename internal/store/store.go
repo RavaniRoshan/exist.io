@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver, registers name "sqlite"
 )
@@ -31,9 +32,15 @@ func Open(path string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("store: open %s: %w", path, err)
 	}
-	// A single writer keeps SQLite happy under WAL without a connection pool
-	// fighting over the write lock.
-	sqlDB.SetMaxOpenConns(1)
+	// Configure connection pooling: in-memory requires 1 connection to preserve state,
+	// while on-disk WAL mode supports concurrent readers with busy_timeout queuing.
+	if path == ":memory:" {
+		sqlDB.SetMaxOpenConns(1)
+	} else {
+		maxConns := max(4, runtime.NumCPU()*2)
+		sqlDB.SetMaxOpenConns(maxConns)
+		sqlDB.SetMaxIdleConns(max(2, runtime.NumCPU()))
+	}
 
 	if _, err := sqlDB.Exec(`PRAGMA foreign_keys = ON`); err != nil {
 		sqlDB.Close()

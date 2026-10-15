@@ -105,11 +105,25 @@ func (h *scimHandler) authenticate(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Also permit admin API keys
+		// Also permit active admin API keys
 		key, err := h.db.GetAPIKeyByHash(r.Context(), hash)
 		if err == nil && key.ID != "" {
-			next(w, r)
-			return
+			if key.RevokedAt.Valid && key.RevokedAt.String != "" {
+				scimError(w, http.StatusUnauthorized, "SCIM API key has been revoked")
+				return
+			}
+			if key.ExpiresAt.Valid && key.ExpiresAt.String != "" {
+				exp, err := time.Parse(time.RFC3339, key.ExpiresAt.String)
+				if err == nil && time.Now().After(exp) {
+					scimError(w, http.StatusUnauthorized, "SCIM API key has expired")
+					return
+				}
+			}
+			user, err := h.db.GetUser(r.Context(), key.UserID)
+			if err == nil && user.Role == "admin" && user.Status != "suspended" {
+				next(w, r)
+				return
+			}
 		}
 
 		scimError(w, http.StatusUnauthorized, "Invalid SCIM bearer token")

@@ -11,6 +11,7 @@ import (
 	"exist.io/internal/audit"
 	"exist.io/internal/store"
 	"exist.io/pkg/idgen"
+	"exist.io/pkg/slug"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -200,6 +201,11 @@ func RegisterHandler(db *store.DB) http.HandlerFunc {
 
 		if req.Email == "" || req.Login == "" || req.Password == "" {
 			http.Error(w, "Email, login username, and password are required", http.StatusBadRequest)
+			return
+		}
+
+		if err := slug.Validate(req.Login); err != nil {
+			http.Error(w, "Invalid username: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -396,6 +402,17 @@ func AdminListUsersHandler(db *store.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Administrator authentication required", http.StatusUnauthorized)
+			return
+		}
+		if caller.Role != "admin" {
+			http.Error(w, "Forbidden: Administrator role required", http.StatusForbidden)
+			return
+		}
+
 		users, err := db.ListUsers(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to list users", http.StatusInternalServerError)
@@ -417,6 +434,16 @@ func AdminCreateUserHandler(db *store.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Administrator authentication required", http.StatusUnauthorized)
+			return
+		}
+		if caller.Role != "admin" {
+			http.Error(w, "Forbidden: Administrator role required", http.StatusForbidden)
+			return
+		}
+
 		var req struct {
 			Email    string `json:"email"`
 			Login    string `json:"login"`
@@ -431,6 +458,11 @@ func AdminCreateUserHandler(db *store.DB) http.HandlerFunc {
 
 		if req.Email == "" || req.Login == "" || req.Password == "" {
 			http.Error(w, "Email, login, and password are required", http.StatusBadRequest)
+			return
+		}
+
+		if err := slug.Validate(req.Login); err != nil {
+			http.Error(w, "Invalid username: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -461,7 +493,7 @@ func AdminCreateUserHandler(db *store.DB) http.HandlerFunc {
 		}
 
 		_ = audit.Log(audit.Event{
-			Actor:     "admin",
+			Actor:     caller.Email,
 			ActorType: "user",
 			Action:    "admin.user_created",
 			Resource:  userID,
@@ -497,13 +529,13 @@ func UserCreateTokenHandler(db *store.DB) http.HandlerFunc {
 			req.Scopes = "*"
 		}
 
-		// Identify acting user from session or context
-		actingUser := "user_root"
-		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
-			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
-				actingUser = sess.UserID
-			}
+		// Authenticate acting user from session or context
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
 		}
+		actingUser := caller.ID
 
 		rawKey, prefix, hash, err := GenerateAPIKey()
 		if err != nil {
@@ -572,12 +604,12 @@ func UserAddSSHKeyHandler(db *store.DB) http.HandlerFunc {
 		}
 
 		fingerprint := ssh.FingerprintSHA256(parsedKey)
-		actingUser := "user_root"
-		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
-			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
-				actingUser = sess.UserID
-			}
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
 		}
+		actingUser := caller.ID
 
 		sshKey := store.SSHKey{
 			ID:          idgen.New("sshkey"),
@@ -619,12 +651,12 @@ func UserListSSHKeysHandler(db *store.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		actingUser := "user_root"
-		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
-			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
-				actingUser = sess.UserID
-			}
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
 		}
+		actingUser := caller.ID
 
 		keys, err := db.ListUserSSHKeys(r.Context(), actingUser)
 		if err != nil {
@@ -644,12 +676,12 @@ func UserListTokensHandler(db *store.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		actingUser := "user_root"
-		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
-			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
-				actingUser = sess.UserID
-			}
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
 		}
+		actingUser := caller.ID
 
 		keys, err := db.ListAPIKeysByUserID(r.Context(), actingUser)
 		if err != nil {
@@ -701,12 +733,40 @@ func UserDeleteTokenHandler(db *store.DB) http.HandlerFunc {
 			return
 		}
 
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
+		}
+
 		keyID := r.PathValue("id")
 		if keyID == "" {
 			keyID = strings.TrimPrefix(r.URL.Path, "/api/v1/user/tokens/")
 		}
 		if keyID == "" {
 			http.Error(w, "token id is required", http.StatusBadRequest)
+			return
+		}
+
+		// Ensure the token belongs to the caller or caller is admin
+		keys, err := db.ListAPIKeysByUserID(r.Context(), caller.ID)
+		if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+		found := false
+		if caller.Role == "admin" {
+			found = true
+		} else {
+			for _, k := range keys {
+				if k.ID == keyID {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			http.Error(w, "Token not found or not owned by user", http.StatusNotFound)
 			return
 		}
 
@@ -735,12 +795,12 @@ func UserDeleteSSHKeyHandler(db *store.DB) http.HandlerFunc {
 			return
 		}
 
-		actingUser := "user_root"
-		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
-			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
-				actingUser = sess.UserID
-			}
+		caller, err := ResolveUser(r.Context(), db, r)
+		if err != nil {
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
 		}
+		actingUser := caller.ID
 
 		keyID := r.PathValue("id")
 		if keyID == "" {

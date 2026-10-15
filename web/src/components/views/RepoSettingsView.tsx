@@ -30,6 +30,7 @@ import { ChangeVisibilityModal } from '@/components/modals/ChangeVisibilityModal
 import { ArchiveRepoModal } from '@/components/modals/ArchiveRepoModal'
 import { RenameRepoModal } from '@/components/modals/RenameRepoModal'
 import { TransferRepoModal } from '@/components/modals/TransferRepoModal'
+import { DeleteRepoModal } from '@/components/modals/DeleteRepoModal'
 import {
   type RepoInfo,
   type BranchItem,
@@ -42,7 +43,6 @@ import {
   getCollaborators,
   addCollaborator,
   removeCollaborator,
-  deleteRepository,
   defaultRepo,
   getDeployKeys,
   createDeployKey,
@@ -127,9 +127,6 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
   const [renameModalOpen, setRenameModalOpen] = useState(false)
   const [transferModalOpen, setTransferModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [confirmDeleteInput, setConfirmDeleteInput] = useState('')
-  const [deletingRepo, setDeletingRepo] = useState(false)
-  const [dangerError, setDangerError] = useState<string | null>(null)
 
   useEffect(() => {
     setIsPrivate(Boolean(repo.isPrivate))
@@ -370,27 +367,7 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
     }
   }
 
-  const handleDeleteRepo = async () => {
-    const requiredConfirmation = `${owner}/${repoName}`
-    if (confirmDeleteInput.trim() !== requiredConfirmation) {
-      setDangerError(`Confirmation string does not match "${requiredConfirmation}"`)
-      return
-    }
 
-    setDeletingRepo(true)
-    setDangerError(null)
-    try {
-      await deleteRepository(owner, repoName)
-      setDeleteModalOpen(false)
-      if (onRepoDeleted) {
-        onRepoDeleted()
-      }
-    } catch (err: any) {
-      setDangerError(err.message || 'Failed to delete repository')
-    } finally {
-      setDeletingRepo(false)
-    }
-  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
@@ -1004,13 +981,6 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
               <p className="text-xs text-muted-foreground">Irreversible actions that affect repository visibility or permanently destroy data.</p>
             </div>
 
-            {dangerError && (
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{dangerError}</span>
-              </div>
-            )}
-
             <div className="border border-destructive/40 rounded-md divide-y divide-destructive/30 overflow-hidden bg-card">
               {/* Change Visibility Row */}
               <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1095,11 +1065,7 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
                   variant="outline"
                   size="sm"
                   data-testid="repo-delete-btn"
-                  onClick={() => {
-                    setConfirmDeleteInput('')
-                    setDangerError(null)
-                    setDeleteModalOpen(true)
-                  }}
+                  onClick={() => setDeleteModalOpen(true)}
                   className="shrink-0 text-xs text-destructive border-destructive/40 hover:bg-destructive hover:text-destructive-foreground transition-colors"
                 >
                   Delete this repository
@@ -1162,52 +1128,18 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
       </Dialog>
 
       {/* Delete Repository Confirmation Dialog */}
-      <Dialog
+      <DeleteRepoModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        title="Delete repository confirmation"
-      >
-        <div className="space-y-4 pt-1">
-          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive space-y-1">
-            <p className="font-semibold flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>This action cannot be undone.</span>
-            </p>
-            <p>
-              This will permanently delete the <strong>{owner}/{repoName}</strong> repository, Git bare directories on disk, all commit histories, issues, and branches.
-            </p>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
-              To confirm deletion, please type <strong className="text-foreground font-mono">{owner}/{repoName}</strong>:
-            </label>
-            <input
-              type="text"
-              value={confirmDeleteInput}
-              onChange={(e) => setConfirmDeleteInput(e.target.value)}
-              placeholder={`${owner}/${repoName}`}
-              className="w-full h-8 px-3 text-xs bg-input border border-border rounded-md text-foreground font-mono outline-none focus:border-destructive focus:ring-1 focus:ring-destructive"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDeleteRepo}
-              disabled={deletingRepo || confirmDeleteInput.trim() !== `${owner}/${repoName}`}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent text-xs"
-            >
-              {deletingRepo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'I understand, delete this repository'}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        owner={owner}
+        repoName={repoName}
+        onSuccess={() => {
+          setDeleteModalOpen(false)
+          if (onRepoDeleted) {
+            onRepoDeleted()
+          }
+        }}
+      />
 
       {/* Change Visibility Modal */}
       <ChangeVisibilityModal

@@ -260,19 +260,32 @@ export async function createRepository(params: {
   }
 }
 
-export async function deleteRepository(owner: string, name: string): Promise<boolean> {
+export async function deleteRepository(
+  owner: string,
+  name: string,
+  confirmName?: string,
+  sudoSecret?: string
+): Promise<boolean> {
   if (isDemoModeActive()) {
     return true
   }
-  try {
-    const res = await fetch(`/api/v1/repos/${owner}/${name}`, {
-      method: 'DELETE',
-      headers: getAuthHeader(),
-    })
-    return res.ok
-  } catch {
-    return false
+  const payload: Record<string, string> = {}
+  if (confirmName) payload.confirm_name = confirmName
+  if (sudoSecret) payload.sudo_secret = sudoSecret
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined,
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Failed to delete repository (${res.status})`)
   }
+  return true
 }
 
 export async function commitFile(params: {

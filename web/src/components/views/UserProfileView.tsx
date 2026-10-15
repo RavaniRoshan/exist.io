@@ -28,6 +28,7 @@ import { Box, BoxHeader, BoxTitle, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog'
 import { UnderlineNav, type NavTabItem } from '@/components/ui/UnderlineNav'
 import { CreateRepoModal } from '@/components/modals/CreateRepoModal'
+import { DeleteRepoModal } from '@/components/modals/DeleteRepoModal'
 import {
   fetchUserSSHKeys,
   addUserSSHKey,
@@ -38,7 +39,6 @@ import {
   checkActiveSession,
   getRepositories,
   getCommits,
-  deleteRepository,
   isDemoModeActive,
   type UserProfile,
   type UserSSHKey,
@@ -163,6 +163,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
   const [repoTypeFilter, setRepoTypeFilter] = useState<'all' | 'public' | 'private'>('all')
   const [userRepos, setUserRepos] = useState<PinnedRepo[]>(() => (isDemoModeActive() ? pinnedReposData : []))
   const [isCreateRepoModalOpen, setIsCreateRepoModalOpen] = useState(false)
+  const [deleteRepoTarget, setDeleteRepoTarget] = useState<{ owner: string; name: string } | null>(null)
   const [liveCommitCount, setLiveCommitCount] = useState(0)
 
   // Load initial session, keys, tokens, and live repos
@@ -210,15 +211,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
     }
   }
 
-  const handleDeleteRepo = async (e: React.MouseEvent, repoOwner: string, repoName: string) => {
+  const handleDeleteRepo = (e: React.MouseEvent, repoOwner: string, repoName: string) => {
     e.stopPropagation()
-    if (!window.confirm(`Are you sure you want to delete "${repoOwner}/${repoName}"? This action cannot be undone.`)) {
-      return
-    }
-    const ok = await deleteRepository(repoOwner, repoName)
-    if (ok) {
-      loadRepos()
-    }
+    setDeleteRepoTarget({ owner: repoOwner, name: repoName })
   }
 
   // Contribution Calendar Data Generator (52 weeks x 7 days)
@@ -1143,6 +1138,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
             ...prev,
           ])
           onSelectRepo?.(newRepo.name)
+        }}
+      />
+
+      {/* Delete Repo Modal */}
+      <DeleteRepoModal
+        isOpen={deleteRepoTarget !== null}
+        onClose={() => setDeleteRepoTarget(null)}
+        owner={deleteRepoTarget?.owner || ''}
+        repoName={deleteRepoTarget?.name || ''}
+        onSuccess={() => {
+          setDeleteRepoTarget(null)
+          loadRepos()
         }}
       />
     </div>

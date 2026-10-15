@@ -302,15 +302,10 @@ func (s *Server) getTarball(w http.ResponseWriter, r *http.Request) {
 	if ref == "" {
 		ref = "HEAD"
 	}
-	data, err := s.git.Tarball(owner, name, ref)
-	if err != nil {
-		internalError(w, "tarball: "+err.Error())
-		return
-	}
 	w.Header().Set("Content-Type", "application/gzip")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+name+".tar.gz\"")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
+	_ = s.git.StreamTarball(w, owner, name, ref)
 }
 
 func (s *Server) grepContents(w http.ResponseWriter, r *http.Request) {

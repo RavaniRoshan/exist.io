@@ -35,6 +35,7 @@ type Server struct {
 	sshConfig   *ssh.ServerConfig
 	quit        chan struct{}
 	wg          sync.WaitGroup
+	sem         chan struct{}
 }
 
 // New constructs an embedded SSH server.
@@ -45,6 +46,7 @@ func New(addr string, db *store.DB, git *gitstore.Store, hostKeyPath string) (*S
 		git:         git,
 		hostKeyPath: hostKeyPath,
 		quit:        make(chan struct{}),
+		sem:         make(chan struct{}, 64),
 	}
 
 	signer, err := s.getOrCreateHostKey()
@@ -310,6 +312,15 @@ func (s *Server) executeGitCommand(conn *ssh.ServerConn, channel ssh.Channel, ra
 	}
 
 	metrics.DefaultRegistry.IncGitTransfers()
+
+	select {
+	case s.sem <- struct{}{}:
+		defer func() { <-s.sem }()
+	default:
+		fmt.Fprintf(channel.Stderr(), "exist.io: server busy: git concurrency limit reached\n")
+		sendExitStatus(channel, 1)
+		return
+	}
 
 	cmd := exec.Command(subCmd, targetDir)
 	cmd.Dir = targetDir

@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"exist.io/internal/audit"
 	"exist.io/internal/metrics"
 )
+
+var revRegex = regexp.MustCompile(`^[0-9a-fA-F]{40,64}$`)
 
 // PreReceiveHook processes standard Git pre-receive input lines:
 // <old-rev> <new-rev> <ref-name>
@@ -29,6 +32,11 @@ func PreReceiveHook(r io.Reader, stderr io.Writer) error {
 		}
 		oldRev, newRev, refName := parts[0], parts[1], parts[2]
 
+		if !revRegex.MatchString(oldRev) || !revRegex.MatchString(newRev) {
+			fmt.Fprintf(stderr, "remote: error: Invalid git revision format\n")
+			return fmt.Errorf("invalid git revision format: %s..%s", oldRev, newRev)
+		}
+
 		// Ref deletion: all zeros
 		if strings.Trim(newRev, "0") == "" {
 			if refName == "refs/heads/main" || refName == "refs/heads/master" {
@@ -41,7 +49,7 @@ func PreReceiveHook(r io.Reader, stderr io.Writer) error {
 
 		// Force-push detection (non-fast-forward) on protected default branches
 		if strings.Trim(oldRev, "0") != "" && (refName == "refs/heads/main" || refName == "refs/heads/master") {
-			ancestorCheck := exec.Command("git", "merge-base", "--is-ancestor", oldRev, newRev)
+			ancestorCheck := exec.Command("git", "merge-base", "--is-ancestor", "--", oldRev, newRev)
 			if err := ancestorCheck.Run(); err != nil {
 				fmt.Fprintf(stderr, "remote: error: GH006: Protected branch update failed for %s\n", refName)
 				fmt.Fprintf(stderr, "remote: error: Force-push (non-fast-forward update) to protected branch is not permitted\n")
@@ -52,9 +60,9 @@ func PreReceiveHook(r io.Reader, stderr io.Writer) error {
 		var cmd *exec.Cmd
 		if strings.Trim(oldRev, "0") == "" {
 			// New branch/ref: diff against Git's canonical empty tree hash
-			cmd = exec.Command("git", "diff", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", newRev)
+			cmd = exec.Command("git", "diff", "--", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", newRev)
 		} else {
-			cmd = exec.Command("git", "diff", oldRev, newRev)
+			cmd = exec.Command("git", "diff", "--", oldRev, newRev)
 		}
 
 		diffOut, err := cmd.Output()

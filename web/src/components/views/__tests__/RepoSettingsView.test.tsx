@@ -242,8 +242,14 @@ describe('RepoSettingsView', () => {
     expect(screen.getByText('Delete repository confirmation')).toBeInTheDocument()
     expect(screen.getByText('This action cannot be undone.')).toBeInTheDocument()
 
+    const ackCheckbox = screen.getByTestId('delete-acknowledge-checkbox')
+    fireEvent.click(ackCheckbox)
+
     const confirmInput = screen.getByPlaceholderText('shiva/rocket')
     fireEvent.change(confirmInput, { target: { value: 'shiva/rocket' } })
+
+    const sudoInput = screen.getByTestId('delete-sudo-secret-input')
+    fireEvent.change(sudoInput, { target: { value: 'password123' } })
 
     const confirmDeleteBtn = screen.getByRole('button', { name: /i understand, delete this repository/i })
     expect(confirmDeleteBtn).not.toBeDisabled()

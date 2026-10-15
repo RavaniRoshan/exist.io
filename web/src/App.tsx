@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import {
   Activity,
   Server,
   ShieldAlert,
   KeyRound,
   Users,
+  Loader2,
 } from 'lucide-react'
 import { Header } from '@/components/views/Header'
 import { RepoOverview } from '@/components/views/RepoOverview'
@@ -13,19 +14,40 @@ import { CommitsView } from '@/components/views/CommitsView'
 import { AgentConsoleView } from '@/components/views/AgentConsoleView'
 import { RulesetsView } from '@/components/views/RulesetsView'
 import { WebhooksView } from '@/components/views/WebhooksView'
-import { UserProfileView } from '@/components/views/UserProfileView'
 import { GlobalHomeView } from '@/components/views/GlobalHomeView'
 import { IssuesView } from '@/components/views/IssuesView'
 import { ReleasesView } from '@/components/views/ReleasesView'
 import { ProductTour } from '@/components/views/ProductTour'
 import { UserManualModal } from '@/components/views/UserManualModal'
-import { ClusterHealth } from '@/components/views/admin/ClusterHealth'
-import { AuditLogs } from '@/components/views/admin/AuditLogs'
-import { SsoConfig } from '@/components/views/admin/SsoConfig'
-import { EnterpriseUsers } from '@/components/views/admin/EnterpriseUsers'
-import { RepoSettingsView } from '@/components/views/RepoSettingsView'
 import { defaultRepo, getRepoInfo, getRepositories, isDemoModeActive } from '@/lib/api'
 import { cn } from '@/lib/utils'
+
+// Lazy-loaded views for bundle optimization & code splitting
+const RepoSettingsView = lazy(() =>
+  import('@/components/views/RepoSettingsView').then((m) => ({ default: m.RepoSettingsView }))
+)
+const UserProfileView = lazy(() =>
+  import('@/components/views/UserProfileView').then((m) => ({ default: m.UserProfileView }))
+)
+const ClusterHealth = lazy(() =>
+  import('@/components/views/admin/ClusterHealth').then((m) => ({ default: m.ClusterHealth }))
+)
+const AuditLogs = lazy(() =>
+  import('@/components/views/admin/AuditLogs').then((m) => ({ default: m.AuditLogs }))
+)
+const SsoConfig = lazy(() =>
+  import('@/components/views/admin/SsoConfig').then((m) => ({ default: m.SsoConfig }))
+)
+const EnterpriseUsers = lazy(() =>
+  import('@/components/views/admin/EnterpriseUsers').then((m) => ({ default: m.EnterpriseUsers }))
+)
+
+const ViewFallback = () => (
+  <div className="py-16 text-center text-xs text-muted-foreground">
+    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
+    <span>Loading view...</span>
+  </div>
+)
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin' | 'settings'>('code')
@@ -117,9 +139,11 @@ export default function App() {
 
         {/* 0.1 User Profile & Keys Management */}
         {activeTab === 'profile' && (
-          <UserProfileView
-            onSelectRepo={(repoSlug) => handleSelectRepo(repoSlug)}
-          />
+          <Suspense fallback={<ViewFallback />}>
+            <UserProfileView
+              onSelectRepo={(repoSlug) => handleSelectRepo(repoSlug)}
+            />
+          </Suspense>
         )}
 
         {/* 1. Code & File Tree View */}
@@ -174,16 +198,18 @@ export default function App() {
 
         {/* 6.5. Repository Settings & Collaborators */}
         {activeTab === 'settings' && (
-          <RepoSettingsView
-            repo={currentRepo}
-            onRepoUpdated={() => {
-              getRepoInfo(currentRepo.ownerSlug, currentRepo.name).then(setCurrentRepo)
-            }}
-            onRepoDeleted={() => {
-              handleSelectRepo('')
-              setActiveTab('home')
-            }}
-          />
+          <Suspense fallback={<ViewFallback />}>
+            <RepoSettingsView
+              repo={currentRepo}
+              onRepoUpdated={() => {
+                getRepoInfo(currentRepo.ownerSlug, currentRepo.name).then(setCurrentRepo)
+              }}
+              onRepoDeleted={() => {
+                handleSelectRepo('')
+                setActiveTab('home')
+              }}
+            />
+          </Suspense>
         )}
 
         {/* 7. Enterprise Admin & Settings View (Classic 2-column layout) */}
@@ -217,10 +243,12 @@ export default function App() {
 
             {/* Right Settings Content (75%) */}
             <section className="md:col-span-3">
-              {adminSection === 'cluster' && <ClusterHealth />}
-              {adminSection === 'users' && <EnterpriseUsers />}
-              {adminSection === 'sso' && <SsoConfig />}
-              {adminSection === 'audit' && <AuditLogs />}
+              <Suspense fallback={<ViewFallback />}>
+                {adminSection === 'cluster' && <ClusterHealth />}
+                {adminSection === 'users' && <EnterpriseUsers />}
+                {adminSection === 'sso' && <SsoConfig />}
+                {adminSection === 'audit' && <AuditLogs />}
+              </Suspense>
             </section>
           </div>
         )}

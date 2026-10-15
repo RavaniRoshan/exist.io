@@ -66,33 +66,37 @@ export const Dialog: React.FC<DialogProps> = ({
             className="fixed inset-0 bg-background/70 backdrop-blur-xs"
           />
 
-          {/* Modal Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98, y: 6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 6 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 450 }}
-            className={cn(
-              'relative w-full rounded-lg border border-border bg-card text-card-foreground shadow-2xl z-10 overflow-hidden',
-              maxW,
-              className
-            )}
-          >
-            {/* Modal Header */}
-            {(title || description) && (
-              <div className="px-4 py-3 border-b border-border bg-secondary/20 flex items-start justify-between gap-3">
-                <div className="space-y-0.5">
-                  {title && <h3 className="text-sm font-semibold text-foreground leading-tight">{title}</h3>}
-                  {description && <p className="text-xs text-muted-foreground leading-normal">{description}</p>}
+            {/* Modal Container */}
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={title ? 'dialog-title' : undefined}
+              initial={{ opacity: 0, scale: 0.98, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 6 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 450 }}
+              className={cn(
+                'relative w-full rounded-md border border-border bg-card text-card-foreground shadow-2xl z-10 overflow-hidden',
+                maxW,
+                className
+              )}
+            >
+              {/* Modal Header */}
+              {(title || description) && (
+                <div className="px-4 py-3 border-b border-border bg-secondary/20 flex items-start justify-between gap-3">
+                  <div className="space-y-0.5">
+                    {title && <h3 id="dialog-title" className="text-sm font-semibold text-foreground leading-tight">{title}</h3>}
+                    {description && <p className="text-xs text-muted-foreground leading-normal">{description}</p>}
+                  </div>
+                  <button
+                    onClick={handleClose}
+                    aria-label="Close dialog"
+                    className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={handleClose}
-                  className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+              )}
 
             {/* Modal Body */}
             <div className="p-4">

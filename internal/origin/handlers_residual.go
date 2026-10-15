@@ -177,15 +177,12 @@ func (s *Server) getRepoTarball2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ref := r.PathValue("ref")
-	data, err := s.git.Tarball(owner, name, ref)
-	if err != nil {
+	w.Header().Set("Content-Type", "application/x-gzip")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+name+"-"+ref+".tar.gz\"")
+	if err := s.git.StreamTarball(w, owner, name, ref); err != nil {
 		notFound(w, "ref not found: "+err.Error())
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/x-gzip")
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+name+"-"+ref+".tar.gz\"")
-	_, _ = w.Write(data)
 }
 
 func (s *Server) getRateLimit(w http.ResponseWriter, r *http.Request) {

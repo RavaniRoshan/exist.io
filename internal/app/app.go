@@ -32,6 +32,7 @@ import (
 	"exist.io/internal/store"
 	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
+	"exist.io/pkg/slug"
 
 	"github.com/go-git/go-git/v6/plumbing/object"
 )
@@ -155,9 +156,20 @@ func Open(cfg config.Config) (*App, error) {
 	mux.HandleFunc("GET /api/v1/agent/activities", agentactivity.Handler(agentactivity.DefaultHub))
 	leaseSecret := []byte(cfg.JWTSecret)
 	if len(leaseSecret) == 0 {
-		leaseSecret = []byte("exist-ephemeral-agent-lease-signing-key")
+		raw, _, _ := auth.GenerateSessionToken()
+		leaseSecret = []byte(raw)
 	}
-	mux.HandleFunc("POST /api/v1/agent/leases", agentlease.Handler(leaseSecret))
+	baseLeaseHandler := agentlease.Handler(leaseSecret)
+	mux.HandleFunc("POST /api/v1/agent/leases", func(w http.ResponseWriter, r *http.Request) {
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			if _, err := auth.ResolveUser(r.Context(), db, r); err != nil {
+				http.Error(w, "Unauthorized: Authentication required to issue agent capability leases", http.StatusUnauthorized)
+				return
+			}
+		}
+		baseLeaseHandler(w, r)
+	})
 
 	// Web Authentication & Session Management
 	mux.HandleFunc("POST /api/v1/auth/login", auth.LoginHandler(db))
@@ -260,6 +272,14 @@ func Open(cfg config.Config) (*App, error) {
 		if req.Owner == "" {
 			req.Owner = "exist"
 		}
+		if err := slug.Validate(req.Owner); err != nil {
+			http.Error(w, "Invalid repository owner slug: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := slug.Validate(req.Name); err != nil {
+			http.Error(w, "Invalid repository name: "+err.Error(), http.StatusBadRequest)
+			return
+		}
 		if req.DefaultBranch == "" {
 			req.DefaultBranch = "main"
 		}
@@ -361,6 +381,66 @@ func Open(cfg config.Config) (*App, error) {
 		}
 		owner := r.PathValue("owner")
 		name := r.PathValue("name")
+		expectedConfirm := owner + "/" + name
+
+		repoRecord, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			ConfirmName string `json:"confirm_name"`
+			SudoSecret  string `json:"sudo_secret"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+
+		cleanConfirm := strings.TrimSpace(req.ConfirmName)
+		if cleanConfirm == "" {
+			cleanConfirm = r.URL.Query().Get("confirm_name")
+		}
+		if cleanConfirm != expectedConfirm && cleanConfirm != name {
+			http.Error(w, fmt.Sprintf("Confirmation required: please type %q to delete repository", expectedConfirm), http.StatusBadRequest)
+			return
+		}
+
+		cleanSecret := strings.TrimSpace(req.SudoSecret)
+		if cleanSecret == "" {
+			cleanSecret = r.URL.Query().Get("sudo_secret")
+		}
+		if cleanSecret == "" {
+			http.Error(w, "Sudo mode security authentication (password or personal access key) is required to delete repository", http.StatusForbidden)
+			return
+		}
+
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			caller, _ := auth.ResolveUser(r.Context(), db, r)
+			var valid bool
+			if caller != nil {
+				valid = auth.VerifySudoChallenge(r.Context(), db, caller, cleanSecret)
+			}
+			if !valid {
+				if user, uerr := db.GetUserByLogin(r.Context(), owner); uerr == nil && user.PasswordHash != "" {
+					if auth.CheckPassword(cleanSecret, user.PasswordHash) {
+						valid = true
+					}
+				}
+			}
+			if !valid {
+				http.Error(w, "Invalid security credentials for sudo mode", http.StatusForbidden)
+				return
+			}
+
+			if caller != nil && caller.Role != "admin" {
+				allowed, err := db.CheckRepoAccess(r.Context(), repoRecord, caller.ID, true)
+				if err != nil || !allowed {
+					http.Error(w, "Forbidden: Administrator or repository owner permission required to delete repository", http.StatusForbidden)
+					return
+				}
+			}
+		}
+
 		if err := db.DeleteRepo(r.Context(), owner, name); err != nil {
 			http.Error(w, "Failed to delete repository: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -368,8 +448,17 @@ func Open(cfg config.Config) (*App, error) {
 		repoPath := filepath.Join(gitDir, owner, name+".git")
 		_ = os.RemoveAll(repoPath)
 
+		_ = audit.Log(audit.Event{
+			Actor:     owner,
+			ActorType: "user",
+			Action:    "repo.deleted",
+			Resource:  expectedConfirm,
+			Severity:  audit.SeverityCritical,
+			Details:   fmt.Sprintf("Permanently deleted repository %s", expectedConfirm),
+		})
+
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "deleted": owner + "/" + name})
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "deleted": expectedConfirm})
 	})
 
 	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}", func(w http.ResponseWriter, r *http.Request) {
@@ -381,6 +470,21 @@ func Open(cfg config.Config) (*App, error) {
 		if err != nil {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
+		}
+		if repo.Visibility == "private" {
+			count, _ := db.CountUsers(r.Context())
+			if count > 0 {
+				caller, err := auth.ResolveUser(r.Context(), db, r)
+				if err != nil {
+					http.Error(w, "Unauthorized: Authentication required for private repository", http.StatusUnauthorized)
+					return
+				}
+				allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, false)
+				if err != nil || (!allowed && caller.Role != "admin") {
+					http.Error(w, "Repository not found", http.StatusNotFound)
+					return
+				}
+			}
 		}
 		cloneURL := fmt.Sprintf("%s/%s/%s.git", cfg.PublicURL, owner, name)
 		webURL := fmt.Sprintf("%s/%s/%s", cfg.PublicURL, owner, name)
@@ -412,9 +516,29 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		owner := r.PathValue("owner")
 		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Visibility == "private" {
+			count, _ := db.CountUsers(r.Context())
+			if count > 0 {
+				caller, err := auth.ResolveUser(r.Context(), db, r)
+				if err != nil {
+					http.Error(w, "Unauthorized: Authentication required for private repository", http.StatusUnauthorized)
+					return
+				}
+				allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, false)
+				if err != nil || (!allowed && caller.Role != "admin") {
+					http.Error(w, "Repository not found", http.StatusNotFound)
+					return
+				}
+			}
+		}
 		ref := r.URL.Query().Get("ref")
 		if ref == "" {
-			if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.DefaultBranch != "" {
+			if repo.DefaultBranch != "" {
 				ref = repo.DefaultBranch
 			} else {
 				ref = "main"
@@ -483,10 +607,30 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		owner := r.PathValue("owner")
 		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Visibility == "private" {
+			count, _ := db.CountUsers(r.Context())
+			if count > 0 {
+				caller, err := auth.ResolveUser(r.Context(), db, r)
+				if err != nil {
+					http.Error(w, "Unauthorized: Authentication required for private repository", http.StatusUnauthorized)
+					return
+				}
+				allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, false)
+				if err != nil || (!allowed && caller.Role != "admin") {
+					http.Error(w, "Repository not found", http.StatusNotFound)
+					return
+				}
+			}
+		}
 		path := r.URL.Query().Get("path")
 		ref := r.URL.Query().Get("ref")
 		if ref == "" {
-			if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.DefaultBranch != "" {
+			if repo.DefaultBranch != "" {
 				ref = repo.DefaultBranch
 			} else {
 				ref = "main"
@@ -598,9 +742,10 @@ func Open(cfg config.Config) (*App, error) {
 			// Sudo mode verification
 			count, _ := db.CountUsers(r.Context())
 			if count > 0 {
+				caller, _ := auth.ResolveUser(r.Context(), db, r)
 				var valid bool
-				if _, err := db.GetAPIKeyByHash(r.Context(), auth.HashCredential(cleanSecret)); err == nil {
-					valid = true
+				if caller != nil {
+					valid = auth.VerifySudoChallenge(r.Context(), db, caller, cleanSecret)
 				}
 				if !valid {
 					if user, uerr := db.GetUserByLogin(r.Context(), owner); uerr == nil && user.PasswordHash != "" {
@@ -762,9 +907,10 @@ func Open(cfg config.Config) (*App, error) {
 		// Sudo mode verification
 		count, _ := db.CountUsers(r.Context())
 		if count > 0 {
+			caller, _ := auth.ResolveUser(r.Context(), db, r)
 			var valid bool
-			if _, err := db.GetAPIKeyByHash(r.Context(), auth.HashCredential(cleanSecret)); err == nil {
-				valid = true
+			if caller != nil {
+				valid = auth.VerifySudoChallenge(r.Context(), db, caller, cleanSecret)
 			}
 			if !valid {
 				if user, uerr := db.GetUserByLogin(r.Context(), owner); uerr == nil && user.PasswordHash != "" {
@@ -902,6 +1048,19 @@ func Open(cfg config.Config) (*App, error) {
 		if repo.Archived {
 			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
+		}
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			caller, err := auth.ResolveUser(r.Context(), db, r)
+			if err != nil {
+				http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+				return
+			}
+			allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, true)
+			if err != nil || (!allowed && caller.Role != "admin") {
+				http.Error(w, "Forbidden: Administrator permission required to manage collaborators", http.StatusForbidden)
+				return
+			}
 		}
 
 		var req struct {
@@ -1042,6 +1201,19 @@ func Open(cfg config.Config) (*App, error) {
 		if repo.Archived {
 			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
+		}
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			caller, err := auth.ResolveUser(r.Context(), db, r)
+			if err != nil {
+				http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+				return
+			}
+			allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, true)
+			if err != nil || (!allowed && caller.Role != "admin") {
+				http.Error(w, "Forbidden: Administrator permission required to manage deploy keys", http.StatusForbidden)
+				return
+			}
 		}
 		var req struct {
 			Title    string `json:"title"`
@@ -1303,6 +1475,30 @@ func Open(cfg config.Config) (*App, error) {
 		if owner == "" || name == "" {
 			http.Error(w, "Repository owner and name are required", http.StatusBadRequest)
 			return
+		}
+
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
+
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			caller, err := auth.ResolveUser(r.Context(), db, r)
+			if err != nil {
+				http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+				return
+			}
+			allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, true)
+			if err != nil || (!allowed && caller.Role != "admin") {
+				http.Error(w, "Forbidden: Write permission required to commit files", http.StatusForbidden)
+				return
+			}
 		}
 
 		var req struct {
@@ -1668,6 +1864,23 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			caller, err := auth.ResolveUser(r.Context(), db, r)
+			if err != nil {
+				http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+				return
+			}
+			allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, true)
+			if err != nil || (!allowed && caller.Role != "admin") {
+				http.Error(w, "Forbidden: Write permission required to create branches", http.StatusForbidden)
+				return
+			}
+		}
 		var req struct {
 			Name string `json:"name"`
 			From string `json:"from"`
@@ -1972,6 +2185,19 @@ func Open(cfg config.Config) (*App, error) {
 		if repo.Archived {
 			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
+		}
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			caller, err := auth.ResolveUser(r.Context(), db, r)
+			if err != nil {
+				http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+				return
+			}
+			allowed, err := db.CheckRepoAccess(r.Context(), repo, caller.ID, true)
+			if err != nil || (!allowed && caller.Role != "admin") {
+				http.Error(w, "Forbidden: Write permission required to merge pull requests", http.StatusForbidden)
+				return
+			}
 		}
 		num, err := strconv.Atoi(r.PathValue("number"))
 		if err != nil {

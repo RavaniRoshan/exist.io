@@ -72,8 +72,17 @@ func TestWebAuthLifecycle(t *testing.T) {
 		t.Fatalf("expected 401 Unauthorized on bad password, got %d", badRec.Code)
 	}
 
-	// 5. Admin List Users
+	// 5. Admin List Users: Unauthenticated attempt MUST be rejected
+	unauthReq := httptest.NewRequest(http.MethodGet, "/api/v1/admin/users", nil)
+	unauthRec := httptest.NewRecorder()
+	AdminListUsersHandler(db).ServeHTTP(unauthRec, unauthReq)
+	if unauthRec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized on unauthenticated admin request, got %d", unauthRec.Code)
+	}
+
+	// 5b. Admin List Users: Authenticated with admin session cookie
 	adminReq := httptest.NewRequest(http.MethodGet, "/api/v1/admin/users", nil)
+	adminReq.AddCookie(&http.Cookie{Name: SessionCookieName, Value: regResp.SessionToken})
 	adminRec := httptest.NewRecorder()
 	AdminListUsersHandler(db).ServeHTTP(adminRec, adminReq)
 
@@ -88,7 +97,15 @@ func TestWebAuthLifecycle(t *testing.T) {
 		t.Errorf("expected 1 user named founder, got %+v", adminListResp.Users)
 	}
 
-	// 6. Logout
+	// 6. User Token Generation: Unauthenticated attempt MUST be rejected
+	unauthTokReq := httptest.NewRequest(http.MethodPost, "/api/v1/user/tokens", bytes.NewBufferString(`{"name": "test-key"}`))
+	unauthTokRec := httptest.NewRecorder()
+	UserCreateTokenHandler(db).ServeHTTP(unauthTokRec, unauthTokReq)
+	if unauthTokRec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized for unauthenticated token creation, got %d", unauthTokRec.Code)
+	}
+
+	// 7. Logout
 	logoutReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 	logoutReq.AddCookie(&http.Cookie{Name: SessionCookieName, Value: regResp.SessionToken})
 	logoutRec := httptest.NewRecorder()

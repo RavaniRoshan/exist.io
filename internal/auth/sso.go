@@ -159,10 +159,15 @@ func (h *ssoHandler) handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract or simulate Identity Provider verified identity
-	email := req.Email
+	email := strings.TrimSpace(req.Email)
 	if email == "" {
 		// Default derivation for test/code exchange
 		email = fmt.Sprintf("sso_user_%s@enterprise.internal", req.Code)
+	}
+
+	if !strings.Contains(email, "@") || strings.ContainsAny(email, " \t\r\n/\\") {
+		writeSSOError(w, http.StatusBadRequest, "Invalid email format")
+		return
 	}
 
 	login := strings.Split(email, "@")[0]
@@ -173,36 +178,40 @@ func (h *ssoHandler) handleCallback(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Find or auto-provision user
 	user, err := h.db.GetUserByEmail(ctx, email)
-	if err != nil {
-		if errors.Is(err, store.ErrNotFound) {
-			randomPass, _, _ := GenerateSessionToken()
-			hash, _ := HashPassword(randomPass)
-			user = store.User{
-				ID:           idgen.NewUser(),
-				Email:        email,
-				Login:        login,
-				Name:         name,
-				PasswordHash: hash,
-				Role:         "member",
-				Status:       "active",
-				CreatedAt:    time.Now().UTC().Format(time.RFC3339),
-			}
-			if err := h.db.CreateUserWithPassword(ctx, user); err != nil {
-				writeSSOError(w, http.StatusInternalServerError, "Failed to auto-provision user: "+err.Error())
-				return
-			}
-			_ = audit.Log(audit.Event{
-				Actor:     email,
-				ActorType: "user",
-				Action:    "sso.auto_provisioned",
-				Resource:  email,
-				Severity:  audit.SeverityInfo,
-				Details:   "User auto-provisioned via SSO",
-			})
-		} else {
-			writeSSOError(w, http.StatusInternalServerError, err.Error())
+	if err == nil {
+		// Prevent unauthorized takeover of administrator accounts via unverified callback
+		if user.Role == "admin" && !cfg.EnforceSSO {
+			writeSSOError(w, http.StatusForbidden, "Administrative accounts cannot be linked via unverified SSO callback")
 			return
 		}
+	} else if errors.Is(err, store.ErrNotFound) {
+		randomPass, _, _ := GenerateSessionToken()
+		hash, _ := HashPassword(randomPass)
+		user = store.User{
+			ID:           idgen.NewUser(),
+			Email:        email,
+			Login:        login,
+			Name:         name,
+			PasswordHash: hash,
+			Role:         "member",
+			Status:       "active",
+			CreatedAt:    time.Now().UTC().Format(time.RFC3339),
+		}
+		if err := h.db.CreateUserWithPassword(ctx, user); err != nil {
+			writeSSOError(w, http.StatusInternalServerError, "Failed to auto-provision user: "+err.Error())
+			return
+		}
+		_ = audit.Log(audit.Event{
+			Actor:     email,
+			ActorType: "user",
+			Action:    "sso.auto_provisioned",
+			Resource:  email,
+			Severity:  audit.SeverityInfo,
+			Details:   "User auto-provisioned via SSO",
+		})
+	} else {
+		writeSSOError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	if user.Status != "active" {

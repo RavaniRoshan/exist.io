@@ -10,6 +10,7 @@ import (
 
 	"exist.io/internal/agentactivity"
 	"exist.io/internal/audit"
+	"exist.io/internal/auth"
 	"exist.io/internal/gitstore"
 	"exist.io/internal/metrics"
 	"exist.io/internal/store"
@@ -89,6 +90,16 @@ func (s *Server) Handler(readonly bool) http.Handler {
 		}
 
 		ctx := r.Context()
+
+		// Enforce authentication when users are registered on the forge
+		count, _ := s.store.CountUsers(ctx)
+		if count > 0 {
+			if _, err := auth.ResolveUser(ctx, s.store, r); err != nil {
+				writeRPCError(w, req.ID, -32001, "Unauthorized: Authentication required via Bearer token or session")
+				return
+			}
+		}
+
 		switch req.Method {
 		case "initialize":
 			writeRPCResult(w, req.ID, map[string]any{

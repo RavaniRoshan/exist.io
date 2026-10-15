@@ -13,7 +13,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
+	"exist.io/pkg/slug"
 	git "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/config"
 	"github.com/go-git/go-git/v6/plumbing"
@@ -22,7 +24,8 @@ import (
 
 // Store manages git repositories rooted at a base directory.
 type Store struct {
-	root string
+	root      string
+	repoLocks sync.Map // map[string]*sync.RWMutex
 }
 
 // New returns a Store rooted at root, creating the directory if needed.
@@ -36,15 +39,38 @@ func New(root string) (*Store, error) {
 // Root returns the store's base directory.
 func (s *Store) Root() string { return s.root }
 
+// RepoLock returns the synchronization RWMutex for a specific repository.
+func (s *Store) RepoLock(namespaceSlug, repoName string) *sync.RWMutex {
+	key := namespaceSlug + "/" + repoName
+	val, _ := s.repoLocks.LoadOrStore(key, &sync.RWMutex{})
+	return val.(*sync.RWMutex)
+}
+
 // repoPath returns the on-disk path for a repo, e.g. <root>/acme/widgets.git.
+// It verifies slug validity and path containment within the store root.
 func (s *Store) repoPath(namespaceSlug, repoName string) string {
-	return filepath.Join(s.root, namespaceSlug, repoName+".git")
+	if err := slug.Validate(namespaceSlug); err != nil {
+		return ""
+	}
+	if err := slug.Validate(repoName); err != nil {
+		return ""
+	}
+	target := filepath.Join(s.root, namespaceSlug, repoName+".git")
+	cleanTarget := filepath.Clean(target)
+	cleanRoot := filepath.Clean(s.root)
+	if !strings.HasPrefix(cleanTarget, cleanRoot+string(filepath.Separator)) {
+		return ""
+	}
+	return cleanTarget
 }
 
 // Init creates a new bare repository for the given owner/name with the given
 // default branch, and returns it. It errors if the repo already exists.
 func (s *Store) Init(namespaceSlug, repoName, defaultBranch string) (*git.Repository, error) {
 	path := s.repoPath(namespaceSlug, repoName)
+	if path == "" {
+		return nil, fmt.Errorf("gitstore: invalid or unsafe repository slug %s/%s", namespaceSlug, repoName)
+	}
 	if _, err := os.Stat(path); err == nil {
 		return nil, fmt.Errorf("gitstore: repo %s/%s already exists", namespaceSlug, repoName)
 	}
@@ -79,13 +105,17 @@ func EnsureHooks(repoPath string) error {
 		exe = "existd"
 	}
 
-	content := fmt.Sprintf("#!/bin/sh\nif command -v %s >/dev/null 2>&1; then\n  exec %s hook pre-receive\nfi\nexit 0\n", exe, exe)
+	content := fmt.Sprintf("#!/bin/sh\nif command -v \"%s\" >/dev/null 2>&1; then\n  exec \"%s\" hook pre-receive\nfi\nexit 0\n", exe, exe)
 	return os.WriteFile(preReceive, []byte(content), 0o755)
 }
 
 // Open opens an existing bare repository.
 func (s *Store) Open(namespaceSlug, repoName string) (*git.Repository, error) {
-	repo, err := git.PlainOpen(s.repoPath(namespaceSlug, repoName))
+	path := s.repoPath(namespaceSlug, repoName)
+	if path == "" {
+		return nil, fmt.Errorf("gitstore: invalid or unsafe repository slug %s/%s", namespaceSlug, repoName)
+	}
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, fmt.Errorf("gitstore: open %s/%s: %w", namespaceSlug, repoName, err)
 	}
@@ -94,7 +124,11 @@ func (s *Store) Open(namespaceSlug, repoName string) (*git.Repository, error) {
 
 // Exists reports whether a repo exists on disk.
 func (s *Store) Exists(namespaceSlug, repoName string) bool {
-	_, err := os.Stat(s.repoPath(namespaceSlug, repoName))
+	path := s.repoPath(namespaceSlug, repoName)
+	if path == "" {
+		return false
+	}
+	_, err := os.Stat(path)
 	return err == nil
 }
 
@@ -102,6 +136,9 @@ func (s *Store) Exists(namespaceSlug, repoName string) bool {
 func (s *Store) Rename(namespaceSlug, oldName, newName string) error {
 	oldPath := s.repoPath(namespaceSlug, oldName)
 	newPath := s.repoPath(namespaceSlug, newName)
+	if oldPath == "" || newPath == "" {
+		return fmt.Errorf("gitstore: invalid or unsafe repository slug")
+	}
 	if _, err := os.Stat(oldPath); err != nil {
 		return fmt.Errorf("gitstore: source repo %s/%s does not exist: %w", namespaceSlug, oldName, err)
 	}
@@ -114,11 +151,14 @@ func (s *Store) Rename(namespaceSlug, oldName, newName string) error {
 // Transfer moves a bare repository directory on disk from oldNamespaceSlug/repoName.git to newNamespaceSlug/repoName.git.
 func (s *Store) Transfer(oldNamespaceSlug, newNamespaceSlug, repoName string) error {
 	oldPath := s.repoPath(oldNamespaceSlug, repoName)
+	newPath := s.repoPath(newNamespaceSlug, repoName)
+	if oldPath == "" || newPath == "" {
+		return fmt.Errorf("gitstore: invalid or unsafe repository slug")
+	}
 	newParent := filepath.Join(s.root, newNamespaceSlug)
 	if err := os.MkdirAll(newParent, 0o755); err != nil {
 		return fmt.Errorf("gitstore: create target namespace dir: %w", err)
 	}
-	newPath := s.repoPath(newNamespaceSlug, repoName)
 	if _, err := os.Stat(oldPath); err != nil {
 		return fmt.Errorf("gitstore: source repo %s/%s does not exist: %w", oldNamespaceSlug, repoName, err)
 	}
@@ -132,6 +172,9 @@ func (s *Store) Transfer(oldNamespaceSlug, newNamespaceSlug, repoName string) er
 // This is used by GitHub mirroring (Phase 5).
 func (s *Store) Clone(namespaceSlug, repoName, remoteURL string, auth *Auth) (*git.Repository, error) {
 	path := s.repoPath(namespaceSlug, repoName)
+	if path == "" {
+		return nil, fmt.Errorf("gitstore: invalid or unsafe repository slug %s/%s", namespaceSlug, repoName)
+	}
 	repo, err := git.PlainClone(path, &git.CloneOptions{
 		URL:           remoteURL,
 		Mirror:        true, // mirror so all refs come across

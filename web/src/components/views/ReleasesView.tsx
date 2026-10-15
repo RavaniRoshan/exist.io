@@ -9,6 +9,7 @@ import {
   GitCommit,
   Plus,
   ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -38,6 +39,7 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
   const [isLatest, setIsLatest] = useState(true)
   const [isPrerelease, setIsPrerelease] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
 
   useEffect(() => {
     loadReleases()
@@ -61,6 +63,7 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
     if (!draftTag.trim() || !draftTitle.trim()) return
 
     setIsPublishing(true)
+    setPublishError(null)
     try {
       const res = await createRelease(owner, repoName, {
         tagName: draftTag.trim(),
@@ -75,8 +78,9 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
       setDraftTag('')
       setDraftTitle('')
       setDraftBody('')
+      setPublishError(null)
     } catch (err: any) {
-      alert(err.message || 'Failed to publish release')
+      setPublishError(err.message || 'Failed to publish release')
     } finally {
       setIsPublishing(false)
     }
@@ -130,6 +134,18 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
           {loading ? (
             <div className="py-12 text-center text-xs text-muted-foreground">
               Loading releases...
+            </div>
+          ) : releases.length === 0 ? (
+            <div className="text-center py-12 px-4 border border-dashed border-border rounded-md bg-secondary/20">
+              <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-60" />
+              <h3 className="text-sm font-semibold text-foreground mb-1">There aren’t any releases here</h3>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto mb-4">
+                Releases are based on Git tags and mark specific points in your repository’s history. Package compiled binaries, release notes, and assets for your users.
+              </p>
+              <Button size="sm" onClick={() => setIsDraftModalOpen(true)} className="gap-1.5">
+                <Plus className="w-3.5 h-3.5" />
+                <span>Draft a new release</span>
+              </Button>
             </div>
           ) : (
             releases.map((rel, idx) => (
@@ -244,43 +260,57 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
 
       {/* 2. TAGS TAB */}
       {activeSubTab === 'tags' && (
-        <Box flush>
-          <BoxHeader className="py-2.5 text-xs font-semibold text-foreground">
-            <span>All Git Tags</span>
-          </BoxHeader>
-          <BoxBody>
-            {releases.map((rel) => (
-              <BoxRow key={rel.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <Tag className="w-4 h-4 text-primary shrink-0" />
-                  <div className="space-y-0.5 font-mono text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground">{rel.tagName}</span>
-                      <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-[10px] font-sans flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" />
-                        <span>Verified</span>
-                      </Badge>
-                    </div>
-                    <div className="text-muted-foreground text-[11px]">
-                      Commit <span className="text-primary hover:underline cursor-pointer">{rel.commitSha}</span>
+        releases.length === 0 ? (
+          <div className="text-center py-12 px-4 border border-dashed border-border rounded-md bg-secondary/20">
+            <Tag className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-60" />
+            <h3 className="text-sm font-semibold text-foreground mb-1">There aren’t any tags</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto mb-4">
+              You can create a tag to mark a specific commit in your repository’s history, or draft a release to publish assets.
+            </p>
+            <Button size="sm" onClick={() => setIsDraftModalOpen(true)} className="gap-1.5">
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create a release with tag</span>
+            </Button>
+          </div>
+        ) : (
+          <Box flush>
+            <BoxHeader className="py-2.5 text-xs font-semibold text-foreground">
+              <span>All Git Tags</span>
+            </BoxHeader>
+            <BoxBody>
+              {releases.map((rel) => (
+                <BoxRow key={rel.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <Tag className="w-4 h-4 text-primary shrink-0" />
+                    <div className="space-y-0.5 font-mono text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground">{rel.tagName}</span>
+                        <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-[10px] font-sans flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>Verified</span>
+                        </Badge>
+                      </div>
+                      <div className="text-muted-foreground text-[11px]">
+                        Commit <span className="text-primary hover:underline cursor-pointer">{rel.commitSha}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <Button variant="secondary" size="xs" className="gap-1 font-mono text-xs">
-                    <Download className="w-3 h-3" />
-                    <span>zip</span>
-                  </Button>
-                  <Button variant="secondary" size="xs" className="gap-1 font-mono text-xs">
-                    <Download className="w-3 h-3" />
-                    <span>tar.gz</span>
-                  </Button>
-                </div>
-              </BoxRow>
-            ))}
-          </BoxBody>
-        </Box>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="xs" className="gap-1 font-mono text-xs">
+                      <Download className="w-3 h-3" />
+                      <span>zip</span>
+                    </Button>
+                    <Button variant="secondary" size="xs" className="gap-1 font-mono text-xs">
+                      <Download className="w-3 h-3" />
+                      <span>tar.gz</span>
+                    </Button>
+                  </div>
+                </BoxRow>
+              ))}
+            </BoxBody>
+          </Box>
+        )
       )}
 
       {/* DRAFT NEW RELEASE MODAL */}
@@ -291,6 +321,12 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
         description="Publish release notes and attach compiled artifacts for distribution."
       >
         <form onSubmit={handlePublishRelease} className="space-y-4 pt-1">
+          {publishError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{publishError}</span>
+            </div>
+          )}
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-2 gap-3">
               <div>
