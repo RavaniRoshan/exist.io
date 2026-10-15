@@ -2,8 +2,10 @@ package origin
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
+	"exist.io/internal/audit"
 	"exist.io/internal/store"
 	"exist.io/pkg/scopes"
 )
@@ -127,6 +129,16 @@ func (s *Server) createRuleset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_ = audit.Log(audit.Event{
+		Actor:     s.resolveActor(r),
+		ActorType: "user",
+		Action:    "repo.ruleset_created",
+		Resource:  fmt.Sprintf("%s/%s:%s", owner, name, created.Name),
+		ClientIP:  r.RemoteAddr,
+		Severity:  audit.SeverityWarning,
+		Details:   fmt.Sprintf("Created ruleset %q with enforcement %q", created.Name, created.Enforcement),
+	})
+
 	writeJSON(w, http.StatusOK, toRulesetDTO(created))
 }
 
@@ -198,6 +210,16 @@ func (s *Server) updateRuleset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_ = audit.Log(audit.Event{
+		Actor:     s.resolveActor(r),
+		ActorType: "user",
+		Action:    "repo.ruleset_updated",
+		Resource:  fmt.Sprintf("%s/%s:%s", owner, name, updated.Name),
+		ClientIP:  r.RemoteAddr,
+		Severity:  audit.SeverityWarning,
+		Details:   fmt.Sprintf("Updated ruleset %q (enforcement: %q)", updated.Name, updated.Enforcement),
+	})
+
 	writeJSON(w, http.StatusOK, toRulesetDTO(updated))
 }
 
@@ -221,6 +243,16 @@ func (s *Server) deleteRuleset(w http.ResponseWriter, r *http.Request) {
 		internalError(w, "delete ruleset: "+err.Error())
 		return
 	}
+
+	_ = audit.Log(audit.Event{
+		Actor:     s.resolveActor(r),
+		ActorType: "user",
+		Action:    "repo.ruleset_deleted",
+		Resource:  fmt.Sprintf("%s/%s:ruleset-%s", owner, name, rulesetID),
+		ClientIP:  r.RemoteAddr,
+		Severity:  audit.SeverityCritical,
+		Details:   fmt.Sprintf("Deleted ruleset %s", rulesetID),
+	})
 
 	w.WriteHeader(http.StatusNoContent)
 }

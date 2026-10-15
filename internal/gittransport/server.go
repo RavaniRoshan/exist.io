@@ -16,8 +16,10 @@ import (
 	"strings"
 	"time"
 
+	"exist.io/internal/audit"
 	"exist.io/internal/auth"
 	"exist.io/internal/gitstore"
+	"exist.io/internal/metrics"
 	"exist.io/internal/store"
 )
 
@@ -107,6 +109,21 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil || !allowed {
 		http.Error(w, "Access denied", http.StatusForbidden)
 		return
+	}
+
+	metrics.DefaultRegistry.IncGitTransfers()
+
+	if isReceive {
+		_ = gitstore.EnsureHooks(filepath.Join(s.git.Root(), ownerSlug, repoName+".git"))
+		_ = audit.Log(audit.Event{
+			Actor:     userID,
+			ActorType: "user",
+			Action:    "git.receive_pack",
+			Resource:  ownerSlug + "/" + repoName,
+			ClientIP:  r.RemoteAddr,
+			Severity:  audit.SeverityInfo,
+			Details:   "Incoming git push / receive-pack operation",
+		})
 	}
 
 	s.execBackend(w, r, ownerSlug, repoName, subPath, userID)

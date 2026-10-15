@@ -110,6 +110,28 @@ func TestCreateCommitFromFilesDelete(t *testing.T) {
 	}
 }
 
+func TestCreateCommitFromFilesSecretPushProtection(t *testing.T) {
+	srv, db, h := testServer(t)
+	seedNS(t, db, "acme")
+	head := seedRepo(t, srv, "acme", "widgets")
+
+	dummyKey := "AKIA" + "IOSFODNN7EXAMPLE"
+	body := `{
+		"targetBranch": "main",
+		"expectedHeadSha": "` + head + `",
+		"message": "commit with aws key",
+		"author": {"name": "Dev", "email": "dev@acme.com"},
+		"files": [{"path": "config.env", "content": "AWS_KEY=` + dummyKey + `\n"}]
+	}`
+	rec := do(h, http.MethodPost, "/v1/origin/repos/acme/widgets/git/commits:createFromFiles", body)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected 422 UnprocessableEntity on secret, got %d; body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "PUSH REJECTED") {
+		t.Errorf("expected push rejected banner in body, got: %s", rec.Body.String())
+	}
+}
+
 func TestCreateGitRef(t *testing.T) {
 	srv, db, h := testServer(t)
 	seedNS(t, db, "acme")

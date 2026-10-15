@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	git "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/config"
@@ -59,7 +60,27 @@ func (s *Store) Init(namespaceSlug, repoName, defaultBranch string) (*git.Reposi
 	if err := repo.Storer.SetReference(headRef); err != nil {
 		return nil, fmt.Errorf("gitstore: set HEAD for %s/%s: %w", namespaceSlug, repoName, err)
 	}
+
+	_ = EnsureHooks(path)
+
 	return repo, nil
+}
+
+// EnsureHooks writes standard enterprise Git server hooks (including pre-receive secret scanning).
+func EnsureHooks(repoPath string) error {
+	hooksDir := filepath.Join(repoPath, "hooks")
+	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+		return err
+	}
+	preReceive := filepath.Join(hooksDir, "pre-receive")
+
+	exe, err := os.Executable()
+	if err != nil || exe == "" || strings.HasSuffix(exe, ".test") {
+		exe = "existd"
+	}
+
+	content := fmt.Sprintf("#!/bin/sh\nif command -v %s >/dev/null 2>&1; then\n  exec %s hook pre-receive\nfi\nexit 0\n", exe, exe)
+	return os.WriteFile(preReceive, []byte(content), 0o755)
 }
 
 // Open opens an existing bare repository.

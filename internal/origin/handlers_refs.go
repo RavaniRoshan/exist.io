@@ -3,10 +3,14 @@ package origin
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"exist.io/internal/audit"
 	"exist.io/internal/gitstore"
+	"exist.io/internal/metrics"
+	"exist.io/internal/security"
 	"exist.io/pkg/scopes"
 
 	"github.com/go-git/go-git/v6/plumbing/object"
@@ -219,6 +223,25 @@ func (s *Server) createCommitFromFiles(w http.ResponseWriter, r *http.Request) {
 			}
 			content = string(decoded)
 		}
+
+		if !f.Delete {
+			violations := security.DefaultScanner.ScanFile(f.Path, []byte(content))
+			if len(violations) > 0 {
+				metrics.DefaultRegistry.IncSecretPushBlocks()
+				_ = audit.Log(audit.Event{
+					Actor:     req.Author.Email,
+					ActorType: "user",
+					Action:    "security.secret_commit_blocked",
+					Resource:  owner + "/" + name + ":" + f.Path,
+					Severity:  audit.SeverityCritical,
+					Details:   fmt.Sprintf("Blocked commit containing sensitive credentials in %s", f.Path),
+				})
+				writeError(w, http.StatusUnprocessableEntity, codeFailedPrecondition,
+					security.FormatPushRejection(violations))
+				return
+			}
+		}
+
 		changes = append(changes, gitstore.FileChange{Path: f.Path, Content: content, Delete: f.Delete})
 	}
 

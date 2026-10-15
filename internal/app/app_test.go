@@ -48,6 +48,30 @@ func TestAppLifecycle(t *testing.T) {
 	if recRepo.Code != http.StatusUnauthorized {
 		t.Fatalf("GET /v1/origin/namespaces without auth = %d, want 401", recRepo.Code)
 	}
+
+	// 3. Prometheus metrics endpoint is mounted
+	reqMetrics := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	recMetrics := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recMetrics, reqMetrics)
+	if recMetrics.Code != http.StatusOK {
+		t.Fatalf("GET /metrics status = %d, want 200", recMetrics.Code)
+	}
+
+	// 4. Admin health endpoint returns live cluster metrics
+	reqHealth := httptest.NewRequest(http.MethodGet, "/api/v1/admin/health", nil)
+	recHealth := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recHealth, reqHealth)
+	if recHealth.Code != http.StatusOK {
+		t.Fatalf("GET /api/v1/admin/health status = %d, want 200", recHealth.Code)
+	}
+
+	// 5. Admin audit logs endpoint returns json log records
+	reqAudit := httptest.NewRequest(http.MethodGet, "/api/v1/admin/audit-logs", nil)
+	recAudit := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recAudit, reqAudit)
+	if recAudit.Code != http.StatusOK {
+		t.Fatalf("GET /api/v1/admin/audit-logs status = %d, want 200", recAudit.Code)
+	}
 }
 
 func TestAppOpenFailure(t *testing.T) {

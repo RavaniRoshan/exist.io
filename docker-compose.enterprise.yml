@@ -1,0 +1,82 @@
+services:
+  # ----------------------------------------------------------------------------
+  # exist.io Enterprise Core Server Daemon
+  # ----------------------------------------------------------------------------
+  existd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: exist-io/existd:v0.2.0-enterprise
+    container_name: existd-enterprise
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - EXIST_LISTEN_ADDR=0.0.0.0:8080
+      - EXIST_DATA_DIR=/var/lib/exist
+      - EXIST_PUBLIC_URL=http://localhost:8080
+      - EXIST_GIT_URL=localhost:8080
+    volumes:
+      - exist-storage:/var/lib/exist
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  # ----------------------------------------------------------------------------
+  # Object Storage & Git LFS Backend (S3-Compatible MinIO)
+  # ----------------------------------------------------------------------------
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    container_name: existd-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=exist-enterprise-admin
+      - MINIO_ROOT_PASSWORD=exist-secure-cluster-key-change-in-production
+    volumes:
+      - minio-storage:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ----------------------------------------------------------------------------
+  # Prometheus Telemetry & Compliance Auditing Monitor
+  # ----------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: existd-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-storage:/prometheus
+    depends_on:
+      - existd
+
+volumes:
+  exist-storage:
+    name: exist-enterprise-storage
+  minio-storage:
+    name: exist-enterprise-lfs-blobs
+  prometheus-storage:
+    name: exist-enterprise-metrics

@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"exist.io/internal/audit"
 	"exist.io/internal/gitstore"
+	"exist.io/internal/metrics"
 	"exist.io/internal/store"
 )
 
@@ -147,6 +149,8 @@ func (s *Server) Handler(readonly bool) http.Handler {
 				params.Arguments = make(map[string]any)
 			}
 
+			metrics.DefaultRegistry.IncMCPCalls()
+
 			res, err := tool.Handler(ctx, s, params.Arguments)
 			if err != nil {
 				writeRPCResult(w, req.ID, toolCallResult{
@@ -154,6 +158,17 @@ func (s *Server) Handler(readonly bool) http.Handler {
 					IsError: true,
 				})
 				return
+			}
+
+			if !tool.ReadOnly {
+				_ = audit.Log(audit.Event{
+					Actor:     "agent-mcp",
+					ActorType: "agent",
+					Action:    "mcp.tool_execute:" + params.Name,
+					Resource:  fmt.Sprintf("%v", params.Arguments["repo_name"]),
+					Severity:  audit.SeverityInfo,
+					Details:   fmt.Sprintf("Autonomous agent executed mutating tool %q", params.Name),
+				})
 			}
 
 			resBytes, _ := json.MarshalIndent(res, "", "  ")

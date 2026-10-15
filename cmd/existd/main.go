@@ -17,12 +17,24 @@ import (
 
 	"exist.io/internal/app"
 	"exist.io/internal/config"
+	"exist.io/internal/security"
 )
 
 func main() {
 	cfg := config.Load()
 
 	// Check for CLI subcommands
+	if len(os.Args) > 1 && os.Args[1] == "hook" {
+		if len(os.Args) > 2 && os.Args[2] == "pre-receive" {
+			if err := security.PreReceiveHook(os.Stdin, os.Stderr); err != nil {
+				os.Exit(1)
+			}
+			return
+		}
+		fmt.Fprintln(os.Stderr, "Usage: existd hook pre-receive")
+		os.Exit(1)
+	}
+
 	if len(os.Args) > 1 && os.Args[1] == "bootstrap" {
 		fs := flag.NewFlagSet("bootstrap", flag.ExitOnError)
 		email := fs.String("email", "", "Admin user email address (required)")

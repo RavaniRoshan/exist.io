@@ -84,3 +84,16 @@ func (s *Server) webURL(ownerSlug, repoName string) string {
 	base := strings.TrimRight(s.endpoint, "/")
 	return base + "/" + ownerSlug + "/" + repoName
 }
+
+// resolveActor extracts the actor identifier from the authenticated request context.
+func (s *Server) resolveActor(r *http.Request) string {
+	if tok, ok := auth.ContextToken(r.Context()); ok && tok != nil {
+		if tok.Subject() != "" {
+			return tok.Subject()
+		}
+	}
+	if user, _, ok := r.BasicAuth(); ok && user != "" {
+		return user
+	}
+	return "system"
+}

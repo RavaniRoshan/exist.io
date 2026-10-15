@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "existd-enterprise"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["existd:8080"]
+        labels:
+          environment: "enterprise-production"
+          service: "exist.io"
