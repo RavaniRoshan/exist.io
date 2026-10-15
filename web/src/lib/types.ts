@@ -33,6 +33,13 @@ export interface CommitItem {
   }
   timestamp: string
   verified: boolean
+  verification?: {
+    status: 'verified' | 'unverified' | 'unsigned' | 'invalid'
+    key_type?: 'ssh' | 'gpg'
+    key_id?: string
+    signer_email?: string
+    reason?: string
+  }
 }
 
 export interface CheckRun {
@@ -157,3 +164,58 @@ export interface UserProfile {
   status: 'active' | 'suspended'
   createdAt: string
 }
+
+export interface SSOConfigData {
+  configured: boolean
+  provider_type?: 'oidc' | 'saml'
+  issuer_url?: string
+  client_id?: string
+  client_secret?: string
+  metadata_xml?: string
+  enabled?: boolean
+  enforce_sso?: boolean
+}
+
+export interface UserSSHKey {
+  id: string
+  name: string
+  fingerprint: string
+  key_type: string
+  created_at: string
+}
+
+export interface PersonalAccessToken {
+  id: string
+  name: string
+  token_prefix?: string
+  raw_token?: string
+  scopes?: string[]
+  expires_at: string
+  created_at: string
+}
+
+export interface IPAllowlistEntry {
+  id: string
+  cidr: string
+  description: string
+  created_at: string
+}
+
+export interface SSHCARecord {
+  id: string
+  name: string
+  fingerprint: string
+  key_type: string
+  required?: boolean
+  created_at: string
+}
+
+export interface RulesetRecord {
+  id: string
+  name: string
+  enforcement: 'active' | 'evaluate' | 'disabled'
+  kind: string
+  includedRefNames?: string[]
+  rules?: Array<{ type: string; parameters?: Record<string, any> }>
+}
+

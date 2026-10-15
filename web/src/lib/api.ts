@@ -12,6 +12,12 @@ import type {
   SsoProvider,
   EnterpriseUser,
   UserProfile,
+  SSOConfigData,
+  UserSSHKey,
+  PersonalAccessToken,
+  IPAllowlistEntry,
+  SSHCARecord,
+  RulesetRecord,
 } from './types'
 
 import {
@@ -25,6 +31,10 @@ import {
   mockClusterMetrics,
   mockSsoProviders,
   mockEnterpriseUsers,
+  mockRulesets,
+  mockIPAllowlistEntries,
+  mockSSHCAs,
+  mockWebhookDeliveries,
 } from './mockData'
 
 // Re-export types for consumers
@@ -155,12 +165,13 @@ export async function getCommits(owner: string, name: string, ref = 'main'): Pro
       shortSha: c.sha ? c.sha.slice(0, 7) : '0000000',
       message: c.message || 'Commit',
       author: {
-        name: c.author?.name || 'Developer',
-        email: c.author?.email || 'dev@exist.io',
+        name: c.author?.name || c.author_name || 'Developer',
+        email: c.author?.email || c.author_email || 'dev@exist.io',
         isAgent: Boolean(c.author?.is_agent),
       },
-      timestamp: c.timestamp || 'Recently',
-      verified: Boolean(c.verified),
+      timestamp: c.timestamp || c.author_date || 'Recently',
+      verified: c.verification?.status === 'verified' || Boolean(c.verified),
+      verification: c.verification,
     }))
   } catch {
     return [] // Real clean empty state
@@ -266,17 +277,69 @@ export async function getSsoProviders(): Promise<SsoProvider[]> {
   if (isDemoModeActive()) {
     return mockSsoProviders
   }
+  const sso = await fetchSSOConfig()
+  if (!sso.configured) {
+    return []
+  }
   return [
     {
       id: 'sso-prod-1',
-      name: 'Corporate Identity Provider (SAML 2.0 / OIDC)',
-      type: 'saml',
-      enabled: false,
-      issuerUrl: 'https://login.company.com/idp',
-      ssoUrl: 'https://login.company.com/sso',
-      scimEnabled: false,
+      name: sso.provider_type === 'saml' ? 'Enterprise SAML 2.0 Identity Provider' : 'Enterprise OpenID Connect (OIDC)',
+      type: sso.provider_type || 'oidc',
+      enabled: sso.enabled ?? false,
+      issuerUrl: sso.issuer_url || '',
+      ssoUrl: `${sso.issuer_url || ''}/authorize`,
+      scimEnabled: true,
+      enforceForDomain: sso.enforce_sso ? 'Required for all domain users' : undefined,
     },
   ]
+}
+
+export async function fetchSSOConfig(): Promise<SSOConfigData> {
+  if (isDemoModeActive()) {
+    return {
+      configured: true,
+      provider_type: 'oidc',
+      issuer_url: 'https://login.microsoftonline.com/tenant/v2.0',
+      client_id: 'enterprise_client_sandbox',
+      enabled: true,
+      enforce_sso: false,
+    }
+  }
+  try {
+    const res = await fetch('/api/v1/auth/sso/config')
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch (err) {
+    console.warn('[SSO API] fetch config error:', err)
+  }
+  return { configured: false, enabled: false }
+}
+
+export async function saveSSOConfig(cfg: {
+  provider_type: 'oidc' | 'saml'
+  issuer_url: string
+  client_id: string
+  client_secret?: string
+  metadata_xml?: string
+  enabled: boolean
+  enforce_sso: boolean
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/auth/sso/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      return { ok: false, error: data.error || 'Failed to update SSO configuration' }
+    }
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
 }
 
 export async function getEnterpriseUsers(): Promise<EnterpriseUser[]> {
@@ -287,39 +350,109 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUser[]> {
     const res = await fetch('/api/v1/admin/users')
     if (res.ok) {
       const data = await res.json()
-      if (Array.isArray(data?.users) && data.users.length > 0) {
+      if (Array.isArray(data?.users)) {
         return data.users.map((u: any) => ({
           id: u.id,
           username: u.login || u.email.split('@')[0],
           email: u.email,
           name: u.name || u.login || 'User',
-          role: u.role === 'admin' ? 'admin' : 'member',
+          role: u.role === 'admin' ? 'admin' : 'contributor',
           status: u.status || 'active',
           twoFactorEnabled: false,
-          lastActive: 'Active',
+          lastActive: 'Active now',
           sshKeyCount: 0,
-          patCount: 1,
+          patCount: 0,
         }))
       }
     }
   } catch {
     // fallback
   }
-  return [
-    {
-      id: 'u-admin',
-      username: 'admin',
-      email: 'admin@exist.io',
-      name: 'Root Administrator',
-      role: 'owner',
-      isAgent: false,
-      status: 'active',
-      twoFactorEnabled: true,
-      lastActive: 'Active now',
-      sshKeyCount: 1,
-      patCount: 1,
-    },
-  ]
+  return []
+}
+
+export async function createEnterpriseUser(user: {
+  email: string
+  login: string
+  name: string
+  password?: string
+  role: string
+}): Promise<{ ok: boolean; user?: any; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      return { ok: false, error: data.error || 'Failed to create user' }
+    }
+    const data = await res.json()
+    return { ok: true, user: data.user }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function fetchUserSSHKeys(): Promise<UserSSHKey[]> {
+  if (isDemoModeActive()) {
+    return [
+      {
+        id: 'ssh-1',
+        name: 'Work MacBook Pro (Ed25519)',
+        fingerprint: 'SHA256:7uK8h1...sample',
+        key_type: 'ssh-ed25519',
+        created_at: '2026-10-15T00:00:00Z',
+      },
+    ]
+  }
+  try {
+    const res = await fetch('/api/v1/user/ssh-keys')
+    if (res.ok) {
+      const data = await res.json()
+      return Array.isArray(data?.keys) ? data.keys : []
+    }
+  } catch {
+    // fallback
+  }
+  return []
+}
+
+export async function addUserSSHKey(name: string, publicKey: string): Promise<{ ok: boolean; key?: UserSSHKey; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/user/ssh-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, publicKey }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      return { ok: false, error: text || 'Failed to add SSH key' }
+    }
+    const key = await res.json()
+    return { ok: true, key }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function createUserToken(name: string, scopes: string[] = ['repo', 'read:user']): Promise<{ ok: boolean; token?: PersonalAccessToken; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/user/tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, scopes }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      return { ok: false, error: text || 'Failed to generate token' }
+    }
+    const token = await res.json()
+    return { ok: true, token }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
 }
 
 // -------------------------------------------------------------
@@ -415,6 +548,237 @@ export async function queryLocalMcpTools(): Promise<any[]> {
       ]
     }
     return []
+  }
+}
+
+// Rulesets API
+export async function fetchRulesets(owner: string, repo: string): Promise<RulesetRecord[]> {
+  if (isDemoModeActive()) {
+    return mockRulesets
+  }
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/rulesets`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data?.rulesets) ? data.rulesets : []
+  } catch {
+    return []
+  }
+}
+
+export async function createRuleset(
+  owner: string,
+  repo: string,
+  data: Partial<RulesetRecord>
+): Promise<{ ok: boolean; ruleset?: RulesetRecord; error?: string }> {
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/rulesets`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return { ok: false, error: err || 'Failed to create ruleset' }
+    }
+    const created = await res.json()
+    return { ok: true, ruleset: created }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function deleteRuleset(owner: string, repo: string, id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/rulesets/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+// IP Allowlists API
+export async function fetchIPAllowlist(namespace: string): Promise<{ enabled: boolean; entries: IPAllowlistEntry[] }> {
+  if (isDemoModeActive()) {
+    return { enabled: true, entries: mockIPAllowlistEntries }
+  }
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return { enabled: false, entries: [] }
+    const data = await res.json()
+    return {
+      enabled: Boolean(data.enabled),
+      entries: Array.isArray(data.entries) ? data.entries : [],
+    }
+  } catch {
+    return { enabled: false, entries: [] }
+  }
+}
+
+export async function setIPAllowlistEnabled(namespace: string, enabled: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist`, {
+      method: 'PATCH',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export async function addIPAllowlistEntry(
+  namespace: string,
+  cidr: string,
+  description: string
+): Promise<{ ok: boolean; entry?: IPAllowlistEntry; error?: string }> {
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist/entries`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cidr, description }),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return { ok: false, error: err || 'Failed to add CIDR' }
+    }
+    const entry = await res.json()
+    return { ok: true, entry }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function deleteIPAllowlistEntry(namespace: string, entryId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist/entries/${entryId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+// SSH Certificate Authorities API
+export async function fetchSSHCAs(namespace: string): Promise<{ required: boolean; cas: SSHCARecord[] }> {
+  if (isDemoModeActive()) {
+    return { required: false, cas: mockSSHCAs }
+  }
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return { required: false, cas: [] }
+    const data = await res.json()
+    return {
+      required: Boolean(data.required),
+      cas: Array.isArray(data.certificateAuthorities) ? data.certificateAuthorities : [],
+    }
+  } catch {
+    return { required: false, cas: [] }
+  }
+}
+
+export async function addSSHCA(
+  namespace: string,
+  name: string,
+  publicKey: string
+): Promise<{ ok: boolean; ca?: SSHCARecord; error?: string }> {
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, publicKey }),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return { ok: false, error: err || 'Failed to add SSH CA' }
+    }
+    const ca = await res.json()
+    return { ok: true, ca }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function deleteSSHCA(namespace: string, caId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities/${caId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export async function setSSHCARequirement(namespace: string, required: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities:setRequirement`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ required }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+// Webhooks API
+export async function fetchWebhookDeliveries(): Promise<any[]> {
+  if (isDemoModeActive()) {
+    return mockWebhookDeliveries
+  }
+  try {
+    const res = await fetch('/v1/origin/app/webhook/deliveries', {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data?.deliveries) ? data.deliveries : []
+  } catch {
+    return []
+  }
+}
+
+export async function pingWebhook(): Promise<{ ok: boolean; delivery_id?: string; error?: string }> {
+  try {
+    const res = await fetch('/v1/origin/app/webhook/pings', {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) {
+      return { ok: false, error: 'Ping failed' }
+    }
+    const data = await res.json()
+    return { ok: true, delivery_id: data.delivery_id }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function batchRedeliverWebhooks(deliveryIds: string[]): Promise<boolean> {
+  try {
+    const res = await fetch('/v1/origin/app/webhook/deliveries:batchRedeliver', {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deliveryIds }),
+    })
+    return res.ok
+  } catch {
+    return false
   }
 }
 

@@ -132,7 +132,7 @@ export default function App() {
             )}
 
             {navSection === 'forge' && activeTab === 'commits' && (
-              <CommitsView />
+              <CommitsView repo={repo} />
             )}
 
             {navSection === 'forge' && activeTab === 'agents' && (
@@ -140,7 +140,7 @@ export default function App() {
             )}
 
             {navSection === 'forge' && activeTab === 'rulesets' && (
-              <RulesetsView />
+              <RulesetsView repo={repo} />
             )}
 
             {navSection === 'forge' && activeTab === 'webhooks' && (

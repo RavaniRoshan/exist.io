@@ -362,3 +362,67 @@ export const mockEnterpriseUsers: EnterpriseUser[] = [
     patCount: 0,
   },
 ]
+
+export const mockRulesets: import('./types').RulesetRecord[] = [
+  {
+    id: 'rs-main-prod',
+    name: 'Production Mainline Protection',
+    enforcement: 'active',
+    kind: 'branch',
+    includedRefNames: ['refs/heads/main'],
+    rules: [
+      { type: 'pull_request', parameters: { required_approving_review_count: 1 } },
+      { type: 'required_status_checks', parameters: { checks: ['Go Build & Test Matrix'] } },
+      { type: 'required_signatures', parameters: {} },
+      { type: 'non_fast_forward', parameters: {} },
+    ],
+  },
+]
+
+export const mockIPAllowlistEntries: import('./types').IPAllowlistEntry[] = [
+  { id: 'ip-1', cidr: '10.0.0.0/8', description: 'Internal VPC / Container Mesh', created_at: '2026-03-01T10:00:00Z' },
+  { id: 'ip-2', cidr: '192.168.1.0/24', description: 'On-premise Engineering Subnet', created_at: '2026-03-01T10:00:00Z' },
+  { id: 'ip-3', cidr: '172.16.0.0/12', description: 'Agent Sandbox Isolated Bridge', created_at: '2026-03-01T10:00:00Z' },
+]
+
+export const mockSSHCAs: import('./types').SSHCARecord[] = [
+  {
+    id: 'ca-1',
+    name: 'Vault Production CA',
+    fingerprint: 'SHA256:4Xk9p0vV+eM3p0eQ4rT2Y9z8lM1nO7kP8wJ2lQ5rS0=',
+    key_type: 'ssh-ed25519',
+    required: false,
+    created_at: '2026-02-15T08:30:00Z',
+  },
+]
+
+export const mockWebhookDeliveries = [
+  {
+    id: 'wh-1',
+    event: 'pull_request.opened',
+    targetUrl: 'https://ci.internal.exist.io/hooks/forge',
+    statusCode: 200,
+    timestamp: '3 hours ago',
+    latency: '34ms',
+    payload: { action: 'opened', number: 42, repository: 'exist/exist.io', sender: 'claude-agent' },
+  },
+  {
+    id: 'wh-2',
+    event: 'check_run.completed',
+    targetUrl: 'https://ci.internal.exist.io/hooks/forge',
+    statusCode: 200,
+    timestamp: '2 hours ago',
+    latency: '22ms',
+    payload: { check_name: 'Go Build & Test Matrix', conclusion: 'success', duration_s: 42 },
+  },
+  {
+    id: 'wh-3',
+    event: 'push',
+    targetUrl: 'https://audit.corp.exist.io/log',
+    statusCode: 204,
+    timestamp: '1 hour ago',
+    latency: '18ms',
+    payload: { ref: 'refs/heads/main', after: '7aa844697bf92d4f58c707d8ceca47e1d882b524' },
+  },
+]
+
