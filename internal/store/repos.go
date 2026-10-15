@@ -202,6 +202,34 @@ func (db *DB) ListRepos(ctx context.Context, ownerSlug string, pageSize int, pag
 	return repos, nextToken, nil
 }
 
+// ListAllRepos returns repos across all namespaces, ordered by updated_at descending.
+func (db *DB) ListAllRepos(ctx context.Context, limit int) ([]Repo, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	rows, err := db.sql.QueryContext(ctx, `SELECT r.id, r.namespace_id, r.name, r.full_name, r.default_branch,
+		r.visibility, r.clone_url, r.web_url, r.mirror_source, r.mirror_source_id, r.mirror_status,
+		r.allow_merge_commit, r.allow_squash_merge, r.delete_branch_on_merge,
+		r.created_at, r.updated_at, r.pushed_at
+		FROM repos r ORDER BY r.updated_at DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var repos []Repo
+	for rows.Next() {
+		r, err := scanRepoRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, r)
+	}
+	return repos, rows.Err()
+}
+
 // UpdateRepo applies a partial update. Only non-nil fields are changed.
 func (db *DB) UpdateRepo(ctx context.Context, ownerSlug, name string, u RepoUpdate) error {
 	// Build a dynamic SET clause from the provided fields.

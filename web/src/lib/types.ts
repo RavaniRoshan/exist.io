@@ -308,4 +308,31 @@ export interface ReleaseItem {
   assets: ReleaseAsset[]
 }
 
+export interface RepositoryRecord {
+  id: string
+  name: string
+  full_name: string
+  default_branch: string
+  visibility: string
+  is_private: boolean
+  clone_url: string
+  web_url: string
+  updated_at: string
+  description?: string
+  stars?: number
+  forks?: number
+  language?: string
+  languageColor?: string
+}
+
+export interface ClusterSystemInfo {
+  version: string
+  publicUrl: string
+  gitHttpUrl: string
+  sshAddr: string
+  mcpUrl: string
+  walStatus: string
+  engine: string
+}
+
 

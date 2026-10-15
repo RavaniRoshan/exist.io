@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Activity,
   Server,
@@ -17,6 +17,8 @@ import { UserProfileView } from '@/components/views/UserProfileView'
 import { GlobalHomeView } from '@/components/views/GlobalHomeView'
 import { IssuesView } from '@/components/views/IssuesView'
 import { ReleasesView } from '@/components/views/ReleasesView'
+import { ProductTour } from '@/components/views/ProductTour'
+import { UserManualModal } from '@/components/views/UserManualModal'
 import { ClusterHealth } from '@/components/views/admin/ClusterHealth'
 import { AuditLogs } from '@/components/views/admin/AuditLogs'
 import { SsoConfig } from '@/components/views/admin/SsoConfig'
@@ -27,7 +29,17 @@ import { cn } from '@/lib/utils'
 export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin'>('code')
   const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
+  const [tourOpen, setTourOpen] = useState(false)
+  const [manualOpen, setManualOpen] = useState(false)
   const repo = defaultRepo
+
+  useEffect(() => {
+    // If first-time user hasn't completed tour yet, auto-open tour
+    const completed = localStorage.getItem('exist_onboarding_tour_completed')
+    if (completed !== 'true') {
+      setTourOpen(true)
+    }
+  }, [])
 
   const adminNavItems = [
     { id: 'cluster', label: 'Cluster Health & Metrics', icon: <Server className="w-4 h-4" /> },
@@ -49,6 +61,8 @@ export default function App() {
             setActiveTab(tab as any)
           }
         }}
+        onOpenTour={() => setTourOpen(true)}
+        onOpenManual={() => setManualOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -58,6 +72,8 @@ export default function App() {
           <GlobalHomeView
             onSelectRepo={() => setActiveTab('code')}
             onSelectTab={(tab) => setActiveTab(tab as any)}
+            onOpenTour={() => setTourOpen(true)}
+            onOpenManual={() => setManualOpen(true)}
           />
         )}
 
@@ -197,11 +213,24 @@ export default function App() {
             </a>
             <span className="text-border">|</span>
             <span className="text-foreground font-semibold">
-              exist.io v0.3.0
+              exist.io v0.4.0-enterprise
             </span>
           </div>
         </div>
       </footer>
+
+      {/* Interactive First-Time Onboarding Tour */}
+      <ProductTour
+        isOpen={tourOpen}
+        onClose={() => setTourOpen(false)}
+        onOpenManual={() => setManualOpen(true)}
+      />
+
+      {/* In-App System Architecture User Manual */}
+      <UserManualModal
+        isOpen={manualOpen}
+        onClose={() => setManualOpen(false)}
+      />
     </div>
   )
 }

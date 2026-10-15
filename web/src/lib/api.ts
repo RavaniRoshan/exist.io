@@ -24,6 +24,8 @@ import type {
   Issue,
   IssueComment,
   ReleaseItem,
+  RepositoryRecord,
+  ClusterSystemInfo,
 } from './types'
 
 import {
@@ -128,6 +130,120 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
       cloneUrlHttp: `http://${window.location.host}/${owner}/${name}.git`,
       cloneUrlSsh: `git@${window.location.hostname}:${owner}/${name}.git`,
     }
+  }
+}
+
+export async function getRepositories(): Promise<RepositoryRecord[]> {
+  if (isDemoModeActive()) {
+    return [
+      {
+        id: 'repo-demo-1',
+        name: 'exist.io',
+        full_name: 'shiva/exist.io',
+        default_branch: 'main',
+        visibility: 'public',
+        is_private: false,
+        clone_url: 'http://localhost:8080/shiva/exist.io.git',
+        web_url: 'http://localhost:8080/shiva/exist.io',
+        description: 'Sovereign GitHub Enterprise alternative with MCP and SQLite WAL engine',
+        stars: 284,
+        forks: 36,
+        language: 'Go',
+        languageColor: '#00ADD8',
+        updated_at: 'Just now',
+      },
+      {
+        id: 'repo-demo-2',
+        name: 'agentic-mcp-bridge',
+        full_name: 'shiva/agentic-mcp-bridge',
+        default_branch: 'main',
+        visibility: 'public',
+        is_private: false,
+        clone_url: 'http://localhost:8080/shiva/agentic-mcp-bridge.git',
+        web_url: 'http://localhost:8080/shiva/agentic-mcp-bridge',
+        description: '35+ Git operations over Model Context Protocol',
+        stars: 142,
+        forks: 19,
+        language: 'TypeScript',
+        languageColor: '#3178C6',
+        updated_at: '2 hours ago',
+      },
+      {
+        id: 'repo-demo-3',
+        name: 'sqlite-git-wal',
+        full_name: 'shiva/sqlite-git-wal',
+        default_branch: 'main',
+        visibility: 'public',
+        is_private: false,
+        clone_url: 'http://localhost:8080/shiva/sqlite-git-wal.git',
+        web_url: 'http://localhost:8080/shiva/sqlite-git-wal',
+        description: 'Transactional ref storage and cryptographic audit ledger',
+        stars: 98,
+        forks: 8,
+        language: 'Go',
+        languageColor: '#00ADD8',
+        updated_at: 'Yesterday',
+      },
+    ]
+  }
+
+  try {
+    const res = await fetch('/api/v1/repos', {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    if (!Array.isArray(data?.repositories)) return []
+    return data.repositories.map((r: any) => ({
+      ...r,
+      description: r.description || 'Enterprise repository on exist.io',
+      language: r.language || 'Go',
+      languageColor: r.languageColor || '#00ADD8',
+      stars: r.stars || 0,
+      forks: r.forks || 0,
+    }))
+  } catch {
+    return [] // Authentic empty state in live production mode
+  }
+}
+
+export async function createRepository(params: {
+  owner?: string
+  name: string
+  description?: string
+  default_branch?: string
+  visibility?: 'public' | 'private'
+}): Promise<{ ok: boolean; repo?: RepositoryRecord; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/repos', {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return { ok: false, error: err || 'Failed to create repository' }
+    }
+    const data = await res.json()
+    return { ok: true, repo: data.repo }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function fetchClusterInfo(): Promise<ClusterSystemInfo> {
+  try {
+    const res = await fetch('/api/v1/system/info')
+    if (res.ok) return await res.json()
+  } catch {}
+  return {
+    version: 'v0.4.0-enterprise',
+    publicUrl: `http://${window.location.host}`,
+    gitHttpUrl: `${window.location.host}`,
+    sshAddr: `${window.location.hostname}:2222`,
+    mcpUrl: `http://${window.location.host}/mcp`,
+    walStatus: 'active',
+    engine: 'SQLite WAL modernc.org/sqlite (zero-CGO)',
   }
 }
 
@@ -659,16 +775,7 @@ export async function fetchUserTokens(): Promise<PersonalAccessToken[]> {
   } catch {
     // fallback
   }
-  return [
-    {
-      id: 'pat_live_1',
-      name: 'CI/CD GitHub Actions & exist-agent',
-      token_prefix: 'ghp_7a9B',
-      scopes: ['repo', 'workflow', 'write:packages'],
-      expires_at: '2027-10-15T00:00:00Z',
-      created_at: '2026-10-14T10:00:00Z',
-    },
-  ]
+  return []
 }
 
 export async function createUserToken(name: string, scopes: string[] = ['repo', 'read:user']): Promise<{ ok: boolean; token?: PersonalAccessToken; error?: string }> {
@@ -1077,11 +1184,11 @@ export async function getIssues(owner: string, name: string): Promise<Issue[]> {
     const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues`, {
       headers: getAuthHeader(),
     })
-    if (!res.ok) return mockSampleIssues
+    if (!res.ok) return []
     const data = await res.json()
-    return Array.isArray(data?.issues) ? data.issues : mockSampleIssues
+    return Array.isArray(data?.issues) ? data.issues : []
   } catch {
-    return mockSampleIssues
+    return []
   }
 }
 
@@ -1205,11 +1312,11 @@ export async function getReleases(owner: string, name: string): Promise<ReleaseI
     const res = await fetch(`/v1/origin/repos/${owner}/${name}/releases`, {
       headers: getAuthHeader(),
     })
-    if (!res.ok) return mockSampleReleases
+    if (!res.ok) return []
     const data = await res.json()
-    return Array.isArray(data?.releases) ? data.releases : mockSampleReleases
+    return Array.isArray(data?.releases) ? data.releases : []
   } catch {
-    return mockSampleReleases
+    return []
   }
 }
 

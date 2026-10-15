@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Box, BoxHeader, BoxTitle, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog'
 import { UnderlineNav, type NavTabItem } from '@/components/ui/UnderlineNav'
+import { CreateRepoModal } from '@/components/modals/CreateRepoModal'
 import {
   fetchUserSSHKeys,
   addUserSSHKey,
@@ -35,6 +36,8 @@ import {
   createUserToken,
   deleteUserToken,
   checkActiveSession,
+  getRepositories,
+  isDemoModeActive,
   type UserProfile,
   type UserSSHKey,
   type PersonalAccessToken,
@@ -153,11 +156,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
   const [copiedToken, setCopiedToken] = useState(false)
   const [isSubmittingToken, setIsSubmittingToken] = useState(false)
 
-  // Repositories tab filter
+  // Repositories tab filter & dynamic repos
   const [repoSearch, setRepoSearch] = useState('')
   const [repoTypeFilter, setRepoTypeFilter] = useState<'all' | 'public' | 'private'>('all')
+  const [userRepos, setUserRepos] = useState<PinnedRepo[]>(pinnedReposData)
+  const [isCreateRepoModalOpen, setIsCreateRepoModalOpen] = useState(false)
 
-  // Load initial session, keys, and tokens
+  // Load initial session, keys, tokens, and live repos
   useEffect(() => {
     checkActiveSession().then((res) => {
       if (res.authenticated && res.user) {
@@ -166,22 +171,45 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
     })
     fetchUserSSHKeys().then(setSshKeys)
     fetchUserTokens().then(setTokens)
+
+    if (!isDemoModeActive()) {
+      getRepositories().then((live) => {
+        if (live && live.length > 0) {
+          setUserRepos(
+            live.map((r) => ({
+              name: r.name,
+              owner: r.full_name?.split('/')[0] || 'shiva',
+              description: r.description || 'Enterprise repository on exist.io',
+              language: r.language || 'Go',
+              languageColor: r.languageColor || '#00ADD8',
+              stars: r.stars || 0,
+              forks: r.forks || 0,
+              isPrivate: r.is_private,
+            }))
+          )
+        }
+      })
+    }
   }, [])
 
   // Contribution Calendar Data Generator (52 weeks x 7 days)
   const contributionData = React.useMemo(() => {
     const weeks: number[][] = []
-    // Deterministic pseudo-random sequence for aesthetic, realistic density
+    const isLive = !isDemoModeActive()
     let seed = 42
     for (let w = 0; w < 52; w++) {
       const days: number[] = []
       for (let d = 0; d < 7; d++) {
-        seed = (seed * 9301 + 49297) % 233280
-        const rand = seed / 233280
-        if (rand > 0.65) days.push(3)
-        else if (rand > 0.45) days.push(2)
-        else if (rand > 0.25) days.push(1)
-        else days.push(0)
+        if (isLive) {
+          days.push(0)
+        } else {
+          seed = (seed * 9301 + 49297) % 233280
+          const rand = seed / 233280
+          if (rand > 0.65) days.push(3)
+          else if (rand > 0.45) days.push(2)
+          else if (rand > 0.25) days.push(1)
+          else days.push(0)
+        }
       }
       weeks.push(days)
     }
@@ -251,7 +279,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
     setTokens((prev) => prev.filter((t) => t.id !== tokenId))
   }
 
-  const filteredRepos = pinnedReposData.filter((r) => {
+  const filteredRepos = userRepos.filter((r) => {
     const matchesSearch = r.name.toLowerCase().includes(repoSearch.toLowerCase()) || r.description.toLowerCase().includes(repoSearch.toLowerCase())
     const matchesType = repoTypeFilter === 'all' ? true : repoTypeFilter === 'private' ? r.isPrivate : !r.isPrivate
     return matchesSearch && matchesType
@@ -259,8 +287,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
 
   const navTabs: NavTabItem[] = [
     { id: 'overview', label: 'Overview', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'repos', label: 'Repositories', count: pinnedReposData.length, icon: <Package className="w-4 h-4" /> },
-    { id: 'stars', label: 'Stars', count: 42, icon: <Star className="w-4 h-4" /> },
+    { id: 'repos', label: 'Repositories', count: userRepos.length, icon: <Package className="w-4 h-4" /> },
+    { id: 'stars', label: 'Stars', count: isDemoModeActive() ? 42 : 0, icon: <Star className="w-4 h-4" /> },
     { id: 'keys', label: 'SSH and GPG keys', count: sshKeys.length, icon: <KeyRound className="w-4 h-4" /> },
     { id: 'tokens', label: 'Personal access tokens', count: tokens.length, icon: <ShieldCheck className="w-4 h-4" /> },
   ]
@@ -438,70 +466,86 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Pinned Repositories Grid */}
+              {/* Pinned / Popular Repositories Grid */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-foreground">Pinned</h3>
-                  <span className="text-xs text-muted-foreground hover:underline cursor-pointer">
-                    Customize your pins
-                  </span>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setIsCreateRepoModalOpen(true)}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>New</span>
+                  </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {pinnedReposData.slice(0, 6).map((repo) => (
-                    <div
-                      key={repo.name}
-                      onClick={() => onSelectRepo?.(repo.name)}
-                      className="rounded-md border border-border bg-card p-4 flex flex-col justify-between hover:border-foreground/30 transition-colors shadow-2xs cursor-pointer group"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                            <span className="font-semibold text-sm text-primary group-hover:underline">
-                              {repo.name}
-                            </span>
+                {userRepos.length === 0 ? (
+                  <div className="p-8 rounded-md border border-dashed border-border text-center space-y-2.5">
+                    <BookOpen className="w-6 h-6 text-muted-foreground mx-auto" />
+                    <p className="text-xs text-muted-foreground">{user.login} doesn't have any public repositories yet.</p>
+                    <Button size="xs" variant="primary" onClick={() => setIsCreateRepoModalOpen(true)}>
+                      Create repository
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {userRepos.slice(0, 6).map((repo) => (
+                      <div
+                        key={repo.name}
+                        onClick={() => onSelectRepo?.(repo.name)}
+                        className="rounded-md border border-border bg-card p-4 flex flex-col justify-between hover:border-foreground/30 transition-colors shadow-2xs cursor-pointer group"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                              <span className="font-semibold text-sm text-primary group-hover:underline">
+                                {repo.name}
+                              </span>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-border text-muted-foreground">
+                              {repo.isPrivate ? 'Private' : 'Public'}
+                            </Badge>
                           </div>
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-border text-muted-foreground">
-                            {repo.isPrivate ? 'Private' : 'Public'}
-                          </Badge>
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {repo.description}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                          {repo.description}
-                        </p>
-                      </div>
 
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono mt-4 pt-2 border-t border-border/50">
-                        <span className="flex items-center gap-1.5">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full"
-                            style={{ backgroundColor: repo.languageColor }}
-                          />
-                          <span>{repo.language}</span>
-                        </span>
-                        {repo.stars > 0 && (
-                          <span className="flex items-center gap-1 hover:text-foreground">
-                            <Star className="w-3.5 h-3.5" />
-                            <span>{repo.stars}</span>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono mt-4 pt-2 border-t border-border/50">
+                          <span className="flex items-center gap-1.5">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: repo.languageColor || '#00ADD8' }}
+                            />
+                            <span>{repo.language || 'Go'}</span>
                           </span>
-                        )}
-                        {repo.forks > 0 && (
-                          <span className="flex items-center gap-1 hover:text-foreground">
-                            <GitFork className="w-3.5 h-3.5" />
-                            <span>{repo.forks}</span>
-                          </span>
-                        )}
+                          {repo.stars > 0 && (
+                            <span className="flex items-center gap-1 hover:text-foreground">
+                              <Star className="w-3.5 h-3.5" />
+                              <span>{repo.stars}</span>
+                            </span>
+                          )}
+                          {repo.forks > 0 && (
+                            <span className="flex items-center gap-1 hover:text-foreground">
+                              <GitFork className="w-3.5 h-3.5" />
+                              <span>{repo.forks}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* 52-Week Contribution Calendar Heatmap */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-foreground">
-                    2,842 contributions in the last year
+                    {isDemoModeActive() || userRepos.length > 0 ? '2,842 contributions in the last year' : '0 contributions in the last year'}
                   </h3>
                   <div className="text-xs text-muted-foreground hover:underline cursor-pointer">
                     Contribution settings ▾
@@ -614,7 +658,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
                     <option value="public">Public</option>
                     <option value="private">Private</option>
                   </select>
-                  <Button size="sm" className="gap-1.5">
+                  <Button size="sm" className="gap-1.5" onClick={() => setIsCreateRepoModalOpen(true)}>
                     <Plus className="w-3.5 h-3.5" />
                     <span>New</span>
                   </Button>
@@ -624,8 +668,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
               {/* Repositories List */}
               <Box flush>
                 {filteredRepos.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-muted-foreground">
-                    No repositories match your filter criteria.
+                  <div className="py-12 text-center text-xs text-muted-foreground space-y-2">
+                    <p>{user.login} doesn't have any repositories matching this criteria.</p>
+                    <Button size="xs" variant="primary" onClick={() => setIsCreateRepoModalOpen(true)}>
+                      Create repository
+                    </Button>
                   </div>
                 ) : (
                   filteredRepos.map((repo) => (
@@ -1033,6 +1080,29 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
           </DialogFooter>
         </form>
       </Dialog>
+
+      {/* Create Repo Modal */}
+      <CreateRepoModal
+        isOpen={isCreateRepoModalOpen}
+        onClose={() => setIsCreateRepoModalOpen(false)}
+        defaultOwner={user.login}
+        onSuccess={(newRepo) => {
+          setUserRepos((prev) => [
+            {
+              name: newRepo.name,
+              owner: newRepo.full_name?.split('/')[0] || user.login,
+              description: newRepo.description || 'Enterprise repository on exist.io',
+              language: newRepo.language || 'Go',
+              languageColor: newRepo.languageColor || '#00ADD8',
+              stars: 0,
+              forks: 0,
+              isPrivate: newRepo.is_private,
+            },
+            ...prev,
+          ])
+          onSelectRepo?.(newRepo.name)
+        }}
+      />
     </div>
   )
 }

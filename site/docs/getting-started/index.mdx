@@ -57,13 +57,18 @@ The server binds to port `8080` and is immediately ready to accept Git Smart-HTT
 | Endpoint | Protocol | Purpose |
 | :--- | :--- | :--- |
 | `http://localhost:8080/{owner}/{repo}.git` | Git Smart-HTTP | Clone, fetch, and push |
-| `http://localhost:8080/v1/origin` | REST API | Repository and collaboration API |
-| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Read-write Model Context Protocol endpoint |
+| `ssh://git@localhost:2222/{owner}/{repo}.git` | Pure-Go SSH | Embedded SSH key transport (port 2222) |
+| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Autonomous AI agent 35+ Git tools |
 | `http://localhost:8080/mcp/readonly` | MCP (JSON-RPC) | Sandboxed read-only MCP endpoint |
+| `http://localhost:8080/scim/v2/Users` | SCIM 2.0 | Automated corporate IdP user provisioning |
 | `http://localhost:8080/v1/origin/openapi.yaml` | HTTP | OpenAPI 3.1 specification |
-| `http://localhost:8080/healthz` | HTTP | Health probe |
+| `http://localhost:8080/healthz` | HTTP | Cluster health & readiness probe |
 
-## 4. Working with the CLI and Git
+## 4. Interactive First-Time Onboarding Tour & In-App Manual
+
+When opening the web console (`http://localhost:8080` in production or `http://localhost:3000` during dev):
+1. An interactive **5-step Onboarding Walkthrough** automatically greets first-time administrators, detailing cluster network topology (:8080, :2222, /mcp), git client configuration, and agent leases.
+2. The built-in **User Manual & Architecture Guide** is accessible anytime via the **"Manual"** icon in the header, complete with live network port tables and copyable quick-start commands.
 
 Configure the `exist` CLI using your bootstrap API token:
 

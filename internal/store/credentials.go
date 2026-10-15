@@ -84,6 +84,29 @@ func (db *DB) RevokeAPIKey(ctx context.Context, id string) error {
 	return nil
 }
 
+// ListAPIKeysByUserID returns all active API keys for a user.
+func (db *DB) ListAPIKeysByUserID(ctx context.Context, userID string) ([]APIKey, error) {
+	rows, err := db.sql.QueryContext(ctx, `
+		SELECT id, user_id, key_hash, key_prefix, name, scopes, created_at, expires_at, revoked_at, last_used_at
+		FROM api_keys
+		WHERE user_id = ? AND revoked_at IS NULL
+		ORDER BY created_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var keys []APIKey
+	for rows.Next() {
+		var k APIKey
+		if err := rows.Scan(&k.ID, &k.UserID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Scopes,
+			&k.CreatedAt, &k.ExpiresAt, &k.RevokedAt, &k.LastUsedAt); err != nil {
+			return nil, err
+		}
+		keys = append(keys, k)
+	}
+	return keys, rows.Err()
+}
+
 // TouchAPIKey updates the last_used_at timestamp on an API key.
 func (db *DB) TouchAPIKey(ctx context.Context, id string) error {
 	now := time.Now().UTC().Format(time.RFC3339Nano)

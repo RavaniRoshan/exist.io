@@ -637,3 +637,125 @@ func UserListSSHKeysHandler(db *store.DB) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(map[string]any{"keys": keys})
 	}
 }
+
+// UserListTokensHandler returns all active API keys (Personal Access Tokens) for the caller.
+func UserListTokensHandler(db *store.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		actingUser := "user_root"
+		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
+			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
+				actingUser = sess.UserID
+			}
+		}
+
+		keys, err := db.ListAPIKeysByUserID(r.Context(), actingUser)
+		if err != nil {
+			http.Error(w, "Failed to list tokens", http.StatusInternalServerError)
+			return
+		}
+		type tokenItem struct {
+			ID         string   `json:"id"`
+			Name       string   `json:"name"`
+			KeyPrefix  string   `json:"prefix"`
+			Scopes     []string `json:"scopes"`
+			CreatedAt  string   `json:"created_at"`
+			LastUsedAt string   `json:"last_used_at,omitempty"`
+		}
+		out := make([]tokenItem, 0, len(keys))
+		for _, k := range keys {
+			var scopesList []string
+			if k.Scopes == "*" {
+				scopesList = []string{"all"}
+			} else {
+				scopesList = strings.Fields(k.Scopes)
+			}
+			lastUsed := ""
+			if k.LastUsedAt.Valid {
+				lastUsed = k.LastUsedAt.String
+			}
+			out = append(out, tokenItem{
+				ID:         k.ID,
+				Name:       k.Name,
+				KeyPrefix:  k.KeyPrefix,
+				Scopes:     scopesList,
+				CreatedAt:  k.CreatedAt,
+				LastUsedAt: lastUsed,
+			})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"tokens": out})
+	}
+}
+
+// UserDeleteTokenHandler revokes an API key.
+func UserDeleteTokenHandler(db *store.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		keyID := r.PathValue("id")
+		if keyID == "" {
+			keyID = strings.TrimPrefix(r.URL.Path, "/api/v1/user/tokens/")
+		}
+		if keyID == "" {
+			http.Error(w, "token id is required", http.StatusBadRequest)
+			return
+		}
+
+		if err := db.RevokeAPIKey(r.Context(), keyID); err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				http.Error(w, "Token not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Failed to revoke token", http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "revoked": keyID})
+	}
+}
+
+// UserDeleteSSHKeyHandler removes an enrolled SSH key.
+func UserDeleteSSHKeyHandler(db *store.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		actingUser := "user_root"
+		if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
+			if sess, _, err := db.GetSessionByHash(r.Context(), HashCredential(cookie.Value)); err == nil {
+				actingUser = sess.UserID
+			}
+		}
+
+		keyID := r.PathValue("id")
+		if keyID == "" {
+			keyID = strings.TrimPrefix(r.URL.Path, "/api/v1/user/ssh-keys/")
+		}
+		if keyID == "" {
+			http.Error(w, "ssh key id is required", http.StatusBadRequest)
+			return
+		}
+
+		if err := db.DeleteUserSSHKey(r.Context(), actingUser, keyID); err != nil {
+			http.Error(w, "Failed to delete SSH key", http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "deleted": keyID})
+	}
+}

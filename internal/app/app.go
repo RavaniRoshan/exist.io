@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"exist.io/internal/agentactivity"
@@ -26,6 +27,7 @@ import (
 	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
 	"exist.io/pkg/agentlease"
+	"exist.io/pkg/idgen"
 )
 
 // App is the composition root for exist.io. It owns configuration, metadata
@@ -151,9 +153,147 @@ func Open(cfg config.Config) (*App, error) {
 	mux.HandleFunc("POST /api/v1/admin/users", auth.AdminCreateUserHandler(db))
 
 	// Self-service User Tokens and SSH keys
+	mux.HandleFunc("GET /api/v1/user/tokens", auth.UserListTokensHandler(db))
 	mux.HandleFunc("POST /api/v1/user/tokens", auth.UserCreateTokenHandler(db))
+	mux.HandleFunc("DELETE /api/v1/user/tokens/{id}", auth.UserDeleteTokenHandler(db))
 	mux.HandleFunc("GET /api/v1/user/ssh-keys", auth.UserListSSHKeysHandler(db))
 	mux.HandleFunc("POST /api/v1/user/ssh-keys", auth.UserAddSSHKeyHandler(db))
+	mux.HandleFunc("DELETE /api/v1/user/ssh-keys/{id}", auth.UserDeleteSSHKeyHandler(db))
+
+	// System Architecture & Live Discovery
+	mux.HandleFunc("GET /api/v1/system/info", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"version":    "v0.4.0-enterprise",
+			"publicUrl":  cfg.PublicURL,
+			"gitHttpUrl": cfg.GitURL,
+			"sshAddr":    cfg.SSHAddr,
+			"mcpUrl":     cfg.PublicURL + "/mcp",
+			"walStatus":  "active",
+			"engine":     "SQLite WAL modernc.org/sqlite (zero-CGO)",
+		})
+	})
+
+	// Direct Repository Management (Web & API)
+	mux.HandleFunc("GET /api/v1/repos", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		repos, err := db.ListAllRepos(r.Context(), 50)
+		if err != nil {
+			http.Error(w, "Failed to list repositories: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		type repoItem struct {
+			ID            string `json:"id"`
+			Name          string `json:"name"`
+			FullName      string `json:"full_name"`
+			DefaultBranch string `json:"default_branch"`
+			Visibility    string `json:"visibility"`
+			IsPrivate     bool   `json:"is_private"`
+			CloneURL      string `json:"clone_url"`
+			WebURL        string `json:"web_url"`
+			UpdatedAt     string `json:"updated_at"`
+		}
+		out := make([]repoItem, 0, len(repos))
+		for _, rp := range repos {
+			out = append(out, repoItem{
+				ID:            rp.ID,
+				Name:          rp.Name,
+				FullName:      rp.FullName,
+				DefaultBranch: rp.DefaultBranch,
+				Visibility:    rp.Visibility,
+				IsPrivate:     rp.Visibility == "private",
+				CloneURL:      rp.CloneURL,
+				WebURL:        rp.WebURL,
+				UpdatedAt:     rp.UpdatedAt,
+			})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"repositories": out})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		var req struct {
+			Owner         string `json:"owner"`
+			Name          string `json:"name"`
+			Description   string `json:"description"`
+			DefaultBranch string `json:"default_branch"`
+			Visibility    string `json:"visibility"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		req.Name = strings.TrimSpace(req.Name)
+		if req.Name == "" {
+			http.Error(w, "Repository name is required", http.StatusBadRequest)
+			return
+		}
+		req.Owner = strings.TrimSpace(req.Owner)
+		if req.Owner == "" {
+			req.Owner = "exist"
+		}
+		if req.DefaultBranch == "" {
+			req.DefaultBranch = "main"
+		}
+		if req.Visibility == "" {
+			req.Visibility = "public"
+		}
+
+		// Ensure namespace exists
+		ns, err := db.GetNamespaceBySlug(r.Context(), req.Owner)
+		if err != nil {
+			ns = store.Namespace{
+				ID:   idgen.NewNS(),
+				Slug: req.Owner,
+				Name: req.Owner,
+				Type: "user",
+			}
+			_ = db.CreateNamespace(r.Context(), ns)
+		}
+
+		fullName := req.Owner + "/" + req.Name
+		cloneHTTP := fmt.Sprintf("%s/%s/%s.git", strings.TrimRight(cfg.PublicURL, "/"), req.Owner, req.Name)
+		webURL := fmt.Sprintf("%s/%s/%s", strings.TrimRight(cfg.PublicURL, "/"), req.Owner, req.Name)
+
+		repoRecord := store.Repo{
+			ID:                  idgen.NewRepo(),
+			NamespaceID:         ns.ID,
+			Name:                req.Name,
+			FullName:            fullName,
+			DefaultBranch:       req.DefaultBranch,
+			Visibility:          req.Visibility,
+			CloneURL:            cloneHTTP,
+			WebURL:              webURL,
+			AllowMergeCommit:    true,
+			AllowSquashMerge:    true,
+			DeleteBranchOnMerge: false,
+		}
+
+		if err := db.CreateRepo(r.Context(), repoRecord); err != nil {
+			http.Error(w, "Failed to create repo: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Initialize bare repo on disk
+		if _, err := git.Init(req.Owner, req.Name, req.DefaultBranch); err != nil {
+			http.Error(w, "Failed to init bare repo on disk: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":   true,
+			"repo": repoRecord,
+		})
+	})
 
 	mux.HandleFunc("POST /auth/exchange_user_api_key", auth.ExchangeHandler(db))
 

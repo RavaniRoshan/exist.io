@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-47%20Passed-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/Tests-57%20Passed%20(15%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
 [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
@@ -74,6 +74,16 @@
     <td width="50%">
       <h3>💎 GitHub Primer UI & Developer Parity</h3>
       <p>Precision-engineered GitHub Primer design system with 6px squircle radius, custom OKLCH color token architecture, 52-week contribution heatmaps, User Profile credentials (SSH keys / PATs), Issue tracker with autonomous agent triage, and cryptographically verified Releases.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>🧭 Interactive Product Tour & System Manual</h3>
+      <p>Built-in interactive onboarding walkthrough for first-time administrators, detailing cluster network topology (:8080, :2222, /mcp), git client enrollment, AI agent integration, and in-app architecture documentation.</p>
+    </td>
+    <td width="50%">
+      <h3>🔒 Zero-Mock Live Production Integrity</h3>
+      <p>Clean isolation between sandbox demo mode and live production clusters. Instant repository creation via SQLite WAL backend, authentic empty states, and dynamic cluster telemetry.</p>
     </td>
   </tr>
 </table>

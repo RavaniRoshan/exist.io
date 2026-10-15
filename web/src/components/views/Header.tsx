@@ -23,6 +23,7 @@ import {
   ChevronDown,
   AlertCircle,
   Tag,
+  Compass,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -38,6 +39,8 @@ export interface HeaderProps {
   activeTab: string
   onTabChange: (tab: string) => void
   openPrCount?: number
+  onOpenTour?: () => void
+  onOpenManual?: () => void
 }
 
 /**
@@ -49,6 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onTabChange,
   openPrCount = 1,
+  onOpenTour,
+  onOpenManual,
 }) => {
   const [cloneModalOpen, setCloneModalOpen] = useState(false)
   const [cloneType, setCloneType] = useState<'http' | 'ssh' | 'mcp'>('http')
@@ -187,16 +192,27 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>MCP: 35 tools</span>
               </button>
 
-              {/* Documentation */}
-              <a
-                href="https://ravaniroshan.github.io/exist.io/"
-                target="_blank"
-                rel="noreferrer"
-                className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors"
-                title="Documentation & Guides"
-              >
-                <BookOpen className="w-4 h-4" />
-              </a>
+              {/* Tour and User Manual Buttons */}
+              {onOpenTour && (
+                <button
+                  onClick={onOpenTour}
+                  className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-foreground border border-border hover:bg-secondary/80 transition-colors cursor-pointer"
+                  title="Take Interactive Onboarding Tour"
+                >
+                  <Compass className="w-3.5 h-3.5 text-primary" />
+                  <span>Tour</span>
+                </button>
+              )}
+
+              {onOpenManual && (
+                <button
+                  onClick={onOpenManual}
+                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors cursor-pointer"
+                  title="In-App System Manual & Architecture Map"
+                >
+                  <BookOpen className="w-4 h-4 text-primary" />
+                </button>
+              )}
 
               {/* GitHub Link */}
               <a
@@ -256,6 +272,30 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span>Enterprise Feed</span>
                       </button>
+                      {onOpenTour && (
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false)
+                            onOpenTour()
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-secondary/70 text-foreground transition-colors cursor-pointer flex items-center gap-2"
+                        >
+                          <Compass className="w-3.5 h-3.5 text-primary" />
+                          <span>Product Tour</span>
+                        </button>
+                      )}
+                      {onOpenManual && (
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false)
+                            onOpenManual()
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-secondary/70 text-foreground transition-colors cursor-pointer flex items-center gap-2"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-primary" />
+                          <span>User Manual</span>
+                        </button>
+                      )}
                       <div className="border-t border-border my-1" />
                       <button
                         onClick={handleLogout}
