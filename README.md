@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-100%20Passed%20(28%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/Tests-111%20Passed%20(31%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
 [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
