@@ -49,7 +49,7 @@ export const Dialog: React.FC<DialogProps> = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md"
           />
 
           {/* Modal Card */}
@@ -59,8 +59,8 @@ export const Dialog: React.FC<DialogProps> = ({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
             className={cn(
-              'relative w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl backdrop-blur-xl z-10 overflow-hidden',
-              'before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-gradient-to-b before:from-sky-500/10 before:to-transparent before:opacity-60',
+              'relative w-full rounded-2xl border border-border bg-card/95 text-card-foreground p-6 shadow-2xl backdrop-blur-xl z-10 overflow-hidden',
+              'before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-gradient-to-b before:from-primary/10 before:to-transparent before:opacity-60',
               maxW,
               className
             )}
@@ -68,7 +68,7 @@ export const Dialog: React.FC<DialogProps> = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/80 transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-secondary/80 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -76,8 +76,8 @@ export const Dialog: React.FC<DialogProps> = ({
             {/* Header */}
             {(title || description) && (
               <div className="mb-4 pr-6">
-                {title && <h3 className="text-lg font-semibold text-slate-100">{title}</h3>}
-                {description && <p className="text-xs text-slate-400 mt-1">{description}</p>}
+                {title && <h3 className="text-lg font-semibold text-foreground">{title}</h3>}
+                {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
               </div>
             )}
 

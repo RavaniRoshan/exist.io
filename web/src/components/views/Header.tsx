@@ -80,22 +80,22 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/85 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-4">
             {/* Logo & Breadcrumb */}
             <div className="flex items-center gap-3">
               <motion.div
                 whileHover={{ rotate: 10, scale: 1.05 }}
-                className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-violet-600 text-white shadow-lg shadow-sky-500/20 border border-sky-400/30"
+                className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground shadow-sm border border-primary/40"
               >
-                <GitBranch className="w-5 h-5 text-white" />
+                <GitBranch className="w-5 h-5 text-current" />
               </motion.div>
               <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-                <span className="text-slate-400 hover:text-slate-200 cursor-pointer">{repo.ownerSlug}</span>
-                <span className="text-slate-600">/</span>
-                <span className="text-white hover:text-sky-400 cursor-pointer">{repo.name}</span>
-                <Badge variant="outline" className="ml-1 text-[10px] py-0 border-slate-700/80">
+                <span className="text-muted-foreground hover:text-foreground cursor-pointer">{repo.ownerSlug}</span>
+                <span className="text-border">/</span>
+                <span className="text-foreground hover:text-primary cursor-pointer">{repo.name}</span>
+                <Badge variant="outline" className="ml-1 text-[10px] py-0 border-border text-muted-foreground">
                   Public
                 </Badge>
               </div>
@@ -127,16 +127,16 @@ export const Header: React.FC<HeaderProps> = ({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onOpenAgentConsole}
-                className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:border-sky-400 hover:bg-sky-500/20 transition-all shadow-[0_0_15px_rgba(56,189,248,0.15)]"
+                className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/30 hover:border-primary hover:bg-primary/20 transition-all shadow-xs"
               >
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                 </span>
-                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 <span className="font-semibold">MCP Active</span>
-                <span className="text-[10px] text-sky-400/80 bg-sky-950/60 px-1.5 py-0.2 rounded border border-sky-800">
-                  34 tools
+                <span className="text-[10px] text-primary bg-primary/20 px-1.5 py-0.2 rounded border border-primary/40">
+                  35 tools
                 </span>
               </motion.button>
 
@@ -175,21 +175,21 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Authentication Status / Sign In Button */}
               {currentUser ? (
-                <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+                <div className="flex items-center gap-2 pl-2 border-l border-border">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-xs">
                       {currentUser.login.charAt(0).toUpperCase()}
                     </div>
                     <div className="hidden lg:flex flex-col text-left">
-                      <span className="text-xs font-medium text-slate-200 leading-tight">{currentUser.name || currentUser.login}</span>
-                      <span className="text-[10px] text-slate-400 capitalize">{currentUser.role}</span>
+                      <span className="text-xs font-medium text-foreground leading-tight">{currentUser.name || currentUser.login}</span>
+                      <span className="text-[10px] text-muted-foreground capitalize">{currentUser.role}</span>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
-                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     title="Sign Out"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -200,9 +200,9 @@ export const Header: React.FC<HeaderProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setAuthModalOpen(true)}
-                  className="gap-1.5 border-slate-700 bg-slate-900/60 hover:bg-slate-800 cursor-pointer"
+                  className="gap-1.5 border-border bg-secondary hover:bg-secondary/80 text-foreground cursor-pointer"
                 >
-                  <LogIn className="w-3.5 h-3.5 text-sky-400" />
+                  <LogIn className="w-3.5 h-3.5 text-primary" />
                   <span>Sign In</span>
                 </Button>
               )}
@@ -219,11 +219,11 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <div className="space-y-4 pt-2">
             {/* Transport Selector Tabs */}
-            <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs font-medium">
+            <div className="flex rounded-xl bg-background p-1 border border-border text-xs font-medium">
               <button
                 onClick={() => setCloneType('http')}
                 className={`flex-1 py-1.5 rounded-lg transition-colors ${
-                  cloneType === 'http' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
+                  cloneType === 'http' ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Smart-HTTP
@@ -231,7 +231,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => setCloneType('ssh')}
                 className={`flex-1 py-1.5 rounded-lg transition-colors ${
-                  cloneType === 'ssh' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
+                  cloneType === 'ssh' ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 SSH
@@ -239,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => setCloneType('mcp')}
                 className={`flex-1 py-1.5 rounded-lg transition-colors ${
-                  cloneType === 'mcp' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
+                  cloneType === 'mcp' ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 MCP Agent
@@ -247,8 +247,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Code snippet display */}
-            <div className="relative rounded-xl bg-slate-950 border border-slate-800 p-3 font-mono text-xs text-sky-300 overflow-x-auto flex items-center justify-between">
-              <code className="text-slate-200 select-all">{getCloneCommand()}</code>
+            <div className="relative rounded-xl bg-background border border-border p-3 font-mono text-xs text-primary overflow-x-auto flex items-center justify-between">
+              <code className="text-foreground select-all">{getCloneCommand()}</code>
               <Button
                 variant="ghost"
                 size="xs"

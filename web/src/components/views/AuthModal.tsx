@@ -66,12 +66,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     >
       <div className="space-y-4 pt-2">
         {/* Tab Switcher */}
-        <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs font-medium">
+        <div className="flex rounded-xl bg-background p-1 border border-border text-xs font-medium">
           <button
             type="button"
             onClick={() => { setTab('login'); setError(null) }}
             className={`flex-1 py-1.5 rounded-lg transition-colors ${
-              tab === 'login' ? 'bg-sky-500/20 text-sky-300 font-semibold shadow-inner' : 'text-slate-400 hover:text-white'
+              tab === 'login' ? 'bg-primary/20 text-primary font-semibold shadow-inner' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Sign In
@@ -80,7 +80,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             type="button"
             onClick={() => { setTab('register'); setError(null) }}
             className={`flex-1 py-1.5 rounded-lg transition-colors ${
-              tab === 'register' ? 'bg-sky-500/20 text-sky-300 font-semibold shadow-inner' : 'text-slate-400 hover:text-white'
+              tab === 'register' ? 'bg-primary/20 text-primary font-semibold shadow-inner' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Create Account
@@ -91,20 +91,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300"
+            className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-2.5 text-xs text-destructive"
           >
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <span>{error}</span>
           </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Email or Username
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
               <Input
                 type="text"
                 required
@@ -119,11 +119,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           {tab === 'register' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-foreground mb-1">
                   Login Username (Slug)
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <User className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
                   <Input
                     type="text"
                     required
@@ -136,11 +136,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-foreground mb-1">
                   Full Name
                 </label>
                 <div className="relative">
-                  <ShieldCheck className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <ShieldCheck className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
                   <Input
                     type="text"
                     value={name}
@@ -155,15 +155,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-slate-300">
+              <label className="block text-xs font-medium text-foreground">
                 Password
               </label>
               {tab === 'register' && (
-                <span className="text-[10px] text-slate-500">Min 8 characters</span>
+                <span className="text-[10px] text-muted-foreground">Min 8 characters</span>
               )}
             </div>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
               <Input
                 type="password"
                 required
@@ -189,7 +189,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </div>
         </form>
 
-        <div className="pt-2 border-t border-slate-800/80 text-center text-slate-500 text-[11px]">
+        <div className="pt-2 border-t border-border text-center text-muted-foreground text-[11px]">
           <span>Protected by exist.io Argon2id credential hashing & session encryption</span>
         </div>
       </div>

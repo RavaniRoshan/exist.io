@@ -19,7 +19,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   children,
   ...props
 }, ref) => {
-  const baseStyles = 'relative inline-flex items-center justify-center font-medium select-none transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:pointer-events-none rounded-xl'
+  const baseStyles = 'relative inline-flex items-center justify-center font-medium select-none transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none rounded-xl'
 
   const sizeStyles = {
     xs: 'h-7 px-2.5 text-xs gap-1.5',
@@ -30,13 +30,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   }
 
   const variantStyles = {
-    primary: 'bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-slate-950 font-semibold shadow-md shadow-sky-500/20 border border-sky-400/40 hover:shadow-sky-500/30',
-    secondary: 'bg-slate-800/90 hover:bg-slate-800 text-slate-100 border border-slate-700/80 hover:border-slate-600',
-    outline: 'bg-transparent hover:bg-slate-800/60 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600',
-    ghost: 'bg-transparent hover:bg-slate-800/60 text-slate-400 hover:text-slate-100 border-none',
-    destructive: 'bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 text-rose-400 border border-rose-500/30',
-    glow: 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-medium shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 border border-sky-300/30 hover:brightness-110',
-    cyber: 'bg-slate-900/90 hover:bg-slate-900 text-sky-400 border border-sky-500/40 hover:border-sky-400 hover:shadow-[0_0_15px_rgba(56,189,248,0.25)]',
+    primary: 'bg-primary hover:opacity-90 active:opacity-100 text-primary-foreground font-semibold shadow-xs border border-primary/40 hover:shadow-sm',
+    secondary: 'bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border hover:border-muted-foreground/40',
+    outline: 'bg-transparent hover:bg-secondary/60 text-foreground border border-border hover:border-muted-foreground/60',
+    ghost: 'bg-transparent hover:bg-secondary/50 text-muted-foreground hover:text-foreground border-none',
+    destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-xs border border-destructive/40',
+    glow: 'bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold shadow-sm hover:shadow-md border border-primary/40 hover:brightness-105',
+    cyber: 'bg-card/90 hover:bg-card text-primary border border-primary/40 hover:border-primary hover:shadow-[0_0_15px_color-mix(in_oklch,var(--primary)_25%,transparent)]',
   }
 
   return (

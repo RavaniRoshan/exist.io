@@ -190,70 +190,70 @@ export const AgentConsoleView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner Hero */}
-      <Card className="border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-slate-900/60 to-purple-950/40 p-6">
+      <Card className="border-primary/30 bg-gradient-to-r from-card/90 via-card/60 to-accent/20 p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <motion.div
               animate={{
                 boxShadow: [
-                  '0 0 15px rgba(56,189,248,0.2)',
-                  '0 0 30px rgba(56,189,248,0.4)',
-                  '0 0 15px rgba(56,189,248,0.2)',
+                  '0 0 15px color-mix(in oklch, var(--primary) 20%, transparent)',
+                  '0 0 30px color-mix(in oklch, var(--primary) 40%, transparent)',
+                  '0 0 15px color-mix(in oklch, var(--primary) 20%, transparent)',
                 ],
               }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="flex items-center justify-center w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-400/40 text-sky-300"
+              className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/20 border border-primary/40 text-primary"
             >
-              <Bot className="w-6 h-6 text-sky-400" />
+              <Bot className="w-6 h-6 text-primary" />
             </motion.div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">AI Agent Telemetry & Capability Leases</h2>
+                <h2 className="text-xl font-bold text-foreground tracking-tight">AI Agent Telemetry & Capability Leases</h2>
                 <Badge variant="agent" pulse>
                   <Sparkles className="w-3 h-3 mr-1" /> Live Protocol
                 </Badge>
               </div>
-              <p className="text-xs text-slate-400">
-                Direct Model Context Protocol server mounted on <code className="text-sky-300 font-mono">http://localhost:8080/mcp</code> with 35 active tools.
+              <p className="text-xs text-muted-foreground">
+                Direct Model Context Protocol server mounted on <code className="text-primary font-mono">http://localhost:8080/mcp</code> with 35 active tools.
               </p>
             </div>
           </div>
 
           {/* Quick Metrics */}
           <div className="flex items-center gap-4 text-xs font-mono">
-            <div className="px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-0.5">
-              <span className="text-[10px] text-slate-500 block uppercase">MCP Tools</span>
-              <span className="text-sm font-bold text-sky-400">{availableTools.length || 35} tools</span>
+            <div className="px-3 py-2 rounded-xl bg-secondary/80 border border-border space-y-0.5">
+              <span className="text-[10px] text-muted-foreground block uppercase">MCP Tools</span>
+              <span className="text-sm font-bold text-primary">{availableTools.length || 35} tools</span>
             </div>
-            <div className="px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-0.5">
-              <span className="text-[10px] text-slate-500 block uppercase">Avg Latency</span>
+            <div className="px-3 py-2 rounded-xl bg-secondary/80 border border-border space-y-0.5">
+              <span className="text-[10px] text-muted-foreground block uppercase">Avg Latency</span>
               <span className="text-sm font-bold text-emerald-400">12ms</span>
             </div>
-            <div className="px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-0.5">
-              <span className="text-[10px] text-slate-500 block uppercase">Engine State</span>
-              <span className="text-sm font-bold text-purple-400">SQLite WAL</span>
+            <div className="px-3 py-2 rounded-xl bg-secondary/80 border border-border space-y-0.5">
+              <span className="text-[10px] text-muted-foreground block uppercase">Engine State</span>
+              <span className="text-sm font-bold text-foreground">SQLite WAL</span>
             </div>
           </div>
         </div>
       </Card>
 
       {/* Sub-tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-border pb-2">
         <button
           onClick={() => setActiveTab('activity')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-            activeTab === 'activity' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'activity' ? 'bg-primary/20 text-primary font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
           <span>Real-time Agent Activity</span>
-          <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full">{activities.length}</span>
+          <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">{activities.length}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('tester')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-            activeTab === 'tester' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'tester' ? 'bg-primary/20 text-primary font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Terminal className="w-3.5 h-3.5" />
@@ -262,18 +262,18 @@ export const AgentConsoleView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('leases')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-            activeTab === 'leases' ? 'bg-purple-500/20 text-purple-300 font-semibold' : 'text-slate-400 hover:text-white'
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'leases' ? 'bg-accent/25 text-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <KeyRound className="w-3.5 h-3.5 text-purple-400" />
+          <KeyRound className="w-3.5 h-3.5 text-primary" />
           <span>Capability Leases</span>
         </button>
 
         <button
           onClick={() => setActiveTab('catalog')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-            activeTab === 'catalog' ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-400 hover:text-white'
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'catalog' ? 'bg-primary/20 text-primary font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <ShieldCheck className="w-3.5 h-3.5" />
@@ -285,13 +285,13 @@ export const AgentConsoleView: React.FC = () => {
       {activeTab === 'activity' && (
         <div className="space-y-4">
           {activities.length === 0 ? (
-            <Card className="border-slate-800 bg-slate-950/60 p-8 text-center space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mx-auto text-sky-400">
+            <Card className="border-border bg-card/60 p-8 text-center space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary">
                 <Activity className="w-6 h-6" />
               </div>
               <div className="max-w-md mx-auto space-y-1">
-                <h3 className="text-base font-semibold text-slate-100">No agent operations recorded yet</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <h3 className="text-base font-semibold text-foreground">No agent operations recorded yet</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   Autonomous agents invoking tools via the JSON-RPC Model Context Protocol or executing pull request reviews
                   will stream real-time operational telemetry into this dashboard.
                 </p>
@@ -469,12 +469,12 @@ export const AgentConsoleView: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-slate-300">TTL Duration (Minutes)</label>
+                <label className="text-xs font-medium text-foreground">TTL Duration (Minutes)</label>
                 <input
                   type="number"
                   value={leaseTtlMinutes}
                   onChange={(e) => setLeaseTtlMinutes(parseInt(e.target.value, 10) || 15)}
-                  className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 font-mono outline-none focus:border-purple-500"
+                  className="mt-1 w-full bg-input border border-border rounded-xl p-2.5 text-xs text-foreground font-mono outline-none focus:border-primary"
                 />
               </div>
 
@@ -484,7 +484,7 @@ export const AgentConsoleView: React.FC = () => {
                   size="sm"
                   onClick={handleGenerateLease}
                   disabled={generatingLease}
-                  className="w-full gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600"
+                  className="w-full gap-1.5"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>{generatingLease ? 'Signing Lease...' : 'Sign & Issue Capability Lease'}</span>
@@ -493,47 +493,47 @@ export const AgentConsoleView: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-950/60 p-6 space-y-4">
-            <h3 className="text-base font-semibold text-white">Active Lease Credential</h3>
+          <Card className="border-border bg-card/60 p-6 space-y-4">
+            <h3 className="text-base font-semibold text-foreground">Active Lease Credential</h3>
             {issuedLease ? (
               <div className="space-y-4">
-                <div className="p-3 bg-purple-950/30 border border-purple-800/60 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-mono text-purple-300">
+                <div className="p-3 bg-accent/15 border border-accent/40 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono text-foreground">
                     <span>Lease ID: {issuedLease.id}</span>
-                    <Badge variant="outline" className="text-[10px] text-purple-300 border-purple-500/40">Active</Badge>
+                    <Badge variant="outline" className="text-[10px] text-primary border-primary/40">Active</Badge>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono">
+                  <div className="text-[11px] text-muted-foreground font-mono">
                     Expires: {new Date(issuedLease.expiresAt).toLocaleTimeString()} ({issuedLease.expiresAt})
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Signed Capability Token</span>
                     <button
                       onClick={handleCopyToken}
-                      className="hover:text-white transition-colors flex items-center gap-1 text-[11px] text-sky-400"
+                      className="hover:text-foreground transition-colors flex items-center gap-1 text-[11px] text-primary cursor-pointer"
                     >
                       {copiedToken ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedToken ? 'Copied' : 'Copy Token'}</span>
                     </button>
                   </div>
-                  <pre className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto break-all whitespace-pre-wrap">
+                  <pre className="p-3 bg-background border border-border rounded-xl text-xs font-mono text-foreground overflow-x-auto break-all whitespace-pre-wrap">
                     {issuedLease.token}
                   </pre>
                 </div>
 
-                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1 text-xs text-slate-400">
-                  <span className="font-semibold text-slate-200">How to use:</span>
+                <div className="p-3 bg-secondary/60 border border-border rounded-xl space-y-1 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">How to use:</span>
                   <p className="text-[11px] leading-relaxed">
                     Pass in agent HTTP requests via header:
                     <br />
-                    <code className="text-sky-300 font-mono">Authorization: Bearer {issuedLease.token.slice(0, 16)}...</code>
+                    <code className="text-primary font-mono">Authorization: Bearer {issuedLease.token.slice(0, 16)}...</code>
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-slate-500 text-xs font-mono">
+              <div className="p-8 text-center text-muted-foreground text-xs font-mono">
                 No active capability lease issued in this session. Configure the parameters and click "Sign & Issue" to generate one.
               </div>
             )}
@@ -543,27 +543,27 @@ export const AgentConsoleView: React.FC = () => {
 
       {/* Tab 4: 35-Tool Catalog */}
       {activeTab === 'catalog' && (
-        <Card className="p-0 overflow-hidden border-slate-800 bg-slate-950/50">
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-850">
+        <Card className="p-0 overflow-hidden border-border bg-card/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
             <div className="p-4 space-y-3">
-              <h4 className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Repository & Tree Tools</h4>
+              <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">Repository & Tree Tools</h4>
               <div className="space-y-2 text-xs">
                 {availableTools.slice(0, Math.ceil(availableTools.length / 2)).map((t) => (
-                  <div key={t.name} className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/60 space-y-1">
-                    <span className="font-mono font-semibold text-white">{t.name}</span>
-                    <p className="text-slate-400 text-[11px]">{t.description}</p>
+                  <div key={t.name} className="p-2.5 rounded-xl bg-secondary/40 border border-border/60 space-y-1">
+                    <span className="font-mono font-semibold text-foreground">{t.name}</span>
+                    <p className="text-muted-foreground text-[11px]">{t.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="p-4 space-y-3">
-              <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Policy & Review Tools</h4>
+              <h4 className="text-xs font-semibold text-accent uppercase tracking-wider">Policy & Review Tools</h4>
               <div className="space-y-2 text-xs">
                 {availableTools.slice(Math.ceil(availableTools.length / 2)).map((t) => (
-                  <div key={t.name} className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/60 space-y-1">
-                    <span className="font-mono font-semibold text-white">{t.name}</span>
-                    <p className="text-slate-400 text-[11px]">{t.description}</p>
+                  <div key={t.name} className="p-2.5 rounded-xl bg-secondary/40 border border-border/60 space-y-1">
+                    <span className="font-mono font-semibold text-foreground">{t.name}</span>
+                    <p className="text-muted-foreground text-[11px]">{t.description}</p>
                   </div>
                 ))}
               </div>

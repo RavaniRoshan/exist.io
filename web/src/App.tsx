@@ -49,7 +49,7 @@ export default function App() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-500/30 selection:text-sky-200">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/25 selection:text-primary">
       {/* Space UI Subtle Mesh Grid Background */}
       <div className="fixed inset-0 pointer-events-none bg-space-grid opacity-80 -z-10" />
 
@@ -67,9 +67,9 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Navigation Section Switcher: Forge vs Enterprise Admin */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-850">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold">
+            <div className="flex items-center gap-1 p-1 bg-card border border-border rounded-xl text-xs font-semibold">
               <button
                 onClick={() => {
                   setNavSection('forge')
@@ -77,8 +77,8 @@ export default function App() {
                 }}
                 className={`px-3 py-1.5 rounded-lg transition-colors ${
                   navSection === 'forge'
-                    ? 'bg-sky-500/20 text-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Forge Workspace
@@ -90,8 +90,8 @@ export default function App() {
                 }}
                 className={`px-3 py-1.5 rounded-lg transition-colors ${
                   navSection === 'admin'
-                    ? 'bg-purple-500/20 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-accent/25 text-foreground border border-accent/40 shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Enterprise Admin
@@ -169,10 +169,10 @@ export default function App() {
       </main>
 
       {/* Space UI Live Telemetry Footer */}
-      <footer className="border-t border-slate-850/80 bg-slate-950/70 backdrop-blur-md py-4 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-mono">
+      <footer className="border-t border-border bg-card/70 backdrop-blur-md py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-mono">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-slate-400">
+            <span className="flex items-center gap-1.5 text-foreground/80">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
@@ -180,12 +180,12 @@ export default function App() {
               <span>existd 127.0.0.1:8080</span>
             </span>
             <span>•</span>
-            <span className="text-slate-400 flex items-center gap-1">
-              <Activity className="w-3 h-3 text-sky-400" />
+            <span className="text-foreground/80 flex items-center gap-1">
+              <Activity className="w-3 h-3 text-primary" />
               <span>SQLite WAL</span>
             </span>
             <span>•</span>
-            <span className="text-slate-400">34 MCP Tools Mounted</span>
+            <span className="text-foreground/80">35 MCP Tools Mounted</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -193,7 +193,7 @@ export default function App() {
               href="https://ravaniroshan.github.io/exist.io/"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-sky-400 transition-colors"
+              className="hover:text-primary transition-colors"
             >
               Docs & Guide
             </a>
@@ -201,13 +201,13 @@ export default function App() {
               href="https://github.com/RavaniRoshan/exist.io"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-sky-400 transition-colors"
+              className="hover:text-primary transition-colors"
             >
               GitHub
             </a>
-            <span className="text-slate-600">|</span>
-            <span className="flex items-center gap-1 text-slate-400">
-              <span>Enterprise Ready v0.2.0</span>
+            <span className="text-border">|</span>
+            <span className="flex items-center gap-1 text-foreground/80">
+              <span>Enterprise Ready v0.3.0</span>
             </span>
           </div>
         </div>

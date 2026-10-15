@@ -42,24 +42,24 @@ export const SlideToConfirm: React.FC<SlideToConfirmProps> = ({
     <div
       ref={containerRef}
       className={cn(
-        'relative flex items-center h-12 w-full max-w-sm rounded-2xl bg-slate-900 border border-purple-500/30 overflow-hidden select-none p-1 shadow-inner',
+        'relative flex items-center h-12 w-full max-w-sm rounded-2xl bg-card border border-border overflow-hidden select-none p-1 shadow-inner',
         disabled && 'opacity-50 pointer-events-none',
         className
       )}
     >
       {/* Background fill based on drag */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-purple-600/30 via-indigo-600/30 to-emerald-600/30 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-emerald-500/20 pointer-events-none"
         style={{ opacity: isConfirmed ? 0.8 : bgOpacity }}
       />
 
       {/* Center Label */}
       <motion.span
         style={{ opacity }}
-        className="absolute inset-0 flex items-center justify-center text-xs font-semibold tracking-wide text-slate-300 pointer-events-none pl-6 gap-2"
+        className="absolute inset-0 flex items-center justify-center text-xs font-semibold tracking-wide text-foreground/80 pointer-events-none pl-6 gap-2"
       >
         <span>{isConfirmed ? confirmedLabel : label}</span>
-        {!isConfirmed && <ArrowRight className="w-3.5 h-3.5 text-purple-400 animate-pulse" />}
+        {!isConfirmed && <ArrowRight className="w-3.5 h-3.5 text-primary animate-pulse" />}
       </motion.span>
 
       {/* Draggable Handle */}
@@ -71,13 +71,13 @@ export const SlideToConfirm: React.FC<SlideToConfirmProps> = ({
           dragSnapToOrigin={false}
           onDragEnd={handleDragEnd}
           style={{ x }}
-          className="relative z-10 flex items-center justify-center h-10 w-12 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white cursor-grab active:cursor-grabbing shadow-lg shadow-purple-500/30 border border-purple-300/40"
+          className="relative z-10 flex items-center justify-center h-10 w-12 rounded-xl bg-primary text-primary-foreground cursor-grab active:cursor-grabbing shadow-sm border border-primary/40"
         >
           <GitMerge className="w-5 h-5" />
         </motion.div>
       ) : (
-        <div className="relative z-10 flex items-center justify-center h-10 w-full rounded-xl bg-purple-600 text-white font-medium text-xs gap-2 shadow-md">
-          <Check className="w-4 h-4 text-emerald-300" />
+        <div className="relative z-10 flex items-center justify-center h-10 w-full rounded-xl bg-primary text-primary-foreground font-medium text-xs gap-2 shadow-sm">
+          <Check className="w-4 h-4 text-primary-foreground" />
           <span>{confirmedLabel}</span>
         </div>
       )}

@@ -14,27 +14,27 @@ export const Badge: React.FC<BadgeProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    default: 'bg-slate-800 text-slate-300 border-slate-700/60',
+    default: 'bg-secondary text-secondary-foreground border-border',
     open: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]',
-    merged: 'bg-purple-500/15 text-purple-300 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.15)]',
-    closed: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-    success: 'bg-teal-500/10 text-teal-300 border-teal-500/30',
-    running: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+    merged: 'bg-accent/15 text-foreground border-accent/40 shadow-xs',
+    closed: 'bg-destructive/15 text-destructive border-destructive/30',
+    success: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+    running: 'bg-primary/10 text-primary border-primary/30',
     warning: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-    agent: 'bg-gradient-to-r from-sky-500/15 to-violet-500/15 text-sky-300 border-sky-400/40 shadow-[0_0_12px_rgba(56,189,248,0.2)]',
-    outline: 'bg-transparent text-slate-400 border-slate-700',
+    agent: 'bg-gradient-to-r from-primary/15 to-accent/20 text-primary border-primary/40 shadow-xs',
+    outline: 'bg-transparent text-muted-foreground border-border',
   }
 
   const dotColors = {
-    default: 'bg-slate-400',
+    default: 'bg-muted-foreground',
     open: 'bg-emerald-400',
-    merged: 'bg-purple-400',
-    closed: 'bg-rose-400',
-    success: 'bg-teal-400',
-    running: 'bg-sky-400',
+    merged: 'bg-accent',
+    closed: 'bg-destructive',
+    success: 'bg-emerald-400',
+    running: 'bg-primary',
     warning: 'bg-amber-400',
-    agent: 'bg-sky-400 animate-pulse',
-    outline: 'bg-slate-500',
+    agent: 'bg-primary animate-pulse',
+    outline: 'bg-muted-foreground',
   }
 
   return (

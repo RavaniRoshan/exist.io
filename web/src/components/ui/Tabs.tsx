@@ -23,7 +23,7 @@ export const Tabs: React.FC<TabsProps> = ({
   className,
 }) => {
   return (
-    <div className={cn('flex items-center gap-1 p-1 bg-slate-900/80 border border-slate-800/80 rounded-xl backdrop-blur-md overflow-x-auto scrollbar-none', className)}>
+    <div className={cn('flex items-center gap-1 p-1 bg-card/80 border border-border rounded-xl backdrop-blur-md overflow-x-auto scrollbar-none', className)}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id
         return (
@@ -32,13 +32,13 @@ export const Tabs: React.FC<TabsProps> = ({
             onClick={() => onChange(tab.id)}
             className={cn(
               'relative flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors duration-200 outline-none whitespace-nowrap',
-              isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              isActive ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             )}
           >
             {isActive && (
               <motion.div
                 layoutId="active-tab-indicator"
-                className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-blue-600/20 border border-sky-500/40 rounded-lg shadow-[0_0_12px_rgba(56,189,248,0.2)]"
+                className="absolute inset-0 bg-primary/15 border border-primary/30 rounded-lg shadow-xs"
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
@@ -49,7 +49,7 @@ export const Tabs: React.FC<TabsProps> = ({
                 <span
                   className={cn(
                     'px-1.5 py-0.2 text-[10px] rounded-full font-semibold',
-                    isActive ? 'bg-sky-500/30 text-sky-200' : 'bg-slate-800 text-slate-400'
+                    isActive ? 'bg-primary/25 text-primary' : 'bg-secondary text-muted-foreground'
                   )}
                 >
                   {tab.count}

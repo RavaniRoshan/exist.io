@@ -339,7 +339,7 @@ git push origin feature/agent-capabilities`
 
                     <span>•</span>
                     <span className="flex items-center gap-1">
-                      opened by <strong className="text-slate-200">{selectedPr.author || 'dev'}</strong> {selectedPr.createdAt || 'recently'}
+                      opened by <strong className="text-foreground">{selectedPr.author || 'dev'}</strong> {selectedPr.createdAt || 'recently'}
                     </span>
                   </div>
                 </div>
@@ -352,16 +352,16 @@ git push origin feature/agent-capabilities`
                       size="sm"
                       onClick={handleRunAgentReview}
                       disabled={isReviewing}
-                      className="border-sky-500/30 text-sky-300 hover:bg-sky-500/10 gap-1.5"
+                      className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5"
                     >
                       {isReviewing ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                           <span>Reviewing Diff & Security...</span>
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                          <Sparkles className="w-3.5 h-3.5 text-primary" />
                           <span>Run AI Agent Review</span>
                         </>
                       )}
@@ -377,7 +377,7 @@ git push origin feature/agent-capabilities`
                     reviewResult.conclusion === 'success'
                       ? 'bg-emerald-950/30 border-emerald-800/80 text-emerald-300'
                       : reviewResult.conclusion === 'failure'
-                      ? 'bg-rose-950/30 border-rose-800/80 text-rose-300'
+                      ? 'bg-destructive/15 border-destructive/30 text-destructive'
                       : 'bg-amber-950/30 border-amber-800/80 text-amber-300'
                   }`}
                 >
@@ -392,18 +392,18 @@ git push origin feature/agent-capabilities`
               )}
 
               {/* Sub-tabs inside PR */}
-              <div className="flex items-center gap-4 pt-3 border-t border-slate-800 text-xs font-medium">
+              <div className="flex items-center gap-4 pt-3 border-t border-border text-xs font-medium">
                 <button
                   onClick={() => setActiveSubTab('conversation')}
                   className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${
                     activeSubTab === 'conversation'
-                      ? 'border-sky-400 text-sky-300 font-semibold'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                      ? 'border-primary text-primary font-semibold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>Conversation</span>
-                  <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full">
+                  <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">
                     {(selectedPr.comments || []).length}
                   </span>
                 </button>
@@ -412,13 +412,13 @@ git push origin feature/agent-capabilities`
                   onClick={() => setActiveSubTab('diff')}
                   className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${
                     activeSubTab === 'diff'
-                      ? 'border-sky-400 text-sky-300 font-semibold'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                      ? 'border-primary text-primary font-semibold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <FileDiff className="w-3.5 h-3.5" />
                   <span>Files Changed</span>
-                  <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full">
+                  <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">
                     {(selectedPr.diffHunks || []).length}
                   </span>
                 </button>
@@ -427,13 +427,13 @@ git push origin feature/agent-capabilities`
                   onClick={() => setActiveSubTab('checks')}
                   className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${
                     activeSubTab === 'checks'
-                      ? 'border-sky-400 text-sky-300 font-semibold'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                      ? 'border-primary text-primary font-semibold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Checks & Policy</span>
-                  <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full">
+                  <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.2 rounded-full">
                     {(selectedPr.checks || []).length}
                   </span>
                 </button>

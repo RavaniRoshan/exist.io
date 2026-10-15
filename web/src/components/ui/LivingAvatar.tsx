@@ -53,8 +53,8 @@ export const LivingAvatar: React.FC<LivingAvatarProps> = ({
           'relative flex items-center justify-center rounded-xl font-bold select-none shadow-md overflow-hidden border',
           sizeMap[size],
           isAgent
-            ? 'bg-gradient-to-br from-sky-600 via-indigo-600 to-purple-700 text-white border-sky-400/50 shadow-sky-500/20'
-            : 'bg-gradient-to-br from-slate-700 to-slate-800 text-slate-200 border-slate-600/60'
+            ? 'bg-gradient-to-br from-primary via-accent to-primary/80 text-primary-foreground border-primary/50 shadow-sm'
+            : 'bg-secondary text-foreground border-border'
         )}
       >
         {isAgent ? (
@@ -67,14 +67,14 @@ export const LivingAvatar: React.FC<LivingAvatarProps> = ({
 
         {/* Agent Cyber Shimmer */}
         {isAgent && (
-          <div className="absolute inset-0 bg-gradient-to-t from-sky-400/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent pointer-events-none" />
         )}
       </motion.div>
 
       {/* Status Ring */}
       <span
         className={cn(
-          'absolute -bottom-0.5 -right-0.5 rounded-full ring-2 ring-slate-950',
+          'absolute -bottom-0.5 -right-0.5 rounded-full ring-2 ring-background',
           indicatorSize[size],
           statusColor[status]
         )}
