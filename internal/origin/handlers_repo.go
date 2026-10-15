@@ -13,6 +13,8 @@ import (
 func (s *Server) registerRepos(mux *http.ServeMux) {
 	// Operations + scope requirements.
 	s.register("OriginService_ListNamespaces", reqListNamespaces)
+	s.register("OriginService_GetNamespace", reqListNamespaces)
+	s.register("OriginService_CreateNamespace", reqCreateRepo)
 	s.register("OriginService_ListRepos", reqListRepos)
 	s.register("OriginService_CreateRepo", reqCreateRepo)
 	s.register("OriginService_GetRepo", reqGetRepo)
@@ -20,6 +22,8 @@ func (s *Server) registerRepos(mux *http.ServeMux) {
 
 	// Routes.
 	mux.Handle("GET /v1/origin/namespaces", s.guard("OriginService_ListNamespaces", s.listNamespaces))
+	mux.Handle("GET /v1/origin/namespaces/{namespaceSlug}", s.guard("OriginService_GetNamespace", s.getNamespace))
+	mux.Handle("POST /v1/origin/namespaces", s.guard("OriginService_CreateNamespace", s.createNamespace))
 	mux.Handle("GET /v1/origin/repos/{ownerSlug}", s.guard("OriginService_ListRepos", s.listRepos))
 	mux.Handle("POST /v1/origin/repos/{ownerSlug}", s.guard("OriginService_CreateRepo", s.createRepo))
 	mux.Handle("GET /v1/origin/repos/{ownerSlug}/{repoName}", s.guard("OriginService_GetRepo", s.getRepo))
@@ -52,6 +56,57 @@ func (s *Server) listNamespaces(w http.ResponseWriter, r *http.Request) {
 		out = append(out, toNamespaceDTO(ns))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"namespaces": out, "nextPageToken": ""})
+}
+
+func (s *Server) getNamespace(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("namespaceSlug")
+	ns, err := s.store.GetNamespaceBySlug(r.Context(), slug)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			notFound(w, "namespace "+slug+" not found")
+			return
+		}
+		internalError(w, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"namespace": toNamespaceDTO(ns)})
+}
+
+func (s *Server) createNamespace(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Slug string `json:"slug"`
+		Name string `json:"name"`
+		Type string `json:"type"`
+	}
+	if err := decodeJSON(r, &body); err != nil {
+		badRequest(w, "invalid request body: "+err.Error())
+		return
+	}
+	if body.Slug == "" {
+		badRequest(w, "slug is required")
+		return
+	}
+	if body.Type == "" {
+		body.Type = "team"
+	}
+	if body.Name == "" {
+		body.Name = body.Slug
+	}
+	ns := store.Namespace{
+		ID:   idgen.NewNS(),
+		Slug: body.Slug,
+		Name: body.Name,
+		Type: body.Type,
+	}
+	if err := s.store.CreateNamespace(r.Context(), ns); err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			conflict(w, "namespace already exists")
+			return
+		}
+		internalError(w, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"namespace": toNamespaceDTO(ns)})
 }
 
 func (s *Server) listRepos(w http.ResponseWriter, r *http.Request) {

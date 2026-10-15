@@ -162,14 +162,23 @@ func (db *DB) UpsertUserByEmail(ctx context.Context, email string, newID func() 
 // GetUser returns a user by id.
 func (db *DB) GetUser(ctx context.Context, id string) (User, error) {
 	var u User
-	var login, name sql.NullString
-	err := db.sql.QueryRowContext(ctx, `SELECT id, email, login, name, created_at FROM users WHERE id=?`, id).
-		Scan(&u.ID, &u.Email, &login, &name, &u.CreatedAt)
+	var login, name, pass, role, status sql.NullString
+	err := db.sql.QueryRowContext(ctx, `SELECT id, email, login, name, password_hash, role, status, created_at FROM users WHERE id=?`, id).
+		Scan(&u.ID, &u.Email, &login, &name, &pass, &role, &status, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return User{}, ErrNotFound
 	}
 	u.Login = login.String
 	u.Name = name.String
+	u.PasswordHash = pass.String
+	u.Role = role.String
+	if u.Role == "" {
+		u.Role = "member"
+	}
+	u.Status = status.String
+	if u.Status == "" {
+		u.Status = "active"
+	}
 	return u, err
 }
 
@@ -194,11 +203,14 @@ func (db *DB) UpsertGroupByName(ctx context.Context, namespaceID, name string, n
 
 // User is an account record.
 type User struct {
-	ID        string
-	Email     string
-	Login     string
-	Name      string
-	CreatedAt string
+	ID           string
+	Email        string
+	Login        string
+	Name         string
+	PasswordHash string
+	Role         string // admin | member | service
+	Status       string // active | suspended
+	CreatedAt    string
 }
 
 // CheckRepoAccess checks if a user has read or write permission on a repository.

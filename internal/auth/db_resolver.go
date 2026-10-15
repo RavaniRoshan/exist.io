@@ -28,6 +28,24 @@ func NewDatabaseResolver(db *store.DB) Resolver {
 	return func(r *http.Request) (Token, error) {
 		raw, ok := bearerCredential(r)
 		if !ok {
+			if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
+				sessHash := HashCredential(cookie.Value)
+				sess, user, err := db.GetSessionByHash(r.Context(), sessHash)
+				if err == nil {
+					exp, err := time.Parse(time.RFC3339Nano, sess.ExpiresAt)
+					if err == nil && time.Now().After(exp) {
+						return nil, errors.New("auth: session expired")
+					}
+					if user.Status == "suspended" {
+						return nil, errors.New("auth: user account is suspended")
+					}
+					return ScopedToken{
+						tokenType: TypeUser,
+						subject:   user.ID,
+						scopes:    scopes.All(),
+					}, nil
+				}
+			}
 			return nil, errMissingToken
 		}
 

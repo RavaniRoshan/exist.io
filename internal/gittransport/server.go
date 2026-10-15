@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 
 	"exist.io/internal/audit"
 	"exist.io/internal/auth"
+	"exist.io/internal/gitlfs"
 	"exist.io/internal/gitstore"
 	"exist.io/internal/metrics"
 	"exist.io/internal/store"
@@ -31,16 +33,27 @@ import (
 type Server struct {
 	store       *store.DB
 	git         *gitstore.Store
+	lfs         *gitlfs.Server
 	backendPath string
 }
 
 // NewServer returns an initialized Git Smart HTTP transport Server.
-func NewServer(store *store.DB, git *gitstore.Store) *Server {
+func NewServer(store *store.DB, git *gitstore.Store, lfs ...*gitlfs.Server) *Server {
+	var lfsServer *gitlfs.Server
+	if len(lfs) > 0 {
+		lfsServer = lfs[0]
+	}
 	return &Server{
 		store:       store,
 		git:         git,
+		lfs:         lfsServer,
 		backendPath: findGitBackend(),
 	}
+}
+
+// SetLFS sets the Git LFS server instance.
+func (s *Server) SetLFS(lfs *gitlfs.Server) {
+	s.lfs = lfs
 }
 
 func findGitBackend() string {
@@ -82,7 +95,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	isUpload := strings.HasSuffix(r.URL.Path, "/git-upload-pack") || r.URL.Query().Get("service") == "git-upload-pack"
 	isReceive := strings.HasSuffix(r.URL.Path, "/git-receive-pack") || r.URL.Query().Get("service") == "git-receive-pack"
-	if !isUpload && !isReceive && !strings.HasSuffix(r.URL.Path, "/info/refs") && !strings.HasSuffix(r.URL.Path, "/HEAD") {
+	isLFS := strings.Contains(r.URL.Path, "/info/lfs")
+	if !isUpload && !isReceive && !isLFS && !strings.HasSuffix(r.URL.Path, "/info/refs") && !strings.HasSuffix(r.URL.Path, "/HEAD") {
 		http.NotFound(w, r)
 		return
 	}
@@ -105,9 +119,38 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allowed, err := s.store.CheckRepoAccess(ctx, repo, userID, isReceive)
+	isLFSWrite := r.Method == http.MethodPut || r.Method == http.MethodDelete
+	if isLFS && r.Method == http.MethodPost {
+		if strings.HasSuffix(r.URL.Path, "/verify") || strings.Contains(r.URL.Path, "/locks") {
+			isLFSWrite = true
+		} else if strings.HasSuffix(r.URL.Path, "/objects/batch") {
+			bodyBytes, _ := io.ReadAll(r.Body)
+			r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+			var peek struct {
+				Operation string `json:"operation"`
+			}
+			_ = json.Unmarshal(bodyBytes, &peek)
+			if peek.Operation == "upload" {
+				isLFSWrite = true
+			}
+		}
+	}
+
+	needsWrite := isReceive || isLFSWrite
+	allowed, err := s.store.CheckRepoAccess(ctx, repo, userID, needsWrite)
 	if err != nil || !allowed {
 		http.Error(w, "Access denied", http.StatusForbidden)
+		return
+	}
+
+	if isLFS {
+		if s.lfs == nil {
+			http.Error(w, "Git LFS is not enabled on this server", http.StatusNotImplemented)
+			return
+		}
+		idx := strings.Index(r.URL.Path, "/info/lfs")
+		lfsPath := strings.TrimPrefix(r.URL.Path[idx+len("/info/lfs"):], "/")
+		s.lfs.HandleLFS(w, r, ownerSlug, repoName, lfsPath, userID)
 		return
 	}
 
@@ -138,6 +181,13 @@ func (s *Server) authenticate(ctx context.Context, r *http.Request) (string, err
 		if id, err := s.checkCredential(ctx, user); err == nil {
 			return id, nil
 		}
+		u, err := s.store.GetUserByLogin(ctx, user)
+		if err != nil {
+			u, err = s.store.GetUserByEmail(ctx, user)
+		}
+		if err == nil && u.PasswordHash != "" && auth.CheckPassword(u.PasswordHash, pass) {
+			return u.ID, nil
+		}
 	}
 
 	// 2. Bearer Auth
@@ -146,6 +196,22 @@ func (s *Server) authenticate(ctx context.Context, r *http.Request) (string, err
 		tok := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 		if id, err := s.checkCredential(ctx, tok); err == nil {
 			return id, nil
+		}
+		if sess, _, err := s.store.GetSessionByHash(ctx, auth.HashCredential(tok)); err == nil {
+			exp, err := time.Parse(time.RFC3339, sess.ExpiresAt)
+			if err == nil && time.Now().Before(exp) {
+				return sess.UserID, nil
+			}
+		}
+	}
+
+	// 3. Web session cookie
+	if cookie, err := r.Cookie("exist_session"); err == nil && cookie.Value != "" {
+		if sess, _, err := s.store.GetSessionByHash(ctx, auth.HashCredential(cookie.Value)); err == nil {
+			exp, err := time.Parse(time.RFC3339, sess.ExpiresAt)
+			if err == nil && time.Now().Before(exp) {
+				return sess.UserID, nil
+			}
 		}
 	}
 

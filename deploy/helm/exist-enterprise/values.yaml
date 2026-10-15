@@ -1,0 +1,103 @@
+# Default values for exist-enterprise Helm chart.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: existio/existd
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+env:
+  EXIST_LISTEN_ADDR: "0.0.0.0:8080"
+  EXIST_SSH_ADDR: "0.0.0.0:2222"
+  EXIST_PUBLIC_URL: "https://git.enterprise.internal"
+  EXIST_GIT_URL: "git.enterprise.internal"
+  EXIST_DATA_DIR: "/var/lib/exist"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  fsGroup: 10001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  httpPort: 8080
+  sshPort: 2222
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+  hosts:
+    - host: git.enterprise.internal
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: exist-enterprise-tls
+      hosts:
+        - git.enterprise.internal
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 100Gi
+  storageClass: ""
+  mountPath: "/var/lib/exist"
+
+resources:
+  limits:
+    cpu: "2000m"
+    memory: "4Gi"
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+
+serviceMonitor:
+  enabled: true
+  namespace: ""
+  interval: "15s"
+  scrapeTimeout: "10s"
+  labels:
+    release: prometheus
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5

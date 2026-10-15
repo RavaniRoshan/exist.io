@@ -11,6 +11,7 @@ import type {
   ClusterMetrics,
   SsoProvider,
   EnterpriseUser,
+  UserProfile,
 } from './types'
 
 import {
@@ -282,6 +283,28 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUser[]> {
   if (isDemoModeActive()) {
     return mockEnterpriseUsers
   }
+  try {
+    const res = await fetch('/api/v1/admin/users')
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data?.users) && data.users.length > 0) {
+        return data.users.map((u: any) => ({
+          id: u.id,
+          username: u.login || u.email.split('@')[0],
+          email: u.email,
+          name: u.name || u.login || 'User',
+          role: u.role === 'admin' ? 'admin' : 'member',
+          status: u.status || 'active',
+          twoFactorEnabled: false,
+          lastActive: 'Active',
+          sshKeyCount: 0,
+          patCount: 1,
+        }))
+      }
+    }
+  } catch {
+    // fallback
+  }
   return [
     {
       id: 'u-admin',
@@ -297,6 +320,71 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUser[]> {
       patCount: 1,
     },
   ]
+}
+
+// -------------------------------------------------------------
+// Interactive Web Authentication & Session Management
+// -------------------------------------------------------------
+
+export async function checkActiveSession(): Promise<{ authenticated: boolean; user?: UserProfile | null; csrfToken?: string }> {
+  try {
+    const res = await fetch('/api/v1/auth/session')
+    if (!res.ok) return { authenticated: false, user: null }
+    return await res.json()
+  } catch {
+    return { authenticated: false, user: null }
+  }
+}
+
+export async function loginUser(email: string, password: string): Promise<{ ok: boolean; user?: UserProfile; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      return { ok: false, error: text || 'Invalid email or password' }
+    }
+    const data = await res.json()
+    if (data.sessionToken) {
+      localStorage.setItem('exist_token', data.sessionToken)
+    }
+    return { ok: true, user: data.user }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function registerUser(email: string, login: string, name: string, password: string): Promise<{ ok: boolean; user?: UserProfile; error?: string }> {
+  try {
+    const res = await fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, login, name, password }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      return { ok: false, error: text || 'Registration failed' }
+    }
+    const data = await res.json()
+    if (data.sessionToken) {
+      localStorage.setItem('exist_token', data.sessionToken)
+    }
+    return { ok: true, user: data.user }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetch('/api/v1/auth/logout', { method: 'POST' })
+  } catch {
+    // ignore
+  }
+  localStorage.removeItem('exist_token')
 }
 
 // Live MCP Caller to local existd daemon

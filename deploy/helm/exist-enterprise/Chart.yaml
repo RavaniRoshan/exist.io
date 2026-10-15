@@ -1,0 +1,20 @@
+apiVersion: v2
+name: exist-enterprise
+description: Enterprise Self-Hosted Git Forge with Pure-Go SSH, Git LFS, and SQLite WAL
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - git
+  - git-forge
+  - vcs
+  - self-hosted
+  - enterprise
+  - git-lfs
+  - ssh
+home: https://github.com/exist-io/exist
+sources:
+  - https://github.com/exist-io/exist
+maintainers:
+  - name: exist.io Core Platform Team
+    email: platform@exist.io

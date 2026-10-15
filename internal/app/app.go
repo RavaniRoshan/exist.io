@@ -15,12 +15,14 @@ import (
 	"exist.io/internal/audit"
 	"exist.io/internal/auth"
 	"exist.io/internal/config"
+	"exist.io/internal/gitlfs"
 	"exist.io/internal/gitstore"
 	"exist.io/internal/gittransport"
 	"exist.io/internal/mcp"
 	"exist.io/internal/metrics"
 	"exist.io/internal/openapi"
 	"exist.io/internal/origin"
+	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
 )
 
@@ -32,6 +34,7 @@ type App struct {
 	Git          *gitstore.Store
 	Origin       *origin.Server
 	GitTransport *gittransport.Server
+	SSHServer    *sshserver.Server
 
 	handler http.Handler
 }
@@ -127,7 +130,26 @@ func Open(cfg config.Config) (*App, error) {
 		})
 	})
 
+	// Web Authentication & Session Management
+	mux.HandleFunc("POST /api/v1/auth/login", auth.LoginHandler(db))
+	mux.HandleFunc("POST /api/v1/auth/register", auth.RegisterHandler(db))
+	mux.HandleFunc("POST /api/v1/auth/logout", auth.LogoutHandler(db))
+	mux.HandleFunc("GET /api/v1/auth/session", auth.SessionHandler(db))
+
+	// Enterprise Administration User Management
+	mux.HandleFunc("GET /api/v1/admin/users", auth.AdminListUsersHandler(db))
+	mux.HandleFunc("POST /api/v1/admin/users", auth.AdminCreateUserHandler(db))
+
+	// Self-service User Tokens and SSH keys
+	mux.HandleFunc("POST /api/v1/user/tokens", auth.UserCreateTokenHandler(db))
+	mux.HandleFunc("GET /api/v1/user/ssh-keys", auth.UserListSSHKeysHandler(db))
+	mux.HandleFunc("POST /api/v1/user/ssh-keys", auth.UserAddSSHKeyHandler(db))
+
 	mux.HandleFunc("POST /auth/exchange_user_api_key", auth.ExchangeHandler(db))
+
+	// Enterprise Federation: SCIM 2.0 and SSO (OIDC/SAML)
+	auth.RegisterSCIMRoutes(mux, db)
+	auth.RegisterSSORoutes(mux, db, cfg.PublicURL)
 
 	originServer.RegisterRoutes(mux)
 
@@ -137,8 +159,30 @@ func Open(cfg config.Config) (*App, error) {
 	mux.Handle("/mcp", mcpServer.Handler(false))
 	mux.Handle("/mcp/readonly", mcpServer.Handler(true))
 
-	gitTransport := gittransport.NewServer(db, git)
+	var lfsDir string
+	if cfg.DataDir == ":memory:" {
+		lfsDir = filepath.Join(os.TempDir(), "exist-lfs")
+	} else {
+		lfsDir = filepath.Join(cfg.DataDir, "lfs")
+	}
+	lfsServer := gitlfs.New(db, lfsDir, cfg.PublicURL)
+
+	gitTransport := gittransport.NewServer(db, git, lfsServer)
 	mux.Handle("/", gitTransport)
+
+	var sshSrv *sshserver.Server
+	if cfg.SSHAddr != "" && cfg.SSHAddr != "none" {
+		hostKeyPath := cfg.SSHHostKeyPath
+		if hostKeyPath == "" && cfg.DataDir != ":memory:" {
+			hostKeyPath = filepath.Join(cfg.DataDir, "ssh_host_key")
+		}
+		var err error
+		sshSrv, err = sshserver.New(cfg.SSHAddr, db, git, hostKeyPath)
+		if err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("app: init ssh server: %w", err)
+		}
+	}
 
 	return &App{
 		Config:       cfg,
@@ -146,14 +190,34 @@ func Open(cfg config.Config) (*App, error) {
 		Git:          git,
 		Origin:       originServer,
 		GitTransport: gitTransport,
+		SSHServer:    sshSrv,
 		handler:      mux,
 	}, nil
 }
 
+// StartSSH starts the embedded SSH server if configured.
+func (a *App) StartSSH() error {
+	if a.SSHServer != nil {
+		return a.SSHServer.Start()
+	}
+	return nil
+}
+
 // Close shuts down all held resources.
 func (a *App) Close() error {
+	var errs []error
+	if a.SSHServer != nil {
+		if err := a.SSHServer.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
 	if a.Store != nil {
-		return a.Store.Close()
+		if err := a.Store.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return errs[0]
 	}
 	return nil
 }

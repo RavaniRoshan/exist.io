@@ -177,6 +177,7 @@ func (s *Store) ListPRCommits(namespaceSlug, repoName, baseSHA, headSHA string, 
 			CommitterName: c.Committer.Name,
 			CommitterEmail: c.Committer.Email,
 			CommitterDate: c.Committer.When.Format("2006-01-02T15:04:05Z07:00"),
+			Verification:  VerifyCommitSignature(c, nil),
 		})
 	}
 

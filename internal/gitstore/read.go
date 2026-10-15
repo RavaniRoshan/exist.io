@@ -222,6 +222,7 @@ type CommitInfo struct {
 	Parents                                      []string
 	AuthorName, AuthorEmail, AuthorDate          string
 	CommitterName, CommitterEmail, CommitterDate string
+	Verification                                 CommitVerification
 }
 
 // ReadCommit reads a commit object by hash.
@@ -242,6 +243,7 @@ func (s *Store) ReadCommit(namespaceSlug, repoName, commitHash string) (CommitIn
 		SHA: c.Hash.String(), TreeSHA: c.TreeHash.String(), Message: c.Message, Parents: parents,
 		AuthorName: c.Author.Name, AuthorEmail: c.Author.Email, AuthorDate: c.Author.When.Format("2006-01-02T15:04:05Z07:00"),
 		CommitterName: c.Committer.Name, CommitterEmail: c.Committer.Email, CommitterDate: c.Committer.When.Format("2006-01-02T15:04:05Z07:00"),
+		Verification:  VerifyCommitSignature(c, nil),
 	}, nil
 }
 
@@ -297,6 +299,7 @@ func (s *Store) ListCommits(namespaceSlug, repoName, ref string, limit int) ([]C
 			SHA: c.Hash.String(), TreeSHA: c.TreeHash.String(), Message: c.Message, Parents: parents,
 			AuthorName: c.Author.Name, AuthorEmail: c.Author.Email, AuthorDate: c.Author.When.Format("2006-01-02T15:04:05Z07:00"),
 			CommitterName: c.Committer.Name, CommitterEmail: c.Committer.Email, CommitterDate: c.Committer.When.Format("2006-01-02T15:04:05Z07:00"),
+			Verification:  VerifyCommitSignature(c, nil),
 		})
 		count++
 		return nil

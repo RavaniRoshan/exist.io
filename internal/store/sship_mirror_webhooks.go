@@ -96,6 +96,30 @@ func (db *DB) ListSSHCAs(ctx context.Context, nsID string) ([]SSHCertificateAuth
 	return list, rows.Err()
 }
 
+func (db *DB) ListAllSSHCAs(ctx context.Context) ([]SSHCertificateAuthority, error) {
+	rows, err := db.sql.QueryContext(ctx, `
+		SELECT id, namespace_id, IFNULL(name, ''), key_type, public_key, fingerprint, required, created_at
+		FROM ssh_cas
+		ORDER BY created_at ASC, id ASC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list all ssh cas: %w", err)
+	}
+	defer rows.Close()
+
+	var list []SSHCertificateAuthority
+	for rows.Next() {
+		var ca SSHCertificateAuthority
+		var reqInt int
+		if err := rows.Scan(&ca.ID, &ca.NamespaceID, &ca.Name, &ca.KeyType, &ca.PublicKey, &ca.Fingerprint, &reqInt, &ca.CreatedAt); err != nil {
+			return nil, err
+		}
+		ca.Required = reqInt == 1
+		list = append(list, ca)
+	}
+	return list, rows.Err()
+}
+
 func (db *DB) AddSSHCA(ctx context.Context, nsID, name, rawPublicKey string) (SSHCertificateAuthority, error) {
 	pub, _, _, _, err := ssh.ParseAuthorizedKey([]byte(strings.TrimSpace(rawPublicKey)))
 	if err != nil {

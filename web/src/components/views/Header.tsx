@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
-import { GitBranch, Terminal, ExternalLink, Copy, Check, ShieldCheck, Sparkles, BookOpen, Layers } from 'lucide-react'
+import { GitBranch, Terminal, ExternalLink, Copy, Check, ShieldCheck, Sparkles, BookOpen, Layers, LogIn, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { SearchPill } from '@/components/ui/Input'
 import { Dialog } from '@/components/ui/Dialog'
-import { isDemoModeActive, setDemoModeActive, type RepoInfo } from '@/lib/api'
+import { isDemoModeActive, setDemoModeActive, checkActiveSession, logoutUser, type RepoInfo, type UserProfile } from '@/lib/api'
+import { AuthModal } from '@/components/views/AuthModal'
 
 export interface HeaderProps {
   repo: RepoInfo
@@ -24,6 +25,21 @@ export const Header: React.FC<HeaderProps> = ({
   const [cloneType, setCloneType] = useState<'http' | 'ssh' | 'mcp'>('http')
   const [copied, setCopied] = useState(false)
   const [isDemo, setIsDemo] = useState(isDemoModeActive())
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+
+  useEffect(() => {
+    checkActiveSession().then((res) => {
+      if (res.authenticated && res.user) {
+        setCurrentUser(res.user)
+      }
+    })
+  }, [])
+
+  const handleLogout = async () => {
+    await logoutUser()
+    setCurrentUser(null)
+  }
 
   const toggleDemoMode = () => {
     const next = !isDemo
@@ -156,6 +172,40 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
+
+              {/* Authentication Status / Sign In Button */}
+              {currentUser ? (
+                <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                      {currentUser.login.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="hidden lg:flex flex-col text-left">
+                      <span className="text-xs font-medium text-slate-200 leading-tight">{currentUser.name || currentUser.login}</span>
+                      <span className="text-[10px] text-slate-400 capitalize">{currentUser.role}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="gap-1.5 border-slate-700 bg-slate-900/60 hover:bg-slate-800 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Sign In</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -226,6 +276,13 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </Dialog>
+
+        {/* Authentication Modal */}
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccess={(u) => setCurrentUser(u)}
+        />
       </header>
     </>
   )

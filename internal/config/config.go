@@ -22,6 +22,9 @@ type Config struct {
 	// Endpoint and GitHost are compatibility aliases for PublicURL and GitURL.
 	Endpoint string
 	GitHost  string
+
+	SSHAddr        string
+	SSHHostKeyPath string
 }
 
 // Load reads configuration from environment variables, falling back to safe self-hosted defaults.
@@ -31,14 +34,18 @@ func Load() Config {
 
 	publicURL := getEnvFirst([]string{"EXIST_PUBLIC_URL", "EXIST_ENDPOINT"}, defaultPublicURL)
 	gitURL := getEnvFirst([]string{"EXIST_GIT_URL", "EXIST_GIT_HOST"}, defaultGitURL)
+	sshAddr := getEnv("EXIST_SSH_ADDR", "127.0.0.1:2222")
+	sshHostKeyPath := getEnv("EXIST_SSH_HOST_KEY", dataDir+"/ssh_host_key")
 
 	return Config{
-		ListenAddr: listenAddr,
-		DataDir:    dataDir,
-		PublicURL:  publicURL,
-		GitURL:     gitURL,
-		Endpoint:   publicURL,
-		GitHost:    gitURL,
+		ListenAddr:     listenAddr,
+		DataDir:        dataDir,
+		PublicURL:      publicURL,
+		GitURL:         gitURL,
+		Endpoint:       publicURL,
+		GitHost:        gitURL,
+		SSHAddr:        sshAddr,
+		SSHHostKeyPath: sshHostKeyPath,
 	}
 }
 

@@ -147,3 +147,13 @@ export interface EnterpriseUser {
   sshKeyCount: number
   patCount: number
 }
+
+export interface UserProfile {
+  id: string
+  email: string
+  login: string
+  name: string
+  role: 'admin' | 'member' | 'service'
+  status: 'active' | 'suspended'
+  createdAt: string
+}

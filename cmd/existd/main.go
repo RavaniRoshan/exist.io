@@ -73,6 +73,14 @@ func main() {
 		}
 	}()
 
+	if cfg.SSHAddr != "" && cfg.SSHAddr != "none" {
+		if err := application.StartSSH(); err != nil {
+			log.Printf("existd: failed to start SSH server on %s: %v", cfg.SSHAddr, err)
+		} else {
+			fmt.Printf("existd SSH listening on %s\n", cfg.SSHAddr)
+		}
+	}
+
 	server := &http.Server{
 		Addr:    cfg.ListenAddr,
 		Handler: application.Handler(),
@@ -83,8 +91,8 @@ func main() {
 
 	serverErr := make(chan error, 1)
 	go func() {
-		fmt.Printf("existd listening on %s (publicURL=%s gitURL=%s dataDir=%s)\n",
-			cfg.ListenAddr, cfg.PublicURL, cfg.GitURL, cfg.DataDir)
+		fmt.Printf("existd listening on %s (publicURL=%s gitURL=%s dataDir=%s sshAddr=%s)\n",
+			cfg.ListenAddr, cfg.PublicURL, cfg.GitURL, cfg.DataDir, cfg.SSHAddr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 		}
