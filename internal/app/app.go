@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,8 @@ import (
 	"exist.io/internal/store"
 	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
+
+	"github.com/go-git/go-git/v6/plumbing/object"
 )
 
 // App is the composition root for exist.io. It owns configuration, metadata
@@ -292,6 +295,351 @@ func Open(cfg config.Config) (*App, error) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":   true,
 			"repo": repoRecord,
+		})
+	})
+
+	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		if err := db.DeleteRepo(r.Context(), owner, name); err != nil {
+			http.Error(w, "Failed to delete repository: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		repoPath := filepath.Join(gitDir, owner, name+".git")
+		_ = os.RemoveAll(repoPath)
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "deleted": owner + "/" + name})
+	})
+
+	// Direct File Commit & In-Browser File Creation (Web & API)
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/files", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		if owner == "" || name == "" {
+			http.Error(w, "Repository owner and name are required", http.StatusBadRequest)
+			return
+		}
+
+		var req struct {
+			Branch  string `json:"branch"`
+			Path    string `json:"path"`
+			Content string `json:"content"`
+			Message string `json:"message"`
+			Author  string `json:"author"`
+			Email   string `json:"email"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Path = strings.TrimLeft(strings.TrimSpace(req.Path), "/")
+		if req.Path == "" {
+			http.Error(w, "File path is required", http.StatusBadRequest)
+			return
+		}
+		if req.Branch == "" {
+			req.Branch = "main"
+		}
+		if req.Message == "" {
+			req.Message = fmt.Sprintf("Add %s", req.Path)
+		}
+		if req.Author == "" {
+			req.Author = "exist.io User"
+		}
+		if req.Email == "" {
+			req.Email = "user@exist.io"
+		}
+
+		sig := object.Signature{
+			Name:  req.Author,
+			Email: req.Email,
+			When:  time.Now().UTC(),
+		}
+
+		commitHash, err := git.WriteFiles(owner, name, req.Branch, []gitstore.FileChange{
+			{Path: req.Path, Content: req.Content},
+		}, sig, req.Message)
+		if err != nil {
+			http.Error(w, "Failed to commit file to repository: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":         true,
+			"commit_sha": commitHash.String(),
+			"path":       req.Path,
+			"branch":     req.Branch,
+		})
+	})
+
+	// Repository Issues REST API
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/issues", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"issues": []any{}})
+			return
+		}
+
+		state := r.URL.Query().Get("state")
+		rawIssues, err := db.ListIssues(r.Context(), repo.ID, state)
+		if err != nil {
+			http.Error(w, "Failed to list issues: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		type issueItem struct {
+			ID        string   `json:"id"`
+			Number    int      `json:"number"`
+			Title     string   `json:"title"`
+			Body      string   `json:"body"`
+			State     string   `json:"state"`
+			Author    string   `json:"author"`
+			CreatedAt string   `json:"createdAt"`
+			ClosedAt  string   `json:"closedAt,omitempty"`
+			Assignees []string `json:"assignees"`
+			Labels    []any    `json:"labels"`
+			Comments  []any    `json:"comments"`
+		}
+
+		out := make([]issueItem, 0, len(rawIssues))
+		for _, iss := range rawIssues {
+			rawComments, _ := db.ListIssueComments(r.Context(), iss.ID)
+			comments := make([]any, 0, len(rawComments))
+			for _, c := range rawComments {
+				author := c.AuthorUserID
+				if author == "" {
+					author = "shiva"
+				}
+				comments = append(comments, map[string]any{
+					"id":        c.ID,
+					"author":    author,
+					"body":      c.Body,
+					"createdAt": c.CreatedAt,
+				})
+			}
+
+			author := iss.AuthorUserID
+			if author == "" {
+				author = "shiva"
+			}
+
+			out = append(out, issueItem{
+				ID:        iss.ID,
+				Number:    iss.Number,
+				Title:     iss.Title,
+				Body:      iss.Body,
+				State:     iss.State,
+				Author:    author,
+				CreatedAt: iss.CreatedAt,
+				ClosedAt:  iss.ClosedAt,
+				Assignees: []string{author},
+				Labels: []any{
+					map[string]string{"name": "enhancement", "color": "#1d76db"},
+				},
+				Comments: comments,
+			})
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"issues": out})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/issues", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			Title  string   `json:"title"`
+			Body   string   `json:"body"`
+			Labels []string `json:"labels"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Title = strings.TrimSpace(req.Title)
+		if req.Title == "" {
+			http.Error(w, "Title is required", http.StatusBadRequest)
+			return
+		}
+
+		author := "shiva"
+		var authorUserID string
+		if u, err := db.GetUserByLogin(r.Context(), author); err == nil {
+			authorUserID = u.ID
+		} else if u, err := db.GetUserByLogin(r.Context(), owner); err == nil {
+			authorUserID = u.ID
+		}
+
+		newIssue := &store.Issue{
+			RepoID:       repo.ID,
+			Title:        req.Title,
+			Body:         req.Body,
+			AuthorUserID: authorUserID,
+		}
+		if err := db.CreateIssue(r.Context(), newIssue); err != nil {
+			http.Error(w, "Failed to create issue: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"issue": map[string]any{
+				"id":        newIssue.ID,
+				"number":    newIssue.Number,
+				"title":     newIssue.Title,
+				"body":      newIssue.Body,
+				"state":     newIssue.State,
+				"author":    author,
+				"createdAt": newIssue.CreatedAt,
+				"assignees": []string{author},
+				"labels": []any{
+					map[string]string{"name": "enhancement", "color": "#1d76db"},
+				},
+				"comments": []any{},
+			},
+		})
+	})
+
+	mux.HandleFunc("PATCH /api/v1/repos/{owner}/{name}/issues/{number}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid issue number", http.StatusBadRequest)
+			return
+		}
+
+		var req struct {
+			State string `json:"state"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if req.State != "open" && req.State != "closed" {
+			http.Error(w, "State must be 'open' or 'closed'", http.StatusBadRequest)
+			return
+		}
+
+		if err := db.UpdateIssueState(r.Context(), repo.ID, num, req.State); err != nil {
+			http.Error(w, "Failed to update issue: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": req.State})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/issues/{number}/comments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid issue number", http.StatusBadRequest)
+			return
+		}
+		issue, err := db.GetIssue(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Issue not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			Body string `json:"body"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Body = strings.TrimSpace(req.Body)
+		if req.Body == "" {
+			http.Error(w, "Comment body is required", http.StatusBadRequest)
+			return
+		}
+
+		var authorUserID string
+		if u, err := db.GetUserByLogin(r.Context(), "shiva"); err == nil {
+			authorUserID = u.ID
+		} else if u, err := db.GetUserByLogin(r.Context(), owner); err == nil {
+			authorUserID = u.ID
+		}
+
+		comment := &store.IssueComment{
+			RepoID:       repo.ID,
+			IssueID:      issue.ID,
+			AuthorUserID: authorUserID,
+			Body:         req.Body,
+		}
+		if err := db.CreateIssueComment(r.Context(), comment); err != nil {
+			http.Error(w, "Failed to create comment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"comment": map[string]any{
+				"id":        comment.ID,
+				"author":    "shiva",
+				"body":      comment.Body,
+				"createdAt": comment.CreatedAt,
+			},
 		})
 	})
 

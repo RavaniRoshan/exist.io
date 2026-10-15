@@ -231,6 +231,52 @@ export async function createRepository(params: {
   }
 }
 
+export async function deleteRepository(owner: string, name: string): Promise<boolean> {
+  if (isDemoModeActive()) {
+    return true
+  }
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export async function commitFile(params: {
+  owner: string
+  name: string
+  branch?: string
+  path: string
+  content: string
+  message?: string
+  author?: string
+  email?: string
+}): Promise<{ ok: boolean; commit_sha?: string; error?: string }> {
+  if (isDemoModeActive()) {
+    return { ok: true, commit_sha: 'demo-sha-' + Date.now().toString(16) }
+  }
+
+  try {
+    const res = await fetch(`/api/v1/repos/${params.owner}/${params.name}/files`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return { ok: false, error: err || 'Failed to commit file' }
+    }
+    const data = await res.json()
+    return { ok: true, commit_sha: data.commit_sha }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
 export async function fetchClusterInfo(): Promise<ClusterSystemInfo> {
   try {
     const res = await fetch('/api/v1/system/info')
@@ -316,13 +362,13 @@ export async function getCommits(owner: string, name: string, ref = 'main'): Pro
     return data.commits.map((c: any) => ({
       sha: c.sha,
       shortSha: c.sha ? c.sha.slice(0, 7) : '0000000',
-      message: c.message || 'Commit',
+      message: c.commit?.message || c.message || 'Commit',
       author: {
-        name: c.author?.name || c.author_name || 'Developer',
-        email: c.author?.email || c.author_email || 'dev@exist.io',
-        isAgent: Boolean(c.author?.is_agent),
+        name: c.commit?.author?.name || c.author?.name || c.author_name || 'Developer',
+        email: c.commit?.author?.email || c.author?.email || c.author_email || 'dev@exist.io',
+        isAgent: Boolean(c.author?.is_agent || c.commit?.author?.is_agent),
       },
-      timestamp: c.timestamp || c.author_date || 'Recently',
+      timestamp: c.commit?.author?.date || c.timestamp || c.author_date || 'Recently',
       verified: c.verification?.status === 'verified' || Boolean(c.verified),
       verification: c.verification,
     }))
@@ -1181,7 +1227,7 @@ export async function getIssues(owner: string, name: string): Promise<Issue[]> {
     return mockSampleIssues
   }
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues`, {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/issues`, {
       headers: getAuthHeader(),
     })
     if (!res.ok) return []
@@ -1216,7 +1262,7 @@ export async function createIssue(
     return newIssue
   }
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues`, {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/issues`, {
       method: 'POST',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, body, labels }),
@@ -1243,7 +1289,7 @@ export async function addIssueComment(
     createdAt: 'Just now',
   }
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues/${issueNumber}/comments`, {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/issues/${issueNumber}/comments`, {
       method: 'POST',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ body }),
@@ -1264,7 +1310,7 @@ export async function toggleIssueState(
 ): Promise<'open' | 'closed'> {
   const nextState = currentState === 'open' ? 'closed' : 'open'
   try {
-    await fetch(`/v1/origin/repos/${owner}/${name}/issues/${issueNumber}`, {
+    await fetch(`/api/v1/repos/${owner}/${name}/issues/${issueNumber}`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ state: nextState }),

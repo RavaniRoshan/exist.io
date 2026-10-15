@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-57%20Passed%20(15%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/Tests-63%20Passed%20(17%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
 [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
@@ -84,6 +84,16 @@
     <td width="50%">
       <h3>🔒 Zero-Mock Live Production Integrity</h3>
       <p>Clean isolation between sandbox demo mode and live production clusters. Instant repository creation via SQLite WAL backend, authentic empty states, and dynamic cluster telemetry.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>⚡ Canonical Quick Setup & In-Browser Commits</h3>
+      <p>Instant GitHub-style Quick Setup screen for newly initialized bare repositories (0 commits) with HTTPS/SSH commands, followed by in-browser file creation and direct commit directly to <code>main</code>.</p>
+    </td>
+    <td width="50%">
+      <h3>📝 Native SQLite Issues & Thread Discussions</h3>
+      <p>Monotonically sequenced issue tracking, threaded comments, and state transitions (open/closed) backed directly by the embedded SQLite WAL engine with zero external database dependencies.</p>
     </td>
   </tr>
 </table>

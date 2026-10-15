@@ -55,3 +55,5 @@ func NewRuleset() string            { return New("rs") }
 func NewRulesetRule() string        { return New("rsr") }
 func NewRulesetBypassActor() string { return New("rsba") }
 func NewCheckRunAnnotation() string { return New("cra") }
+func NewIssue() string              { return New("issue") }
+func NewIssueComment() string       { return New("ic") }

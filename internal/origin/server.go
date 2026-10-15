@@ -56,6 +56,40 @@ func (s *Server) register(operationID string, reqs scopes.Requirements) {
 	s.registry.Register(operationID, reqs)
 }
 
+func isPublicReadOperation(op string) bool {
+	switch op {
+	case "OriginService_GetRepo",
+		"OriginService_GetContents",
+		"OriginService_BatchGetContents",
+		"OriginService_GetBlob",
+		"OriginService_GetTree",
+		"OriginService_GetGitCommit",
+		"OriginService_ListCommits",
+		"OriginService_GetCommit",
+		"OriginService_ListBranches",
+		"OriginService_GetRepoTarball",
+		"OriginService_ListCommitFiles",
+		"OriginService_SearchSymbols",
+		"OriginService_ListMatchingGitRefs",
+		"OriginService_GetGitRef",
+		"OriginService_CompareCommits",
+		"OriginService_ListPullRequests",
+		"OriginService_GetPullRequest",
+		"OriginService_ListPullRequestFiles",
+		"OriginService_ListPullRequestCommits",
+		"OriginService_GetPullRequestComment",
+		"OriginService_ListPullRequestComments",
+		"OriginService_ListPullRequestReviews",
+		"OriginService_ListPullRequestRequestedReviewers",
+		"OriginService_ListPullRequestLabels",
+		"OriginService_ListLabels",
+		"OriginService_GetLabel":
+		return true
+	default:
+		return false
+	}
+}
+
 // guard wraps a handler with auth enforcement for a registered operation. The
 // handler runs only if the resolved credential satisfies the operation's
 // x-origin-scopes requirements. If s.resolve is set (tests), it is used;
@@ -66,6 +100,21 @@ func (s *Server) guard(operationID string, h http.HandlerFunc) http.Handler {
 		if resolve == nil {
 			resolve = auth.BearerResolver
 		}
+
+		// Public repository read operations: permit anonymous access when unauthenticated
+		if isPublicReadOperation(operationID) {
+			owner := r.PathValue("ownerSlug")
+			name := r.PathValue("repoName")
+			if owner != "" && name != "" {
+				if repo, err := s.store.GetRepo(r.Context(), owner, name); err == nil && repo.Visibility == "public" {
+					if _, err := resolve(r); err != nil {
+						h.ServeHTTP(w, r)
+						return
+					}
+				}
+			}
+		}
+
 		auth.RequireWith(s.registry, operationID, resolve, h).ServeHTTP(w, r)
 	})
 }

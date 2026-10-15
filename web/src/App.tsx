@@ -31,7 +31,34 @@ export default function App() {
   const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
   const [tourOpen, setTourOpen] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
-  const repo = defaultRepo
+  const [currentRepo, setCurrentRepo] = useState(defaultRepo)
+
+  const handleSelectRepo = (slug?: string) => {
+    if (!slug) {
+      setActiveTab('code')
+      return
+    }
+    let owner = 'shiva'
+    let name = slug
+    if (slug.includes('/')) {
+      const parts = slug.split('/')
+      owner = parts[0]
+      name = parts[1]
+    }
+    setCurrentRepo({
+      ownerSlug: owner,
+      name: name,
+      description: `Enterprise repository ${owner}/${name}`,
+      defaultBranch: 'main',
+      isPrivate: false,
+      starsCount: 0,
+      forksCount: 0,
+      updatedAt: 'Just now',
+      cloneUrlHttp: `http://${window.location.host}/${owner}/${name}.git`,
+      cloneUrlSsh: `git@${window.location.hostname}:2222/${owner}/${name}.git`,
+    })
+    setActiveTab('code')
+  }
 
   useEffect(() => {
     // If first-time user hasn't completed tour yet, auto-open tour
@@ -52,7 +79,7 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/25 selection:text-primary">
       {/* Top Application Header & UnderlineNav */}
       <Header
-        repo={repo}
+        repo={currentRepo}
         activeTab={activeTab}
         onTabChange={(tab) => {
           if (tab === 'admin') {
@@ -70,7 +97,7 @@ export default function App() {
         {/* 0. Enterprise Home Activity Feed */}
         {activeTab === 'home' && (
           <GlobalHomeView
-            onSelectRepo={() => setActiveTab('code')}
+            onSelectRepo={(repoSlug) => handleSelectRepo(repoSlug)}
             onSelectTab={(tab) => setActiveTab(tab as any)}
             onOpenTour={() => setTourOpen(true)}
             onOpenManual={() => setManualOpen(true)}
@@ -80,14 +107,14 @@ export default function App() {
         {/* 0.1 User Profile & Keys Management */}
         {activeTab === 'profile' && (
           <UserProfileView
-            onSelectRepo={() => setActiveTab('code')}
+            onSelectRepo={(repoSlug) => handleSelectRepo(repoSlug)}
           />
         )}
 
         {/* 1. Code & File Tree View */}
         {activeTab === 'code' && (
           <RepoOverview
-            repo={repo}
+            repo={currentRepo}
             onSelectCommits={() => setActiveTab('commits')}
             onSelectAgentConsole={() => setActiveTab('agents')}
           />
@@ -96,7 +123,7 @@ export default function App() {
         {/* 1.5. Issues View */}
         {activeTab === 'issues' && (
           <IssuesView
-            repo={repo}
+            repo={currentRepo}
             onSelectPullRequest={() => setActiveTab('prs')}
           />
         )}
@@ -104,19 +131,19 @@ export default function App() {
         {/* 2. Pull Requests View */}
         {activeTab === 'prs' && (
           <PullRequestsView
-            repo={repo}
+            repo={currentRepo}
             onSelectAgentConsole={() => setActiveTab('agents')}
           />
         )}
 
         {/* 3. Commits History View */}
         {activeTab === 'commits' && (
-          <CommitsView repo={repo} />
+          <CommitsView repo={currentRepo} />
         )}
 
         {/* 3.5. Releases & Tags View */}
         {activeTab === 'releases' && (
-          <ReleasesView repo={repo} />
+          <ReleasesView repo={currentRepo} />
         )}
 
         {/* 4. Autonomous Agent Console & MCP Telemetry */}
@@ -126,7 +153,7 @@ export default function App() {
 
         {/* 5. Branch Rulesets & Policy View */}
         {activeTab === 'rulesets' && (
-          <RulesetsView repo={repo} />
+          <RulesetsView repo={currentRepo} />
         )}
 
         {/* 6. Webhooks Delivery View */}

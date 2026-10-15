@@ -37,6 +37,7 @@ import {
   deleteUserToken,
   checkActiveSession,
   getRepositories,
+  deleteRepository,
   isDemoModeActive,
   type UserProfile,
   type UserSSHKey,
@@ -172,6 +173,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
     fetchUserSSHKeys().then(setSshKeys)
     fetchUserTokens().then(setTokens)
 
+    loadRepos()
+  }, [])
+
+  const loadRepos = () => {
     if (!isDemoModeActive()) {
       getRepositories().then((live) => {
         if (live && live.length > 0) {
@@ -190,7 +195,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
         }
       })
     }
-  }, [])
+  }
+
+  const handleDeleteRepo = async (e: React.MouseEvent, repoOwner: string, repoName: string) => {
+    e.stopPropagation()
+    if (!window.confirm(`Are you sure you want to delete "${repoOwner}/${repoName}"? This action cannot be undone.`)) {
+      return
+    }
+    const ok = await deleteRepository(repoOwner, repoName)
+    if (ok) {
+      loadRepos()
+    }
+  }
 
   // Contribution Calendar Data Generator (52 weeks x 7 days)
   const contributionData = React.useMemo(() => {
@@ -713,6 +729,14 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
                             {repo.stars}
                           </span>
                         </Button>
+                        <button
+                          onClick={(e) => handleDeleteRepo(e, repo.owner, repo.name)}
+                          className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                          title="Delete repository"
+                          aria-label={`Delete repository ${repo.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </BoxRow>
                   ))

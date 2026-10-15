@@ -276,6 +276,26 @@ type RepoUpdate struct {
 	DeleteBranchOnMerge *bool
 }
 
+// DeleteRepo deletes a repository by owner slug + name.
+func (db *DB) DeleteRepo(ctx context.Context, ownerSlug, name string) error {
+	res, err := db.sql.ExecContext(ctx, `DELETE FROM repos
+		WHERE id IN (
+			SELECT r.id FROM repos r JOIN namespaces n ON n.id = r.namespace_id
+			WHERE n.slug = ? AND r.name = ?
+		)`, ownerSlug, name)
+	if err != nil {
+		return fmt.Errorf("delete repo: %w", err)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func scanRepo(row *sql.Row) (Repo, error) {
 	return scanRepoCols(row.Scan)
 }

@@ -64,11 +64,14 @@ The server binds to port `8080` and is immediately ready to accept Git Smart-HTT
 | `http://localhost:8080/v1/origin/openapi.yaml` | HTTP | OpenAPI 3.1 specification |
 | `http://localhost:8080/healthz` | HTTP | Cluster health & readiness probe |
 
-## 4. Interactive First-Time Onboarding Tour & In-App Manual
+## 4. Interactive Onboarding, In-App Manual, & In-Browser Commits
 
 When opening the web console (`http://localhost:8080` in production or `http://localhost:3000` during dev):
-1. An interactive **5-step Onboarding Walkthrough** automatically greets first-time administrators, detailing cluster network topology (:8080, :2222, /mcp), git client configuration, and agent leases.
-2. The built-in **User Manual & Architecture Guide** is accessible anytime via the **"Manual"** icon in the header, complete with live network port tables and copyable quick-start commands.
+1. **Interactive 5-step Onboarding Walkthrough**: Automatically greets first-time administrators, detailing cluster network topology (:8080, :2222, /mcp), git client configuration, and agent leases.
+2. **In-App User Manual & System Guide**: Accessible anytime via the **"Manual"** icon in the header, complete with live network port tables and copyable quick-start commands.
+3. **Canonical Quick Setup Screen**: When a repository is newly created (0 commits), exist.io displays the canonical GitHub Quick Setup screen with HTTPS and SSH command blocks, git push instructions, and agent lease initialization commands.
+4. **In-Browser File Creation**: Directly create and commit files (such as `README.md` or `main.go`) directly from the browser using the **"Add file"** button without touching your terminal.
+5. **Native SQLite Issues & Comments**: Full issues lifecycle tracking with monotonic numbering, thread commenting, and state transitions backed by SQLite WAL storage.
 
 Configure the `exist` CLI using your bootstrap API token:
 
