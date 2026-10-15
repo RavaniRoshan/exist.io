@@ -1199,9 +1199,7 @@ export async function fetchRulesets(owner: string, repo: string): Promise<Rulese
     return mockRulesets
   }
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/rulesets`, {
-      headers: getAuthHeader(),
-    })
+    const res = await fetch(`/api/v1/repos/${owner}/${repo}/rulesets`)
     if (!res.ok) return []
     const data = await res.json()
     return Array.isArray(data?.rulesets) ? data.rulesets : []
@@ -1216,9 +1214,9 @@ export async function createRuleset(
   data: Partial<RulesetRecord>
 ): Promise<{ ok: boolean; ruleset?: RulesetRecord; error?: string }> {
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/rulesets`, {
+    const res = await fetch(`/api/v1/repos/${owner}/${repo}/rulesets`, {
       method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
     if (!res.ok) {
@@ -1234,9 +1232,8 @@ export async function createRuleset(
 
 export async function deleteRuleset(owner: string, repo: string, id: string): Promise<boolean> {
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/rulesets/${id}`, {
+    const res = await fetch(`/api/v1/repos/${owner}/${repo}/rulesets/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     })
     return res.ok
   } catch {
@@ -1250,9 +1247,7 @@ export async function fetchIPAllowlist(namespace: string): Promise<{ enabled: bo
     return { enabled: true, entries: mockIPAllowlistEntries }
   }
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist`, {
-      headers: getAuthHeader(),
-    })
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ip-allowlist`)
     if (!res.ok) return { enabled: false, entries: [] }
     const data = await res.json()
     return {
@@ -1266,9 +1261,9 @@ export async function fetchIPAllowlist(namespace: string): Promise<{ enabled: bo
 
 export async function setIPAllowlistEnabled(namespace: string, enabled: boolean): Promise<boolean> {
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist`, {
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ip-allowlist`, {
       method: 'PATCH',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled }),
     })
     return res.ok
@@ -1283,9 +1278,9 @@ export async function addIPAllowlistEntry(
   description: string
 ): Promise<{ ok: boolean; entry?: IPAllowlistEntry; error?: string }> {
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist/entries`, {
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ip-allowlist/entries`, {
       method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cidr, description }),
     })
     if (!res.ok) {
@@ -1301,9 +1296,8 @@ export async function addIPAllowlistEntry(
 
 export async function deleteIPAllowlistEntry(namespace: string, entryId: string): Promise<boolean> {
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/inbound-ip-allowlist/entries/${entryId}`, {
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ip-allowlist/entries/${entryId}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     })
     return res.ok
   } catch {
@@ -1317,9 +1311,7 @@ export async function fetchSSHCAs(namespace: string): Promise<{ required: boolea
     return { required: false, cas: mockSSHCAs }
   }
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities`, {
-      headers: getAuthHeader(),
-    })
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ssh-cas`)
     if (!res.ok) return { required: false, cas: [] }
     const data = await res.json()
     return {
@@ -1337,9 +1329,9 @@ export async function addSSHCA(
   publicKey: string
 ): Promise<{ ok: boolean; ca?: SSHCARecord; error?: string }> {
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities`, {
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ssh-cas`, {
       method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, publicKey }),
     })
     if (!res.ok) {
@@ -1355,9 +1347,8 @@ export async function addSSHCA(
 
 export async function deleteSSHCA(namespace: string, caId: string): Promise<boolean> {
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities/${caId}`, {
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ssh-cas/${caId}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     })
     return res.ok
   } catch {
@@ -1367,9 +1358,9 @@ export async function deleteSSHCA(namespace: string, caId: string): Promise<bool
 
 export async function setSSHCARequirement(namespace: string, required: boolean): Promise<boolean> {
   try {
-    const res = await fetch(`/v1/origin/namespaces/${namespace}/ssh-certificate-authorities:setRequirement`, {
+    const res = await fetch(`/api/v1/namespaces/${namespace}/ssh-cas`, {
       method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ required }),
     })
     return res.ok
@@ -1384,9 +1375,7 @@ export async function fetchWebhookDeliveries(): Promise<any[]> {
     return mockWebhookDeliveries
   }
   try {
-    const res = await fetch('/v1/origin/app/webhook/deliveries', {
-      headers: getAuthHeader(),
-    })
+    const res = await fetch('/api/v1/webhooks/deliveries')
     if (!res.ok) return []
     const data = await res.json()
     return Array.isArray(data?.deliveries) ? data.deliveries : []
@@ -1397,9 +1386,9 @@ export async function fetchWebhookDeliveries(): Promise<any[]> {
 
 export async function pingWebhook(): Promise<{ ok: boolean; delivery_id?: string; error?: string }> {
   try {
-    const res = await fetch('/v1/origin/app/webhook/pings', {
+    const res = await fetch('/api/v1/webhooks/pings', {
       method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
     })
     if (!res.ok) {
       return { ok: false, error: 'Ping failed' }
@@ -1413,9 +1402,9 @@ export async function pingWebhook(): Promise<{ ok: boolean; delivery_id?: string
 
 export async function batchRedeliverWebhooks(deliveryIds: string[]): Promise<boolean> {
   try {
-    const res = await fetch('/v1/origin/app/webhook/deliveries:batchRedeliver', {
+    const res = await fetch('/api/v1/webhooks/deliveries/batchRedeliver', {
       method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deliveryIds }),
     })
     return res.ok
@@ -1558,14 +1547,83 @@ export async function getReleases(owner: string, name: string): Promise<ReleaseI
     return mockSampleReleases
   }
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/releases`, {
-      headers: getAuthHeader(),
-    })
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/releases`)
     if (!res.ok) return []
     const data = await res.json()
     return Array.isArray(data?.releases) ? data.releases : []
   } catch {
     return []
+  }
+}
+
+export async function createRelease(
+  owner: string,
+  name: string,
+  payload: {
+    tagName: string
+    targetCommitish?: string
+    name?: string
+    body?: string
+    draft?: boolean
+    prerelease?: boolean
+  }
+): Promise<{ ok: boolean; release?: ReleaseItem; error?: string }> {
+  if (isDemoModeActive()) {
+    const newRel: ReleaseItem = {
+      id: `rel-${Date.now()}`,
+      tagName: payload.tagName,
+      name: payload.name || payload.tagName,
+      body: payload.body || '',
+      author: owner,
+      isDraft: Boolean(payload.draft),
+      isPrerelease: Boolean(payload.prerelease),
+      createdAt: 'Just now',
+      publishedAt: 'Just now',
+      commitSha: '5c92f55',
+      assets: [
+        {
+          name: `${name}-${payload.tagName}.tar.gz`,
+          size: 1428571,
+          downloadCount: 0,
+          sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        },
+      ],
+    }
+    return { ok: true, release: newRel }
+  }
+
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/releases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tag_name: payload.tagName,
+        target_commitish: payload.targetCommitish || 'main',
+        name: payload.name,
+        body: payload.body,
+        draft: payload.draft,
+        prerelease: payload.prerelease,
+      }),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return { ok: false, error: err || 'Failed to create release' }
+    }
+    const data = await res.json()
+    return { ok: true, release: data.release }
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function deleteRelease(owner: string, name: string, id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/releases/${id}`, {
+      method: 'DELETE',
+    })
+    return res.ok
+  } catch {
+    return false
   }
 }
 

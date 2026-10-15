@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Box, BoxHeader, BoxTitle, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Dialog } from '@/components/ui/Dialog'
-import { getReleases, type RepoInfo, type ReleaseItem } from '@/lib/api'
+import { getReleases, createRelease, type RepoInfo, type ReleaseItem } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export interface ReleasesViewProps {
@@ -56,34 +56,30 @@ export const ReleasesView: React.FC<ReleasesViewProps> = ({ repo }) => {
     setTimeout(() => setCopiedSha(null), 2000)
   }
 
-  const handlePublishRelease = (e: React.FormEvent) => {
+  const handlePublishRelease = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!draftTag.trim() || !draftTitle.trim()) return
 
     setIsPublishing(true)
-    const newRel: ReleaseItem = {
-      id: `rel_${Date.now()}`,
-      tagName: draftTag.trim(),
-      name: draftTitle.trim(),
-      body: draftBody.trim(),
-      author: 'shiva',
-      isDraft: false,
-      isPrerelease,
-      createdAt: new Date().toISOString(),
-      publishedAt: new Date().toISOString(),
-      commitSha: '5c92f55',
-      assets: [
-        { name: `existd-${draftTag.trim()}-linux-amd64.tar.gz`, size: 34500000, downloadCount: 0 },
-        { name: `existd-${draftTag.trim()}-darwin-arm64.tar.gz`, size: 33100000, downloadCount: 0 },
-      ],
+    try {
+      const res = await createRelease(owner, repoName, {
+        tagName: draftTag.trim(),
+        name: draftTitle.trim(),
+        body: draftBody.trim(),
+        prerelease: isPrerelease,
+      })
+      if (res.ok && res.release) {
+        setReleases((prev) => [res.release!, ...prev.filter((r) => r.tagName !== res.release!.tagName)])
+      }
+      setIsDraftModalOpen(false)
+      setDraftTag('')
+      setDraftTitle('')
+      setDraftBody('')
+    } catch (err: any) {
+      alert(err.message || 'Failed to publish release')
+    } finally {
+      setIsPublishing(false)
     }
-
-    setReleases((prev) => [newRel, ...prev])
-    setIsPublishing(false)
-    setIsDraftModalOpen(false)
-    setDraftTag('')
-    setDraftTitle('')
-    setDraftBody('')
   }
 
   const formatSize = (bytes: number) => {

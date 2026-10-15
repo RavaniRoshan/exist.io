@@ -271,6 +271,41 @@ type BranchInfo struct {
 	SHA  string
 }
 
+// TagInfo is a git tag name and its target commit SHA.
+type TagInfo struct {
+	Name    string
+	SHA     string
+	Message string
+	Date    string
+}
+
+// ListTags returns tag name -> commit SHA for the repo.
+func (s *Store) ListTags(namespaceSlug, repoName string) ([]TagInfo, error) {
+	repo, err := s.Open(namespaceSlug, repoName)
+	if err != nil {
+		return nil, err
+	}
+	iter, err := repo.Tags()
+	if err != nil {
+		return nil, err
+	}
+	var out []TagInfo
+	err = iter.ForEach(func(r *plumbing.Reference) error {
+		info := TagInfo{
+			Name: r.Name().Short(),
+			SHA:  r.Hash().String(),
+		}
+		if tagObj, err := repo.TagObject(r.Hash()); err == nil {
+			info.SHA = tagObj.Target.String()
+			info.Message = tagObj.Message
+			info.Date = tagObj.Tagger.When.Format("2006-01-02T15:04:05Z07:00")
+		}
+		out = append(out, info)
+		return nil
+	})
+	return out, err
+}
+
 // ListCommits returns commits reachable from ref, newest first, up to limit.
 func (s *Store) ListCommits(namespaceSlug, repoName, ref string, limit int) ([]CommitInfo, error) {
 	repo, err := s.Open(namespaceSlug, repoName)

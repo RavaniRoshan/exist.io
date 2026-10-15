@@ -255,7 +255,7 @@ export default function App() {
             </a>
             <span className="text-border">|</span>
             <span className="text-foreground font-semibold">
-              exist.io v0.4.4-enterprise
+              exist.io v0.4.5-enterprise
             </span>
           </div>
         </div>

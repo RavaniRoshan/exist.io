@@ -30,6 +30,24 @@ vi.mock('@/lib/api', async () => {
         ],
       },
     ]),
+    createRelease: vi.fn().mockImplementation((owner, name, payload) =>
+      Promise.resolve({
+        ok: true,
+        release: {
+          id: 'rel-2',
+          tagName: payload.tagName,
+          name: payload.name,
+          body: payload.body,
+          author: owner,
+          isDraft: false,
+          isPrerelease: false,
+          createdAt: '2026-10-15T12:00:00Z',
+          publishedAt: '2026-10-15T12:00:00Z',
+          commitSha: 'abcdef1',
+          assets: [],
+        },
+      })
+    ),
   }
 })
 

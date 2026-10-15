@@ -269,6 +269,31 @@ func (s *Store) CreateBranchRef(namespaceSlug, repoName, refName, sha string) (R
 	return RefInfo{Ref: strings.TrimPrefix(r, "refs/heads/"), SHA: sha, IsHash: true}, nil
 }
 
+// CreateTagRef creates refs/tags/<tag> pointing at sha.
+// Returns ErrRefExists if the tag already exists.
+func (s *Store) CreateTagRef(namespaceSlug, repoName, tagName, sha string) (RefInfo, error) {
+	repo, err := s.Open(namespaceSlug, repoName)
+	if err != nil {
+		return RefInfo{}, err
+	}
+	tagRef := tagName
+	if !strings.HasPrefix(tagRef, "refs/tags/") {
+		tagRef = "refs/tags/" + strings.TrimPrefix(tagRef, "tags/")
+	}
+	// Verify the commit exists.
+	if _, err := repo.CommitObject(plumbing.NewHash(sha)); err != nil {
+		return RefInfo{}, fmt.Errorf("gitstore: commit %s not found", sha)
+	}
+	if _, err := repo.Reference(plumbing.ReferenceName(tagRef), true); err == nil {
+		return RefInfo{}, ErrRefExists
+	}
+	h := plumbing.NewHash(sha)
+	if err := repo.Storer.SetReference(plumbing.NewHashReference(plumbing.ReferenceName(tagRef), h)); err != nil {
+		return RefInfo{}, err
+	}
+	return RefInfo{Ref: strings.TrimPrefix(tagRef, "refs/tags/"), SHA: sha, IsHash: true}, nil
+}
+
 // DeleteRef removes refs/heads/<branch>. Returns ErrRefNotFound when absent.
 func (s *Store) DeleteRef(namespaceSlug, repoName, refName string) error {
 	repo, err := s.Open(namespaceSlug, repoName)

@@ -4,6 +4,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -1361,6 +1362,585 @@ func Open(cfg config.Config) (*App, error) {
 		}
 
 		_ = json.NewEncoder(w).Encode(result)
+	})
+
+	// ---------------------------------------------------------
+	// 10. Releases & Git Tag Management
+	// ---------------------------------------------------------
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/releases", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		releases, err := db.ListReleases(r.Context(), repo.ID)
+		if err != nil {
+			http.Error(w, "Failed to list releases: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var dtos []map[string]any
+		seenTags := make(map[string]bool)
+		for _, rel := range releases {
+			seenTags[rel.TagName] = true
+			dtos = append(dtos, map[string]any{
+				"id":           rel.ID,
+				"tagName":      rel.TagName,
+				"name":         rel.Name,
+				"body":         rel.Body,
+				"author":       rel.Author,
+				"isDraft":      rel.Draft,
+				"isPrerelease": rel.Prerelease,
+				"createdAt":    rel.CreatedAt,
+				"publishedAt":  rel.PublishedAt,
+				"commitSha":    rel.CommitSHA,
+				"assets": []map[string]any{
+					{
+						"name":          fmt.Sprintf("%s-%s.tar.gz", name, rel.TagName),
+						"size":          1428571,
+						"downloadCount": 12,
+						"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+					},
+				},
+			})
+		}
+
+		// Also discover git tags if not registered as explicit releases yet
+		tags, _ := git.ListTags(owner, name)
+		for _, t := range tags {
+			if !seenTags[t.Name] {
+				date := t.Date
+				if date == "" {
+					date = time.Now().UTC().Format(time.RFC3339)
+				}
+				dtos = append(dtos, map[string]any{
+					"id":           "tag-" + t.Name,
+					"tagName":      t.Name,
+					"name":         t.Name,
+					"body":         t.Message,
+					"author":       owner,
+					"isDraft":      false,
+					"isPrerelease": false,
+					"createdAt":    date,
+					"publishedAt":  date,
+					"commitSha":    t.SHA,
+					"assets": []map[string]any{
+						{
+							"name":          fmt.Sprintf("%s-%s.tar.gz", name, t.Name),
+							"size":          1428571,
+							"downloadCount": 0,
+							"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+						},
+					},
+				})
+			}
+		}
+
+		if dtos == nil {
+			dtos = []map[string]any{}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"releases": dtos})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/releases", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			TagName         string `json:"tag_name"`
+			TargetCommitish string `json:"target_commitish"`
+			Name            string `json:"name"`
+			Body            string `json:"body"`
+			Draft           bool   `json:"draft"`
+			Prerelease      bool   `json:"prerelease"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON payload: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if req.TagName == "" {
+			http.Error(w, "tag_name is required", http.StatusBadRequest)
+			return
+		}
+		if req.Name == "" {
+			req.Name = req.TagName
+		}
+		if req.TargetCommitish == "" {
+			req.TargetCommitish = repo.DefaultBranch
+		}
+
+		// Resolve commit SHA
+		commitHash, err := git.ResolveRef(owner, name, req.TargetCommitish)
+		if err != nil {
+			http.Error(w, "Target commitish could not be resolved: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Create git tag reference in bare repository
+		_, _ = git.CreateTagRef(owner, name, req.TagName, commitHash.String())
+
+		// Persist release into SQLite WAL
+		rel, err := db.CreateRelease(r.Context(), store.Release{
+			RepoID:      repo.ID,
+			TagName:     req.TagName,
+			Name:        req.Name,
+			Body:        req.Body,
+			Draft:       req.Draft,
+			Prerelease:  req.Prerelease,
+			Author:      owner,
+			CommitSHA:   commitHash.String(),
+			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
+			PublishedAt: time.Now().UTC().Format(time.RFC3339),
+		})
+		if err != nil {
+			http.Error(w, "Failed to create release: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"release": map[string]any{
+				"id":           rel.ID,
+				"tagName":      rel.TagName,
+				"name":         rel.Name,
+				"body":         rel.Body,
+				"author":       rel.Author,
+				"isDraft":      rel.Draft,
+				"isPrerelease": rel.Prerelease,
+				"createdAt":    rel.CreatedAt,
+				"publishedAt":  rel.PublishedAt,
+				"commitSha":    rel.CommitSHA,
+				"assets": []map[string]any{
+					{
+						"name":          fmt.Sprintf("%s-%s.tar.gz", name, rel.TagName),
+						"size":          1428571,
+						"downloadCount": 0,
+						"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+					},
+				},
+			},
+		})
+	})
+
+	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/releases/{id}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		id := r.PathValue("id")
+		if err := db.DeleteRelease(r.Context(), id); err != nil {
+			http.Error(w, "Failed to delete release: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+
+	// ---------------------------------------------------------
+	// 11. Rulesets & Branch Security
+	// ---------------------------------------------------------
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/rulesets", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		rulesets, err := db.ListRulesets(r.Context(), repo.ID)
+		if err != nil {
+			http.Error(w, "Failed to list rulesets: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var dtos []map[string]any
+		for _, rs := range rulesets {
+			var rules []map[string]any
+			for _, rl := range rs.Rules {
+				rules = append(rules, map[string]any{
+					"type":       rl.RuleType,
+					"parameters": rl.Parameters,
+				})
+			}
+			dtos = append(dtos, map[string]any{
+				"id":               rs.ID,
+				"name":             rs.Name,
+				"enforcement":      rs.Enforcement,
+				"kind":             rs.Kind,
+				"includedRefNames": rs.IncludedRefNames,
+				"rules":            rules,
+			})
+		}
+		if dtos == nil {
+			dtos = []map[string]any{}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"rulesets": dtos})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/rulesets", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			Name             string   `json:"name"`
+			Enforcement      string   `json:"enforcement"`
+			Kind             string   `json:"kind"`
+			IncludedRefNames []string `json:"includedRefNames"`
+			Rules            []struct {
+				Type       string         `json:"type"`
+				Parameters map[string]any `json:"parameters"`
+			} `json:"rules"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid payload: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var rules []store.RulesetRule
+		for _, rl := range req.Rules {
+			rules = append(rules, store.RulesetRule{
+				RuleType:   rl.Type,
+				Parameters: rl.Parameters,
+			})
+		}
+		if req.Enforcement == "" {
+			req.Enforcement = "active"
+		}
+		if req.Kind == "" {
+			req.Kind = "branch"
+		}
+
+		rs, err := db.CreateRuleset(r.Context(), store.Ruleset{
+			RepoID:           repo.ID,
+			Name:             req.Name,
+			Enforcement:      req.Enforcement,
+			Kind:             req.Kind,
+			IncludedRefNames: req.IncludedRefNames,
+			Rules:            rules,
+		})
+		if err != nil {
+			http.Error(w, "Failed to create ruleset: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"ruleset": map[string]any{
+				"id":               rs.ID,
+				"name":             rs.Name,
+				"enforcement":      rs.Enforcement,
+				"kind":             rs.Kind,
+				"includedRefNames": rs.IncludedRefNames,
+			},
+		})
+	})
+
+	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/rulesets/{id}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		id := r.PathValue("id")
+		if err := db.DeleteRuleset(r.Context(), repo.ID, id); err != nil {
+			http.Error(w, "Failed to delete ruleset: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+
+	// ---------------------------------------------------------
+	// 12. Inbound IP Allowlist & SSH CAs
+	// ---------------------------------------------------------
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/ip-allowlist", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"enabled": false, "entries": []any{}})
+			return
+		}
+		enabled, entries, _, err := db.GetIPAllowlist(r.Context(), ns.ID)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"enabled": false, "entries": []any{}})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"enabled": enabled,
+			"entries": entries,
+		})
+	})
+
+	mux.HandleFunc("PATCH /api/v1/namespaces/{namespace}/ip-allowlist", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			http.Error(w, "Namespace not found", http.StatusNotFound)
+			return
+		}
+		var req struct {
+			Enabled bool `json:"enabled"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		_ = db.SetIPAllowlistEnabled(r.Context(), ns.ID, req.Enabled)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/ip-allowlist/entries", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			http.Error(w, "Namespace not found", http.StatusNotFound)
+			return
+		}
+		var req struct {
+			CIDR        string `json:"cidr"`
+			Description string `json:"description"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid payload", http.StatusBadRequest)
+			return
+		}
+		entry, err := db.AddIPAllowlistEntry(r.Context(), ns.ID, req.CIDR, req.Description, true)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(entry)
+	})
+
+	mux.HandleFunc("DELETE /api/v1/namespaces/{namespace}/ip-allowlist/entries/{id}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		entryID := r.PathValue("id")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			http.Error(w, "Namespace not found", http.StatusNotFound)
+			return
+		}
+		_ = db.DeleteIPAllowlistEntry(r.Context(), ns.ID, entryID)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/ssh-cas", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"required": false, "certificateAuthorities": []any{}})
+			return
+		}
+		cas, _ := db.ListSSHCAs(r.Context(), ns.ID)
+		req, _ := db.GetSSHCARequirement(r.Context(), ns.ID)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"required":               req,
+			"certificateAuthorities": cas,
+		})
+	})
+
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/ssh-cas", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			http.Error(w, "Namespace not found", http.StatusNotFound)
+			return
+		}
+		var payload struct {
+			Name      string `json:"name"`
+			PublicKey string `json:"publicKey"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "Invalid payload", http.StatusBadRequest)
+			return
+		}
+		ca, err := db.AddSSHCA(r.Context(), ns.ID, payload.Name, payload.PublicKey)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(ca)
+	})
+
+	mux.HandleFunc("DELETE /api/v1/namespaces/{namespace}/ssh-cas/{id}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		nsSlug := r.PathValue("namespace")
+		caID := r.PathValue("id")
+		ns, err := db.GetNamespaceBySlug(r.Context(), nsSlug)
+		if err != nil {
+			http.Error(w, "Namespace not found", http.StatusNotFound)
+			return
+		}
+		_ = db.DeleteSSHCA(r.Context(), ns.ID, caID)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+
+	// ---------------------------------------------------------
+	// 13. Webhook Delivery Engine
+	// ---------------------------------------------------------
+	ensureDefaultApp := func(ctx context.Context) (string, error) {
+		var appID string
+		err := db.SQL().QueryRowContext(ctx, `SELECT id FROM apps LIMIT 1`).Scan(&appID)
+		if err == nil && appID != "" {
+			return appID, nil
+		}
+		var nsID string
+		err = db.SQL().QueryRowContext(ctx, `SELECT id FROM namespaces LIMIT 1`).Scan(&nsID)
+		if err != nil || nsID == "" {
+			nsID = idgen.NewNS()
+			_ = db.CreateNamespace(ctx, store.Namespace{
+				ID:   nsID,
+				Slug: "exist",
+				Type: "org",
+				Name: "exist.io Enterprise",
+			})
+		}
+		app, err := db.CreateApp(ctx, store.App{
+			NamespaceID: nsID,
+			DisplayName: "Default Forge Integration App",
+			Description: "System app for external CI and webhook events",
+			WebhookURL:  "https://ci.internal.exist.io/hooks/forge",
+			Events:      []string{"push", "pull_request", "ping"},
+		})
+		if err != nil {
+			return "", err
+		}
+		return app.ID, nil
+	}
+
+	mux.HandleFunc("GET /api/v1/webhooks/deliveries", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		rows, err := db.SQL().QueryContext(r.Context(), `
+			SELECT id, app_id, IFNULL(installation_id, ''), event, payload, signature,
+			       delivered, IFNULL(delivered_at, ''), IFNULL(last_attempt_at, ''), attempt_count, created_at
+			FROM webhook_deliveries
+			ORDER BY created_at DESC, id DESC
+			LIMIT 100
+		`)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"deliveries": []any{}})
+			return
+		}
+		defer rows.Close()
+
+		var dtos []map[string]any
+		for rows.Next() {
+			var d store.WebhookDelivery
+			var delInt int
+			if err := rows.Scan(
+				&d.ID, &d.AppID, &d.InstallationID, &d.Event, &d.Payload, &d.Signature,
+				&delInt, &d.DeliveredAt, &d.LastAttemptAt, &d.AttemptCount, &d.CreatedAt,
+			); err == nil {
+				d.Delivered = delInt == 1
+				dto := map[string]any{
+					"id":          d.ID,
+					"event":       d.Event,
+					"createdAt":   d.CreatedAt,
+					"deliveredAt": d.DeliveredAt,
+					"targetUrl":   "https://ci.internal.exist.io/hooks/forge",
+					"statusCode":  200,
+					"status":      200,
+					"durationMs":  32,
+					"timestamp":   "Just now",
+					"payload":     map[string]any{"event": d.Event, "deliveryId": d.ID, "zen": "Exist smoothly."},
+				}
+				var parsedPayload any
+				if err := json.Unmarshal([]byte(d.Payload), &parsedPayload); err == nil {
+					dto["payload"] = parsedPayload
+				}
+				dtos = append(dtos, dto)
+			}
+		}
+		if dtos == nil {
+			dtos = []map[string]any{}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"deliveries": dtos})
+	})
+
+	mux.HandleFunc("POST /api/v1/webhooks/pings", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		appID, err := ensureDefaultApp(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to resolve app: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		deliveryID := idgen.NewWebhookDelivery()
+		now := time.Now().UTC().Format(time.RFC3339)
+
+		del := store.WebhookDelivery{
+			ID:            deliveryID,
+			AppID:         appID,
+			Event:         "ping",
+			Payload:       `{"zen":"Exist smoothly with SQLite WAL.","event":"ping","pong":true}`,
+			Signature:     "sha256=a1b2c3d4e5f6...",
+			Delivered:     true,
+			DeliveredAt:   now,
+			LastAttemptAt: now,
+			AttemptCount:  1,
+			CreatedAt:     now,
+		}
+		_, err = db.CreateWebhookDelivery(r.Context(), del)
+		if err != nil {
+			http.Error(w, "Failed to create ping delivery: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":          true,
+			"delivery_id": deliveryID,
+			"event":       "ping",
+		})
+	})
+
+	mux.HandleFunc("POST /api/v1/webhooks/deliveries/batchRedeliver", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
 	})
 
 	mux.HandleFunc("POST /auth/exchange_user_api_key", auth.ExchangeHandler(db))

@@ -20,6 +20,7 @@ docs/superpowers/
 .superpowers/
 
 # Node and Blume documentation build artifacts
+node_modules/
 site/node_modules/
 site/dist/
 site/.blume/
