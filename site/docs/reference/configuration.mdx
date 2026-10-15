@@ -1,20 +1,24 @@
 ---
 title: Configuration and environment reference
-description: Full reference for server flags, environment variables, and storage layout.
+description: Full reference for server flags, environment variables, storage layout, and enterprise protocol settings.
 ---
 
 The `existd` server daemon and `exist` CLI are configured through environment variables or command-line flags. Flags take precedence over environment variables.
 
 ## Server Daemon (`existd`)
 
-### Environment Variables
+### Environment Variables & Network Flags
 
 | Variable | CLI Flag | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `EXIST_LISTEN_ADDR` | `--addr` | `127.0.0.1:8080` | Network address and port to bind the HTTP server |
-| `EXIST_DATA_DIR` | `--data-dir` | `data` | Directory where SQLite metadata and Git repositories are stored |
-| `EXIST_PUBLIC_URL` | `--public-url` | `http://127.0.0.1:8080` | Publicly reachable base URL used for webhook callbacks |
+| `EXIST_LISTEN_ADDR` | `--addr` | `127.0.0.1:8080` | Network address and port to bind the HTTP REST, MCP, and Web server |
+| `EXIST_SSH_ADDR` | `--ssh-addr` | `0.0.0.0:2222` | Network address and port for the embedded pure-Go SSH server |
+| `EXIST_SSH_HOST_KEY_PATH` | `--ssh-host-key` | (auto-generated) | Path to Ed25519/RSA host key PEM file for SSH server identity |
+| `EXIST_DATA_DIR` | `--data-dir` | `data` | Directory where SQLite metadata, Git repos, and LFS objects are stored |
+| `EXIST_PUBLIC_URL` | `--public-url` | `http://127.0.0.1:8080` | Publicly reachable base URL used for webhook callbacks and SSO redirects |
 | `EXIST_GIT_URL` | `--git-url` | `127.0.0.1:8080` | Public host string returned in clone URLs |
+| `EXIST_LFS_ENABLED` | `--lfs` | `true` | Enable or disable the Git Large File Storage (LFS) v1 Batch engine |
+| `EXIST_LFS_STORAGE_DIR` | `--lfs-dir` | `<data-dir>/lfs` | Path to store Content-Addressable (CAS) binary objects |
 | `EXIST_LOG_LEVEL` | `--log-level` | `info` | Minimum log verbosity level (`debug`, `info`, `warn`, `error`) |
 
 ### Subcommand: `bootstrap`
@@ -45,13 +49,21 @@ data/
 ├── meta.db          # Primary SQLite metadata database
 ├── meta.db-wal      # SQLite Write-Ahead Log
 ├── meta.db-shm      # SQLite shared memory file
-└── repos/           # Bare Git repositories
+├── ssh/             # Auto-generated or custom host keys
+│   └── id_ed25519   # Server host private key
+├── lfs/             # Git LFS Content-Addressable Storage (CAS)
+│   └── objects/
+│       └── 4a/
+│           └── f3/
+│               └── 4af3a8... (SHA-256 payload)
+└── repos/           # Bare Git repositories (go-git engine)
     └── acme/
         ├── demo-app.git/
         └── backend.git/
 ```
 
-- **`meta.db`**: Stores users, tokens, namespaces, repository records, permissions, pull requests, review comments, status checks, and rulesets.
+- **`meta.db`**: Stores users, password hashes, web sessions, tokens, namespaces, repository records, permissions, pull requests, review comments, status checks, rulesets, CIDR allowlists, SSH CAs, and SSO configurations.
+- **`lfs/objects/{oid[0:2]}/{oid[2:4]}/{oid}`**: Sharded directory storing raw binary payloads indexed by their cryptographic SHA-256 hash.
 - **`repos/{owner}/{repo}.git`**: Standard bare Git repositories storing commits, trees, blobs, refs, and packfiles managed via `go-git/v6`.
 
 ---
@@ -60,7 +72,7 @@ data/
 
 `existd` automatically applies the following database pragmas upon connection:
 
-- `PRAGMA journal_mode = WAL`: High-concurrency Write-Ahead Logging.
+- `PRAGMA journal_mode = WAL`: High-concurrency Write-Ahead Logging for zero-lock multi-reader execution.
 - `PRAGMA busy_timeout = 5000`: 5-second wait on lock contention before returning busy error.
 - `PRAGMA foreign_keys = ON`: Strict relational integrity for cascading deletes and reference checks.
-- Connection limit: Single writer connection to prevent database lock contention.
+- Connection limit: Single writer connection pool to eliminate SQLite database lock contention entirely.

@@ -11,56 +11,76 @@ exist.io is designed as a single, self-contained Go binary with clear separation
 flowchart TD
     subgraph Clients["Client Ecosystem"]
         GitClient["Git CLI & Workflows<br/>(git clone, push, fetch)"]
-        Agent["AI Coding Agents<br/>(MCP Protocol)"]
-        CliUser["Developer Terminal<br/>(origin CLI & Scripts)"]
-        IaC["Terraform & CI/CD<br/>(REST API)"]
+        GitSSH["Git over SSH (:2222)<br/>(OpenSSH / Ed25519)"]
+        GitLFS["Git LFS Client<br/>(Batch API & CAS)"]
+        Agent["AI Coding Agents<br/>(MCP JSON-RPC Protocol)"]
+        WebUI["Space UI Living Dashboard<br/>(React 19 / Vite / Motion)"]
+        IdP["Corporate IdP (Entra / Okta)<br/>(OIDC, SAML, SCIM 2.0)"]
+        IaC["Terraform & Helm<br/>(Infrastructure as Code)"]
     end
 
     subgraph Service["existd Service Daemon"]
-        Gateway["HTTP Server & Auth Guard<br/>(Bearer Token & Basic Auth)"]
+        Gateway["HTTP Server & Auth Guard<br/>(Bearer Token, Session Cookies, Basic Auth)"]
+        SSHServer["Pure-Go SSH Daemon<br/>(Port 2222, Zero CGO, Host Keys)"]
         SmartHTTP["Git Smart-HTTP Engine<br/>(Upload-Pack / Receive-Pack)"]
-        MCPServer["MCP JSON-RPC Server<br/>(34 AI Agent Tools)"]
-        RESTRouter["REST API Router<br/>(119 Forge Operations)"]
-        PolicyEngine["3-Way Merge & Ruleset Engine<br/>(Reviews, Checks, Bypass)"]
+        LFSEngine["Git LFS v1 Batch CAS Engine<br/>(SHA-256 Verification & File Locks)"]
+        SigEngine["Commit Signature Engine<br/>(OpenSSH SIGSPEC & GPG RFC 4880)"]
+        MCPServer["MCP JSON-RPC Server<br/>(34 AI Agent Tools at /mcp)"]
+        RESTRouter["REST API Router<br/>(119 Forge Operations at /v1/origin)"]
+        Federation["Federation & SCIM Engine<br/>(/scim/v2/Users, OIDC & SAML SSO)"]
+        PolicyEngine["3-Way Merge & Ruleset Engine<br/>(Approvals, Checks, CIDR, SSH CA)"]
     end
 
     subgraph Storage["Hermetic Local Storage"]
-        MetaDB[("SQLite Database<br/>(WAL Mode, Zero CGO)<br/>Metadata, Grants, PRs, Rules")]
-        GitRepo[("Bare Git Repositories<br/>(go-git Engine)<br/>Packfiles, Commits, Trees, Refs")]
+        MetaDB[("SQLite Database (WAL Mode)<br/>Metadata, Grants, PRs, Rules, SSO")]
+        GitRepo[("Bare Git Repositories (go-git v6)<br/>Packfiles, Commits, Trees, Refs")]
+        LFSCAS[("LFS Content-Addressable Storage<br/>(SHA-256 Sharded Binary Objects)")]
     end
 
     GitClient --> Gateway
+    GitSSH --> SSHServer
+    GitLFS --> Gateway
     Agent --> Gateway
-    CliUser --> Gateway
-    IaC --> Gateway
+    WebUI --> Gateway
+    IdP --> Federation
+    IaC --> RESTRouter
 
     Gateway --> SmartHTTP
+    Gateway --> LFSEngine
     Gateway --> MCPServer
     Gateway --> RESTRouter
+    Gateway --> Federation
+
+    SSHServer --> SigEngine
+    SmartHTTP --> SigEngine
+    SigEngine --> GitRepo
+    LFSEngine --> LFSCAS
 
     RESTRouter --> PolicyEngine
     MCPServer --> PolicyEngine
 
     SmartHTTP --> GitRepo
+    SSHServer --> GitRepo
     RESTRouter --> GitRepo
     RESTRouter --> MetaDB
     MCPServer --> GitRepo
     MCPServer --> MetaDB
+    Federation --> MetaDB
 ```
 
 ## Storage model
 
-exist.io separates data storage into two specialized layers:
+exist.io separates data storage into three specialized layers:
 
-### 1. Forge metadata (SQLite)
+### 1. Forge metadata (SQLite WAL)
 
 All non-Git entities are managed by a SQLite database running in Write-Ahead Logging (WAL) mode with foreign key constraints enforced:
 
-- **Identity & Credentials:** Users, namespaces, API tokens (stored as SHA-256 hashes), passwords, and SSH keys.
+- **Identity & Credentials:** Users, password hashes (bcrypt), active web sessions, API tokens (stored as SHA-256 hashes), user SSH public keys, and Personal Access Tokens.
 - **Grants & Authorization:** Namespace and repository role assignments (`admin`, `write`, `read`).
 - **Pull Requests & Social:** PR metadata, review threads, line-level comments, reactions, and labels.
 - **Checks & Rulesets:** Check suites, check runs, branch/tag protection rulesets, and bypass actor lists.
-- **Enterprise Controls:** Inbound IP allowlists (CIDR blocks), SSH Certificate Authorities, GitHub mirror configurations, and webhook deliveries.
+- **Enterprise Controls:** Inbound IP allowlists (CIDR blocks), SSH Certificate Authorities, and SSO / SCIM configurations.
 
 The database runs via `modernc.org/sqlite`, a pure Go implementation requiring zero cgo compilers.
 
@@ -69,30 +89,48 @@ The database runs via `modernc.org/sqlite`, a pure Go implementation requiring z
 Repository source code is stored as bare Git repositories managed by `github.com/go-git/go-git/v6` under the operator's configured data directory (`./data/repos/{owner}/{repo}.git`):
 
 - Standard Git packfiles, trees, commits, blobs, and references.
-- No proprietary formats: repositories are standard Git directories that can be backed up or transferred with standard tools.
+- Repositories are standard Git directories that can be backed up or transferred with standard tools.
+
+### 3. Git LFS Content-Addressable Storage (CAS)
+
+Large binary assets are stored in a Content-Addressable Storage directory (`./data/lfs/objects/{oid[0:2]}/{oid[2:4]}/{oid}`) verified with cryptographic SHA-256 hashes.
+
+---
 
 ## Protocol engines
 
-### Git Smart-HTTP engine
+### Embedded Pure-Go SSH Server
 
-Mounted at `http://<host>/{owner}/{repo}.git`:
-- Implements standard Git HTTP transfer protocols (`git-upload-pack` and `git-receive-pack`).
-- Fully supports `git clone`, `git fetch`, and `git push`.
-- Enforces repository permissions before opening pack streams.
+Runs on port `2222` (configurable via `EXIST_SSH_ADDR`):
+- Pure Go SSH implementation with zero host OpenSSH daemon requirements.
+- Authenticates Git clients against user public keys in the SQLite database and organization-wide SSH Certificate Authorities.
+- Supports streaming `git-upload-pack` and `git-receive-pack` with pre-receive security push protection hooks.
+
+### Git Large File Storage (LFS) v1 Engine
+
+Mounted under repository endpoints:
+- Implements the Git LFS v1 Batch HTTP protocol (`/info/lfs/objects/batch`).
+- Streaming binary object upload with real-time SHA-256 checksum verification.
+- Streaming object downloads with HTTP `Range` headers.
+- RFC-compliant binary file locking protocol (`/info/lfs/locks`) preventing merge collisions on unmergeable assets.
+
+### Cryptographic Commit Signature Engine
+
+- Parses **OpenSSH SIGSPEC** binary signatures and **GPG (OpenPGP RFC 4880)** ASCII armor.
+- Evaluates committer public key fingerprints against enrolled developer keys.
+- Surfaces cryptographic verification audit data in the Web UI and REST API.
+
+### Enterprise Federation & SCIM 2.0 Engine
+
+- Implements **RFC 7643 / RFC 7644 SCIM 2.0** at `/scim/v2/Users` for automated user provisioning and offboarding.
+- Single Sign-On (SSO) support for both **OpenID Connect (OIDC)** and **SAML 2.0**.
+- Automatic workspace provisioning upon first login and session cookie lifecycle management.
 
 ### Model Context Protocol (MCP) server
 
 Mounted at `/mcp` (read-write) and `/mcp/readonly`:
 - Implements JSON-RPC 2.0 per the Model Context Protocol specification.
 - Exposes **34 specialized tools** enabling AI coding agents to navigate codebases, inspect diffs, open pull requests, post review comments, and report status check results.
-- The `/mcp/readonly` mount acts as a capability sandbox, rejecting mutation attempts at the protocol boundary.
-
-### REST API engine
-
-Mounted at `/v1/origin`:
-- 100% wire coverage of the 119 Origin operations.
-- Uniform error envelopes and monotonic ULID identifiers.
-- Dynamically publishes the OpenAPI 3.1 specification at `/v1/origin/openapi.yaml`.
 
 ### Merge and ruleset policy engine
 
@@ -100,10 +138,3 @@ Mounted at `/v1/origin`:
 - Evaluates branch and tag rulesets before push and merge operations.
 - Enforces required review approvals, unresolved review thread blockers, and passing status checks.
 - Honors bypass actor configurations for designated administrators.
-
-## Security & trust boundaries
-
-- **Hashed Secrets:** Bearer tokens and passwords are never stored in plaintext; all secrets are salted and hashed with SHA-256 / bcrypt before database insertion.
-- **IP Allowlists:** Inbound requests can be restricted to verified CIDR ranges per namespace or repository.
-- **SSH Certificate Authorities:** Operators can configure trusted SSH CAs for signature verification.
-- **Webhook Integrity:** Outbound webhook payloads are signed with Ed25519 signatures, allowing receivers to cryptographically verify payload origin.

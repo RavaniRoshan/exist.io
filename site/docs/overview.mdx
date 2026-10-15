@@ -5,15 +5,15 @@ description: What exist.io is, who it is for, and the principles guiding its des
 
 ## A forge you can operate yourself
 
-exist.io is for engineering teams and agent developers who want a Git forge they can run on their own infrastructure. It unifies Git repository hosting, pull request collaboration, access policies, and coding agent integrations into one cohesive system without requiring an account with a proprietary vendor.
+exist.io is for engineering teams and agent developers who want a Git forge they can run on their own infrastructure. It unifies Git repository hosting, pull request collaboration, access policies, enterprise federation, and coding agent integrations into one cohesive system without requiring an account with a proprietary vendor.
 
-The product provides a modern, open-source alternative to Cursor Origin. It focuses on the forge itself—repositories, collaboration, permissions, policy enforcement, and the interfaces agents use to read and modify code.
+The product provides a modern, open-source alternative to Origin. It focuses on the forge itself—repositories, collaboration, permissions, policy enforcement, and the interfaces agents use to read and modify code.
 
 ## Who it is for
 
 - **Engineering teams:** Organizations that require full ownership over where source code, credentials, and pull request histories are stored.
 - **Agent developers & automation engineers:** Builders creating autonomous coding agents who need structured, permission-aware access to repositories via the Model Context Protocol (MCP).
-- **Security-conscious organizations:** Teams needing to enforce strict branch rulesets, IP allowlists, SSH Certificate Authorities, and audit trails without depending on external clouds.
+- **Security-conscious enterprises:** Teams needing to enforce strict branch rulesets, signed commits, corporate CIDR allowlists, SSH Certificate Authorities, and audit trails without depending on external clouds.
 
 ## Product principles
 
@@ -21,29 +21,33 @@ The product provides a modern, open-source alternative to Cursor Origin. It focu
 
 The core forge operates entirely on your own hardware or cloud instance without external service dependencies. It uses pure Go (`go-git/v6` and SQLite with WAL mode enabled), compiling to a single static binary with zero cgo requirements.
 
-### Git first
+### Dual Git transports
 
-Repository creation only matters if standard Git clients can clone, fetch, and push. Git Smart-HTTP is a foundational, first-class citizen in exist.io, authenticated via API tokens or basic credentials.
+Standard Git clients can clone, fetch, and push over both Smart-HTTP and native SSH on port `2222`. The embedded SSH server requires zero external host daemons and supports both user public keys and enterprise SSH Certificate Authorities.
+
+### Git LFS & Content-Addressable Storage
+
+Large model weights, datasets, and design binaries are handled by an RFC-compliant Git LFS v1 Batch engine with SHA-256 CAS persistence and binary file locking.
 
 ### Agents act through permissions
 
 Autonomous agents interact with exist.io through the open Model Context Protocol (MCP). Every tool call (`repo_tree`, `diff_compare`, `pull_request_create`, `thread_comment`) respects the exact same namespace, repository, and branch rulesets as human engineers. Untrusted agents can be restricted to `/mcp/readonly` to prevent unauthorized mutations.
 
-### Complete wire compatibility
-
-exist.io implements the complete 119-operation Origin REST API surface and provides an `origin` command-line tool, enabling existing scripts, Terraform configurations, and developer tools to function seamlessly against a self-hosted instance.
-
 ### Safe policy gating
 
-Merge decisions are protected by a native 3-way merge engine and ruleset evaluator. Pull requests can require passing check runs, approved review threads, and restricted bypass permissions before merging.
+Merge decisions are protected by a native 3-way merge engine and ruleset evaluator. Pull requests can require passing check runs, approved review threads, cryptographically signed commits, and restricted bypass permissions before merging.
 
 ## What is included vs external
 
 | Included in exist.io | Provided Externally |
 | :--- | :--- |
-| Pure-Go Git Smart-HTTP server | AI foundation models (Anthropic, OpenAI, local LLMs) |
-| 119 REST operations across forge entities | Coding agent execution runtimes (Cursor, Claude Desktop, Cline) |
-| Embedded MCP server (34 tools) | Enterprise SSO / SAML identity providers |
-| Native 3-way merge and squash engine | Cloud infrastructure & compute |
-| Rulesets, SSH CAs, and IP allowlists | |
-| CLI companion (`cmd/exist`) | |
+| Pure-Go Git Smart-HTTP & SSH server (:2222) | AI foundation models (Anthropic, OpenAI, local LLMs) |
+| Git LFS v1 Batch CAS engine & file locking | Coding agent execution runtimes (Cursor, Claude Code, Cline) |
+| Cryptographic signature verification (OpenSSH & GPG) | Corporate IdP authority (Microsoft Entra ID, Okta) |
+| Enterprise SSO (OIDC/SAML) & SCIM 2.0 user sync | Underlying compute infrastructure |
+| Official Terraform provider & Kubernetes Helm chart | |
+| Embedded MCP server (34 tools) at `/mcp` | |
+| Native 3-way merge and squash engine | |
+| Rulesets, SSH CAs, and CIDR allowlists | |
+| Web UI Living Dashboard (React 19 / Space UI) | |
+| CLI companion (`cmd/exist`) & daemon (`cmd/existd`) | |

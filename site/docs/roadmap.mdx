@@ -3,49 +3,59 @@ title: Roadmap
 description: Completed milestones and future horizons for exist.io.
 ---
 
-exist.io has progressed from an early design concept to a fully functional, self-hosted Git forge and agent platform. This roadmap highlights what has been completed and what lies ahead.
+exist.io has progressed from an early design concept to a launch-ready, enterprise-grade Git forge and autonomous agent platform. This roadmap highlights what has been delivered in `v0.2.0` and what lies ahead.
 
 ## Completed milestones
 
 ### 1. Server daemon & storage foundation (Complete)
-- Standalone `existd` daemon with pure-Go SQLite WAL metadata storage and `go-git` packfiles.
+- Standalone `existd` daemon with pure-Go SQLite WAL metadata storage and `go-git/v6` packfiles.
 - Offline `bootstrap` command to initialize the database and root administrator credentials.
-- Graceful shutdown, configurable ports, and health probes (`/healthz`).
+- Graceful shutdown, Prometheus `/metrics` endpoint, and Kubernetes liveness probes (`/healthz`).
 
-### 2. Authenticated Git Smart-HTTP (Complete)
-- Standard Git HTTP transport (`info/refs`, `git-upload-pack`, `git-receive-pack`).
-- Support for `git clone`, `git fetch`, and `git push` with bearer token or credential-helper authentication.
+### 2. Dual Git Transports: Smart-HTTP & Pure-Go SSH (Complete)
+- Standard Git HTTP transport (`info/refs`, `git-upload-pack`, `git-receive-pack`) with bearer token authentication.
+- Embedded, zero-cgo Pure-Go SSH server on port `2222` (`git clone ssh://git@<host>:2222/<owner>/<repo>.git`).
+- Public key authentication with per-user keys and organization-wide SSH Certificate Authority trust.
 
-### 3. Complete REST API (119 operations) & local identity (Complete)
-- 100% wire coverage of the 119 Origin REST API operations.
-- Full CRUD for namespaces, repositories, branches, commits, trees, blobs, diffs, and tags.
-- Dynamic OpenAPI 3.1 specification publication at `/v1/origin/openapi.yaml`.
+### 3. Git LFS v1 CAS Engine & Object Locking (Complete)
+- Git Large File Storage v1 Batch HTTP protocol (`/info/lfs/objects/batch`).
+- Streaming binary uploads/downloads with cryptographic SHA-256 Content-Addressable Storage (CAS).
+- RFC-compliant binary file locking protocol (`/info/lfs/locks`) preventing unmergeable asset collisions.
 
-### 4. Pull requests, reviews & 3-way merge engine (Complete)
+### 4. Cryptographic Commit Signature Verification (Complete)
+- Native parsing of OpenSSH SIGSPEC binary signatures and GPG (RFC 4880) ASCII armor.
+- Real-time cryptographic validation against enrolled committer public keys.
+- Interactive signature verification inspection drawer in the web dashboard.
+
+### 5. Enterprise Identity Federation & SCIM 2.0 (Complete)
+- RFC 7643 / RFC 7644 SCIM 2.0 user lifecycle synchronization endpoint at `/scim/v2/Users`.
+- Enterprise Single Sign-On (SSO) for OpenID Connect (OIDC) and SAML 2.0 identity providers.
+- Automated provisioning, role assignment, and immediate credential revocation upon employee departure.
+
+### 6. Official Infrastructure as Code (IaC) (Complete)
+- Dedicated Terraform / OpenTofu provider in `deploy/terraform-provider-exist` managing namespaces, repos, rulesets, CIDRs, and SSH CAs.
+- Production Kubernetes Helm chart in `deploy/helm/exist-enterprise` with dual-port service, PVC persistence, cert-manager TLS, and Prometheus ServiceMonitor.
+
+### 7. Pull Requests, Reviews & 3-Way Merge Engine (Complete)
 - Native 3-way merge and squash merge logic with conflict detection.
 - Pull request lifecycle management (`open`, `closed`, `merged`), review approval gates, and auto-merge queues.
 - Line-level review threads, general comments, emoji reactions, and label assignment.
 
-### 5. Policy rulesets & enterprise security (Complete)
-- Branch and tag rulesets, bypass actor hierarchies, and required status checks.
-- Inbound IP allowlists with CIDR block filtering.
-- SSH Certificate Authority management and Ed25519 webhook signatures.
+### 8. Model Context Protocol (MCP) Server (Complete)
+- Native Model Context Protocol (MCP) server exposing 34 specialized tools over JSON-RPC 2.0 at `/mcp` and sandboxed `/mcp/readonly`.
+- Seamless integration with Claude Code, Cursor, Cline, and autonomous agent loops.
 
-### 6. Agent integrations (MCP) & Exist CLI (Complete)
-- First-class Model Context Protocol (MCP) server exposing 34 specialized tools over JSON-RPC 2.0 at `/mcp` and `/mcp/readonly`.
-- `exist` companion CLI for managing repositories, pull requests, apps, and credentials.
-- Terraform provider compatibility for Infrastructure as Code management.
+### 9. Space UI Living Dashboard & Environment Separation (Complete)
+- High-craft, craft-first frontend dashboard with zero-slop design.
+- Strict isolation between **Production Mode** (live backend APIs with authentic empty states) and **Sandbox Demo Mode** (isolated fixtures).
+- Live telemetry dashboard answering operator questions: cluster health, SQLite WAL sync, active Git streams, and Prometheus targets.
 
 ---
 
 ## Future horizons
 
-### 7. Visual Web Dashboard
-- A responsive browser web UI for viewing repositories, syntax-highlighted file browsing, split diffs, and interactive pull request reviews.
-- Organization settings, member management, and audit log dashboard.
+### 10. Native Semantic Code Search & Graph
+- Pure-Go tree-sitter AST indexing and semantic symbol navigation across repositories without external language servers.
 
-### 8. Native SSH server transport
-- Embedded SSH server allowing developers to clone and push via `git@host:namespace/repo.git` using standard SSH keys.
-
-### 9. High-availability clustering & enterprise federation
-- Multi-node data replication and distributed worker queues for large-scale enterprise deployments.
+### 11. Multi-Region Active-Active Raft Replication
+- Raft-coordinated distributed metadata consensus across multi-region edge nodes for global enterprise topologies.

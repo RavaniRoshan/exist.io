@@ -1,0 +1,152 @@
+---
+title: How to configure Pure-Go SSH, Git LFS, and commit signatures
+description: Connect to exist.io via port 2222 SSH, track large assets with Git LFS, and verify cryptographic commit signatures.
+---
+
+exist.io ships with an embedded, zero-cgo pure-Go SSH server on port `2222` alongside an RFC-compliant Git Large File Storage (LFS) v1 Batch engine and cryptographic commit signature verification.
+
+## Step 1: Connect using Pure-Go SSH
+
+The SSH server runs natively inside the `existd` process without requiring OpenSSH host daemons or external sshd configurations.
+
+### Clone over SSH
+
+```bash
+# SSH URL format
+git clone ssh://git@<host>:2222/<namespace>/<repo-name>.git
+
+# Example: clone local enterprise repository
+git clone ssh://git@localhost:2222/acme/my-service.git
+```
+
+### Configure SSH Client (`~/.ssh/config`)
+
+To simplify authentication across daily terminal workflows, add an entry to your `~/.ssh/config`:
+
+```text
+Host exist.internal
+    HostName git.corp.exist.io
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Then clone cleanly:
+
+```bash
+git clone git@exist.internal:acme/my-service.git
+```
+
+### Enroll Developer SSH Keys
+
+Users can register public keys via the Web UI (**Account Settings &rarr; SSH Keys**) or programmatically using the REST API:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/user/ssh-keys \
+  -H "Authorization: Bearer <your-session-or-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "MacBook Pro Ed25519",
+    "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx... dev@corp.exist.io"
+  }'
+```
+
+---
+
+## Step 2: Track large binaries with Git LFS
+
+exist.io provides full support for the **Git LFS v1 Batch HTTP API** (`/info/lfs/objects/batch`), streaming upload/download verification with SHA-256 Content-Addressable Storage (CAS), and binary file locking.
+
+### Install and initialize Git LFS
+
+```bash
+# Verify Git LFS is installed
+git lfs version
+
+# Install hooks into local repository
+cd my-service
+git lfs install
+```
+
+### Track large file extensions
+
+```bash
+# Track design assets, weights, model checkpoints, and archives
+git lfs track "*.psd"
+git lfs track "*.onnx"
+git lfs track "*.tar.gz"
+
+# Stage the .gitattributes tracking definitions
+git add .gitattributes
+git commit -m "chore: track large models and assets with Git LFS"
+```
+
+### Push LFS objects
+
+When executing `git push`, the Git LFS pre-push hook automatically queries the exist.io Batch endpoint, uploads binary payloads directly to Content-Addressable Storage, and verifies SHA-256 checksums:
+
+```bash
+git add models/weights.onnx
+git commit -m "feat: add fine-tuned agent weights"
+git push origin main
+```
+
+### Binary file locking (RFC Locking Protocol)
+
+Prevent merge conflicts on unmergeable binary assets by acquiring locks before editing:
+
+```bash
+# Lock a file
+git lfs lock models/weights.onnx
+
+# List active repository locks
+git lfs locks
+
+# Unlock when finished
+git lfs unlock models/weights.onnx
+```
+
+---
+
+## Step 3: Cryptographic commit signature verification
+
+exist.io automatically inspects and validates cryptographic commit signatures on all inbound pushes. Both **OpenSSH SIGSPEC** and **GPG (OpenPGP RFC 4880)** signatures are supported.
+
+### Sign commits with SSH (Recommended)
+
+Configure Git to sign commits using your existing SSH key:
+
+```bash
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+git config --global commit.gpgsign true
+```
+
+### Sign commits with GPG
+
+```bash
+git config --global user.signingkey <YOUR_GPG_KEY_ID>
+git config --global commit.gpgsign true
+```
+
+### Verify signatures in the Web UI
+
+When browsing commit history in the exist.io Web UI:
+1. Navigate to your repository &rarr; **Commits**.
+2. Signed commits display a **Verified (SSH)** or **Verified (GPG)** badge.
+3. Click the badge to open the cryptographic verification inspection drawer. It displays:
+   - **Signature Format**: `OpenSSH SIGSPEC (ssh-ed25519)` or `GPG (RFC 4880)`.
+   - **Verification Status**: `VERIFIED (Cryptographically Valid)`.
+   - **Signer Identity**: Verified committer email.
+   - **Public Key Fingerprint**: SHA-256 fingerprint matching the user's enrolled public key.
+
+---
+
+## Step 4: Enforce signed commits in branch rulesets
+
+To mandate that every commit merged into `main` must carry a cryptographically verified signature:
+
+1. Open your repository &rarr; **Rulesets & Policy**.
+2. Click **Branch Protection: main**.
+3. Toggle **Require Signed Commits** to active.
+4. All subsequent `git push` or PR merge attempts without valid cryptographic signatures will be rejected deterministically by the policy engine.

@@ -1,0 +1,75 @@
+---
+title: How to configure Enterprise SSO and SCIM 2.0
+description: Integrate exist.io with corporate identity providers using OIDC, SAML 2.0, and RFC 7644 SCIM user sync.
+---
+
+exist.io provides enterprise identity federation supporting **OpenID Connect (OIDC)**, **SAML 2.0**, and **RFC 7643 / RFC 7644 SCIM 2.0** automated directory synchronization.
+
+## Step 1: OpenID Connect (OIDC) Integration
+
+OIDC allows employees to log in using Microsoft Entra ID (Azure AD), Okta, Google Workspace, Keycloak, or Auth0.
+
+### Configuration via Admin Console
+
+1. Navigate to **Enterprise Admin &rarr; Enterprise SSO & SCIM**.
+2. Select **OpenID Connect (OIDC)**.
+3. Configure your provider coordinates:
+   - **Issuer URL**: `https://login.microsoftonline.com/<tenant-id>/v2.0` (or `https://auth.company.com/realms/corp`)
+   - **Client ID**: Registered application client ID.
+   - **Client Secret**: Application client secret.
+4. Toggle **Enable Single Sign-On** to active.
+5. *(Optional)* Toggle **Enforce SSO For Domain** to mandate SSO for all corporate email addresses and block local password authentication.
+
+### Provider Callback URL
+
+Register this Redirect URI in your Identity Provider (Azure AD / Okta):
+
+```text
+https://git.corp.exist.io/api/v1/auth/sso/callback
+```
+
+---
+
+## Step 2: SAML 2.0 Integration
+
+For organizations requiring standard SAML 2.0 Web Browser SSO profiles:
+
+1. Select **SAML 2.0** under SSO Configuration.
+2. Provide your Identity Provider Metadata XML:
+   - Paste the raw XML into the **IdP Metadata XML** field, or point to your IdP metadata federation endpoint.
+3. exist.io exposes the following Service Provider (SP) parameters:
+   - **SP Entity ID (Audience URI)**: `https://git.corp.exist.io/api/v1/auth/sso/saml/metadata`
+   - **Assertion Consumer Service (ACS) URL**: `https://git.corp.exist.io/api/v1/auth/sso/saml/acs`
+   - **NameID Format**: `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+
+---
+
+## Step 3: SCIM 2.0 Automated User Provisioning
+
+exist.io implements a compliant **RFC 7644 SCIM 2.0 Service Provider** mounted at `/scim/v2`.
+
+### SCIM Endpoints
+
+| Endpoint | Method | Action |
+| :--- | :--- | :--- |
+| `/scim/v2/Users` | `GET` | Filter and list provisioned enterprise users |
+| `/scim/v2/Users` | `POST` | Create a new user with automatic workspace access |
+| `/scim/v2/Users/{id}` | `GET` | Retrieve user profile by immutable ID |
+| `/scim/v2/Users/{id}` | `PUT` / `PATCH` | Update attributes or suspend account on offboarding |
+| `/scim/v2/Users/{id}` | `DELETE` | Deprovision user and revoke all active sessions |
+
+### Configure SCIM in Identity Provider (Okta / Entra ID)
+
+1. In your IdP, enable **SCIM Provisioning**.
+2. Set **SCIM Connector Base URL**:
+   ```text
+   https://git.corp.exist.io/scim/v2
+   ```
+3. Set **Authentication**: Bearer Token (generate an admin token under **User Management &rarr; Personal Access Tokens**).
+4. Supported attribute mappings:
+   - `userName` &rarr; exist.io login handle.
+   - `emails[type eq "work"].value` &rarr; primary email.
+   - `name.formatted` / `name.givenName` &rarr; user display name.
+   - `active` &rarr; `true` (active) / `false` (suspended, revoking all Git HTTP/SSH tokens).
+
+When an employee is deactivated in your corporate IdP, exist.io immediately terminates active web sessions, disables Personal Access Tokens, and denies all Git push/clone operations.

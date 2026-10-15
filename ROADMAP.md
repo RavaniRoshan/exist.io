@@ -10,7 +10,7 @@
 
 **exist.io** is designed to be the definitive open-source, self-hosted Git forge built from the ground up for both **human engineering teams** and **autonomous AI coding agents**.
 
-Traditional Git forges were created 15+ years ago for humans clicking in web browsers. exist.io bridges this generational gap: providing full Git Smart-HTTP compatibility, first-class Model Context Protocol (MCP) agent connectivity, deterministic 3-way merge policies, and enterprise-grade security—all running hermetically on infrastructure you control.
+Traditional Git forges were created 15+ years ago for humans clicking in web browsers. exist.io bridges this generational gap: providing dual Git transports (Smart-HTTP + embedded pure-Go SSH :2222), Git LFS v1 CAS storage, cryptographic commit signature verification, first-class Model Context Protocol (MCP) agent connectivity, deterministic 3-way merge policies, enterprise identity federation (OIDC/SAML/SCIM 2.0), and official Infrastructure as Code (Terraform & Helm)—all running hermetically on infrastructure you control.
 
 This document outlines the evolutionary phases of the project, from current foundational milestones to upcoming capabilities.
 
@@ -21,10 +21,10 @@ This document outlines the evolutionary phases of the project, from current foun
 ```mermaid
 flowchart LR
     P1["Phase 1 (v0.1)<br/>Core Forge & MCP<br/><b>COMPLETED</b>"]
-    P2["Phase 2 (v0.2)<br/>Visual Web Dashboard<br/><b>COMPLETED</b>"]
-    P3["Phase 3 (v0.3)<br/>SSH & Git LFS<br/><b>NEXT UP</b>"]
-    P4["Phase 4 (v0.4)<br/>Agent Sandbox Engine<br/><b>PLANNED</b>"]
-    P5["Phase 5 (v0.5)<br/>Enterprise Clustering<br/><b>HORIZON</b>"]
+    P2["Phase 2 (v0.2)<br/>Enterprise Protocols & IaC<br/><b>COMPLETED</b>"]
+    P3["Phase 3 (v0.3)<br/>Visual Web Dashboard<br/><b>COMPLETED</b>"]
+    P4["Phase 4 (v0.4)<br/>Agent Sandbox Engine<br/><b>NEXT UP</b>"]
+    P5["Phase 5 (v0.5)<br/>Active-Active Raft Replication<br/><b>HORIZON</b>"]
 
     P1 --> P2
     P2 --> P3
@@ -43,74 +43,46 @@ flowchart LR
 - [x] **Enterprise Security & Policy:** Branch/tag rulesets, bypass actor hierarchies, inbound IP allowlists (CIDR filtering), and SSH Certificate Authorities.
 - [x] **Companion CLI:** `exist` command-line utility in `cmd/exist` for managing repos, PRs, apps, and credentials.
 - [x] **Hermetic Storage:** Pure-Go SQLite in WAL mode (`modernc.org/sqlite`, zero cgo) paired with `go-git/v6` bare repository storage.
-- [x] **Terraform Compatibility:** Verified compatibility with Terraform provider client patterns.
 
 ---
 
-## Phase 2: Visual Web Dashboard & Human Experience (v0.2.0) — COMPLETED
+## Phase 2: Enterprise Transports, Protocols & IaC (v0.2.0) — COMPLETED
 
-While coding agents communicate over MCP and automation tools use the CLI, human engineers need an intuitive, responsive web interface. Phase 2 delivers a modern web dashboard built with Space UI living sensory components, Tailwind CSS v4, and Motion.
-
-### 1. Repository Explorer
-- [x] **Interactive Tree Navigation:** File tree browser with branch/tag switcher and breadcrumbs.
-- [x] **Syntax Highlighting & Markdown Viewer:** Fast client-side rendering for source code, READMEs, and documentation.
-- [x] **Commit History & Blame:** Visual commit log with author avatars, diff hashes, and verified commit badges.
-
-### 2. Pull Request & Diff Reviewer
-- [x] **Side-by-Side & Unified Diffs:** High-performance diff viewer with additions/deletions highlighting and hunk headers.
-- [x] **Inline Code Review Threads:** Comment threads supporting both human developers and autonomous AI agents.
-- [x] **Interactive Merge Gate:** Clear visual indicators for required reviews, passing/failing status checks, and merge queue status.
-- [x] **Space UI Slide-to-Confirm:** Sensory drag-to-confirm merge button with celebratory confetti trigger.
-
-### 3. AI Agent Telemetry & MCP Engine
-- [x] **Live MCP Telemetry:** Real-time monitoring of all 34 tools mounted on `/mcp`.
-- [x] **Interactive Tool Runner:** In-browser JSON-RPC tool caller with latency counter and response inspection.
-- [x] **Real-time Agent Activity Feed:** Audit log of autonomous agent tool calls (Claude Code, Cursor, Codex).
-
-### 4. Policy, Security & Webhook Inspector
-- [x] **Ruleset Gates:** Visual branch protection editor (require approvals, passing checks, block force pushes).
-- [x] **Inbound CIDR Allowlists:** Interactive IP allowlist manager for corporate subnets.
-- [x] **SSH Certificate Authorities:** Visual inspector for trusted SSH CAs and ephemeral user keys.
-- [x] **Webhook Delivery Log:** Dispatched webhook event stream with HTTP status codes, latency, and manual redelivery.
+- [x] **Embedded Pure-Go SSH Server (:2222):** Zero-cgo standalone SSH daemon for `git clone` and `git push` without requiring host OpenSSH daemons.
+- [x] **Git LFS v1 Batch & CAS Engine:** Content-Addressable Storage (CAS) with SHA-256 validation, streaming chunked upload/download, and binary file locking protocol (`/info/lfs/locks`).
+- [x] **Cryptographic Commit Verification:** Real-time OpenSSH SIGSPEC and GPG (RFC 4880) signature parsing with public key fingerprint matching.
+- [x] **Enterprise Identity Federation & SCIM 2.0:** RFC 7644 SCIM user sync at `/scim/v2/Users` with automated provisioning and immediate offboarding revocation; OIDC & SAML 2.0 Single Sign-On.
+- [x] **Official Terraform / OpenTofu Provider:** Dedicated provider in `deploy/terraform-provider-exist` managing namespaces, repos, rulesets, CIDR allowlists, and SSH CAs.
+- [x] **Production Kubernetes Helm Chart:** Complete chart in `deploy/helm/exist-enterprise` with dual-port service (HTTP 8080, SSH 2222), PVC storage, Prometheus ServiceMonitor, and non-root security contexts.
 
 ---
 
-## Phase 3: Native SSH Transport & Git LFS (v0.3.0)
+## Phase 3: Space UI Living Dashboard & Environment Separation (v0.2.0) — COMPLETED
 
-Expanding network transport and file handling capabilities for enterprise developers:
-
-- [ ] **Embedded Pure-Go SSH Server:** Built-in SSH server (running on port 22 or configurable port 2222) allowing developers to clone and push via `git@host:namespace/repo.git` using standard SSH keys without needing system-level user accounts.
-- [ ] **Git Large File Storage (Git LFS):** Native implementation of the Git LFS batch API, storing large binary assets (datasets, model checkpoints, media) either on local disk or S3-compatible object stores (MinIO, AWS S3, Cloudflare R2).
-- [ ] **GPG & SSH Commit Verification:** Automatic cryptographic verification of signed git commits and tags, displaying a "Verified" badge in the UI and enforcing commit signature rulesets.
-- [ ] **On-the-Fly Archive Streaming:** Live generation and streaming of `.tar.gz` and `.zip` source snapshots for any commit, tag, or branch.
+- [x] **Production vs. Sandbox Separation:** Strict isolation between live production backend and isolated mock fixtures in `mockData.ts`.
+- [x] **Authentic Empty States:** Purposeful empty states with direct 1-click calls to action across code, commits, rulesets, webhooks, and users.
+- [x] **Commit Signature Inspection Drawer:** Interactive popover displaying cryptographic verification status, key type, fingerprint, and signer email.
+- [x] **Ruleset Merge Gates & CIDR Allowlist UI:** Interactive branch protection editor and corporate IP allowlist manager.
+- [x] **Webhook Delivery Audit Log:** Dispatched JSON payload inspector with HMAC-SHA256 verification, test ping trigger, and batch redeliver.
+- [x] **Operator Telemetry Dashboard:** Real-time metrics for Pure-Go SSH, Git LFS CAS, SQLite WAL sync, MCP 34 tools, and Prometheus exposition.
 
 ---
 
-## Phase 4: Autonomous Agent Execution Sandbox (v0.4.0)
+## Phase 4: Autonomous Agent Execution Sandbox (v0.3.0) — NEXT UP
 
 Taking agent integration beyond passive MCP queries to active, forge-native autonomous workflows:
 
-- [ ] **Forge-Native Task Dispatcher:** Capability for `existd` to trigger containerized agent workers (Docker, Wasm, or microVMs) in response to repository events (e.g. issues labeled `agent-fix`, pull request review requests).
+- [ ] **Forge-Native Task Dispatcher:** Capability for `existd` to trigger containerized agent workers (Docker, Wasm, or microVMs) in response to repository events.
 - [ ] **Automated PR Review Agent:** Configurable agent hook that automatically reads PR diffs, executes linters, tests against local sandboxes, and posts line-level review suggestions.
-- [ ] **Ephemeral Agent Leases:** Short-lived, cryptographic capability tokens issued to autonomous agents that expire automatically after a task completes, strictly bound to specific branch namespaces.
+- [ ] **Ephemeral Agent Leases:** Short-lived, cryptographic capability tokens issued to autonomous agents that expire automatically after task completion.
 - [ ] **Agent Work Log & Audit Trail:** Full recording of agent tool invocations, prompts, and execution steps linked directly to pull request review threads.
 
 ---
 
-## Phase 5: High Availability & Enterprise Federation (v0.5.0+)
+## Phase 5: High Availability & Active-Active Consensus (v0.4.0+)
 
-Scaling exist.io for high-throughput enterprise deployments:
+Scaling exist.io for massive enterprise footprints:
 
-- [ ] **Database Replication:** Continuous, zero-downtime SQLite WAL replication using Litestream or Raft-based consensus, with optional PostgreSQL storage backend driver for ultra-high-volume clusters.
-- [ ] **Distributed Git Storage:** Multi-node repository replication with read-replica routing and automated failover.
-- [ ] **Cross-Forge Federation:** Bi-directional synchronization and automated mirroring between distinct exist.io instances and external Git forges.
-- [ ] **OpenID Connect (OIDC) & SAML 2.0:** Single Sign-On (SSO) integration for Okta, Keycloak, GitHub, and Google Workspace.
-
----
-
-## Contributing to the Roadmap
-
-We welcome input, RFCs, and contributions from both human developers and agent system builders. 
-
-- **Discussion & Feature Requests:** Open an issue on GitHub to discuss design proposals.
-- **Implementation:** Check the [Getting Started guide](https://ravaniroshan.github.io/exist.io/getting-started) to set up your local development environment and run tests.
+- [ ] **Multi-Region Active-Active Raft Replication:** Raft-coordinated metadata consensus across geographically distributed nodes.
+- [ ] **Distributed Git Object Sharding:** Automated packfile sharding across MinIO / S3 buckets with local read caches.
+- [ ] **Disaster Recovery Failover Controller:** Zero-downtime automated failover with continuous Litestream S3 sync.

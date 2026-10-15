@@ -1,0 +1,164 @@
+---
+title: How to manage exist.io with Terraform and Helm
+description: Automate enterprise Git infrastructure with the official Terraform / OpenTofu provider and Kubernetes Helm chart.
+---
+
+exist.io provides official Infrastructure as Code (IaC) tooling, including a dedicated **Terraform / OpenTofu Provider** and a production-ready **Kubernetes Helm Chart**.
+
+## Step 1: Manage resources with Terraform / OpenTofu
+
+The provider lives in `deploy/terraform-provider-exist` and communicates directly with the exist.io REST API.
+
+### Provider Configuration
+
+```hcl
+terraform {
+  required_providers {
+    exist = {
+      source  = "exist.io/enterprise/exist"
+      version = ">= 0.1.0"
+    }
+  }
+}
+
+provider "exist" {
+  endpoint = var.exist_endpoint # e.g. "https://git.corp.exist.io"
+  token    = var.exist_token    # Bearer token or PAT
+}
+```
+
+### Manage Namespaces, Repositories, and Security Policies
+
+```hcl
+# 1. Create an engineering organization namespace
+resource "exist_namespace" "core_eng" {
+  slug         = "core-eng"
+  display_name = "Core Engineering"
+  description  = "Mission-critical enterprise services and microservices."
+  type         = "organization"
+}
+
+# 2. Inbound IP Allowlist perimeter
+resource "exist_ip_allowlist" "vpc_perimeter" {
+  namespace_slug = exist_namespace.core_eng.slug
+  enabled        = true
+  entries = [
+    { cidr = "10.0.0.0/8", description = "Internal Kubernetes Service Mesh" },
+    { cidr = "192.168.1.0/24", description = "Office VPN Gateway" },
+  ]
+}
+
+# 3. Create a Git repository
+resource "exist_repository" "payment_service" {
+  namespace_slug = exist_namespace.core_eng.slug
+  name           = "payment-service"
+  description    = "PCI-DSS compliant payment processing engine."
+  default_branch = "main"
+  private        = true
+}
+
+# 4. Enforce branch protection ruleset
+resource "exist_ruleset" "mainline_protection" {
+  namespace_slug = exist_namespace.core_eng.slug
+  repo_name      = exist_repository.payment_service.name
+  name           = "PCI-DSS Mainline Merge Gate"
+  enforcement    = "active"
+  kind           = "branch"
+  included_refs  = ["refs/heads/main"]
+
+  # Enforce at least 2 approvals and block force pushes
+  rules = [
+    {
+      type = "pull_request"
+      parameters = {
+        required_approving_review_count = 2
+        dismiss_stale_reviews_on_push   = true
+      }
+    },
+    {
+      type = "required_status_checks"
+      parameters = {
+        checks = ["Security Audit", "Go Unit Tests"]
+      }
+    },
+    {
+      type       = "required_signatures"
+      parameters = {}
+    },
+    {
+      type       = "non_fast_forward"
+      parameters = {}
+    }
+  ]
+}
+```
+
+---
+
+## Step 2: Deploy to Kubernetes with Helm
+
+The Helm chart in `deploy/helm/exist-enterprise` packages all Kubernetes manifests required for high availability.
+
+### Installation
+
+```bash
+# Add or package the local Helm chart
+cd deploy/helm/exist-enterprise
+
+# Install release into 'forge' namespace
+helm upgrade --install exist-enterprise . \
+  --namespace forge \
+  --create-namespace \
+  -f values.yaml
+```
+
+### Production `values.yaml` Highlights
+
+```yaml
+replicaCount: 1
+
+image:
+  repository: existio/existd
+  tag: "v0.2.0-enterprise"
+  pullPolicy: IfNotPresent
+
+# Dual-port network service
+service:
+  type: ClusterIP
+  ports:
+    http: 8080
+    ssh: 2222
+
+# Persistent bare repository & SQLite WAL storage
+persistence:
+  enabled: true
+  size: 100Gi
+  storageClass: "gp3-csi"
+
+# Ingress with cert-manager TLS
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: git.corp.exist.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: exist-tls-cert
+      hosts:
+        - git.corp.exist.io
+
+# Prometheus Operator ServiceMonitor
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 10s
+
+# Strict pod security context
+podSecurityContext:
+  fsGroup: 10001
+  runAsUser: 10001
+  runAsNonRoot: true
+```

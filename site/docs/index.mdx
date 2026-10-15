@@ -14,10 +14,13 @@ exist.io is wire-compatible with Origin forge interfaces while running 100% self
 ## Core capabilities
 
 - **Your repositories:** Own your data, Git packfiles, and SQLite database with zero external vendor lock-in.
-- **Git Smart-HTTP transport:** Standard `git clone`, `git fetch`, and `git push` over HTTP with token and credential-helper authentication.
-- **Human & agent collaboration:** Pull requests, 3-way merge engine, inline review threads, emoji reactions, and labels.
-- **Agent integrations (MCP):** Embedded Model Context Protocol server exposing 34 specialized tools at `/mcp` and sandboxed `/mcp/readonly`.
-- **Policy & compliance:** Branch and tag rulesets, bypass actor hierarchies, status check enforcement, SSH CAs, and IP allowlists.
+- **Dual Git transports:** Pure-Go Smart-HTTP and native SSH server on port `2222` with zero host daemon requirements.
+- **Git LFS & CAS storage:** RFC-compliant Git Large File Storage v1 Batch API and file locking.
+- **Cryptographic verification:** Real-time OpenSSH SIGSPEC and GPG commit signature audits in the Web UI.
+- **Enterprise Federation:** OIDC & SAML 2.0 Single Sign-On and RFC 7644 SCIM 2.0 user sync.
+- **Agent integrations (MCP):** Embedded Model Context Protocol server exposing 34 specialized tools at `/mcp`.
+- **Infrastructure as Code:** Official Terraform / OpenTofu provider and Kubernetes Helm chart.
+- **Policy & compliance:** Branch and tag rulesets, bypass actor hierarchies, status check enforcement, SSH CAs, and CIDR allowlists.
 
 ## Find your way around
 
@@ -25,21 +28,21 @@ exist.io is wire-compatible with Origin forge interfaces while running 100% self
   <Card title="Getting started" href="/getting-started">
     Step-by-step tutorial to build, bootstrap, and run your self-hosted forge.
   </Card>
-  <Card title="MCP tool catalog" href="/reference/mcp-tools">
-    Technical reference of all 34 tools available for autonomous coding agents.
+  <Card title="Pure-Go SSH & Git LFS" href="/how-to/ssh-git-lfs">
+    Connect over port 2222 SSH, track large assets, and verify signed commits.
   </Card>
-  <Card title="How-to: Connect agents" href="/how-to/mcp-setup">
-    Connect Claude Desktop, Cursor, or Cline to exist.io via MCP.
+  <Card title="Enterprise SSO & SCIM" href="/how-to/enterprise-sso-scim">
+    Integrate corporate IdPs via OIDC/SAML and automate user lifecycle provisioning.
   </Card>
-  <Card title="Architecture" href="/architecture">
-    The technical design of the daemon, Git storage, MCP engine, and trust boundaries.
+  <Card title="Terraform & Helm" href="/how-to/terraform-helm">
+    Automate repository policies and deploy high-availability Kubernetes clusters.
   </Card>
 </CardGroup>
 
 ## Documentation topics
 
 - **Tutorials:** [Getting started guide](/getting-started) &bull; [Your first agent PR](/tutorials/first-agent)
-- **How-To Guides:** [Connect agents via MCP](/how-to/mcp-setup) &bull; [Configure rulesets & protections](/how-to/rulesets) &bull; [Push with Git Smart-HTTP](/how-to/git-transport)
+- **How-To Guides:** [SSH, Git LFS & Signatures](/how-to/ssh-git-lfs) &bull; [Enterprise SSO & SCIM](/how-to/enterprise-sso-scim) &bull; [Terraform & Helm](/how-to/terraform-helm) &bull; [Connect agents via MCP](/how-to/mcp-setup) &bull; [Configure rulesets & protections](/how-to/rulesets) &bull; [Push with Git Smart-HTTP](/how-to/git-transport)
 - **Reference:** [MCP tool catalog](/reference/mcp-tools) &bull; [CLI reference](/reference/cli) &bull; [Configuration reference](/reference/configuration)
 - **Explanation:** [Architecture](/architecture) &bull; [Merge & policy engine](/explanation/merge-engine) &bull; [Development status](/development/status) &bull; [Roadmap](/roadmap)
 
