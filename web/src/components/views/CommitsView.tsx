@@ -179,10 +179,10 @@ export const CommitsView: React.FC<CommitsViewProps> = ({ repo = defaultRepo }) 
                     const sigType = commit.verification?.key_type?.toUpperCase() || (commit.verified ? 'SSH' : 'UNSIGNED')
 
                     return (
-                      <BoxRow
-                        key={commit.sha}
-                        className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-secondary/20 transition-colors"
-                      >
+                      <div key={commit.sha} className="border-b border-border last:border-b-0">
+                        <BoxRow
+                          className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-secondary/20 transition-colors"
+                        >
                         <div className="flex items-start sm:items-center gap-3">
                           <LivingAvatar
                             name={commit.author.name}
@@ -257,88 +257,89 @@ export const CommitsView: React.FC<CommitsViewProps> = ({ repo = defaultRepo }) 
                           </Button>
                         </div>
                       </BoxRow>
-                    )
-                  })}
-                </BoxBody>
-              </Box>
 
-              {/* Cryptographic Verification Modal / Drawer if an item is inspected */}
-              {inspectingCommit && (
-                <Box className="mt-2 border-emerald-500/40 bg-card p-4 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-border">
-                    <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
-                      {inspectingCommit.verified ? (
-                        <>
-                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                          <span>Cryptographic Signature Audit Attestation</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShieldAlert className="w-4 h-4 text-amber-500" />
-                          <span>Signature Status: Unverified</span>
-                        </>
+                      {/* Cryptographic Verification Drawer if this commit is inspected */}
+                      {isInspectOpen && (
+                        <div className="p-3.5 bg-secondary/30 border-t border-border space-y-2.5">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-border">
+                            <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
+                              {commit.verified ? (
+                                <>
+                                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                  <span>Cryptographic Signature Audit Attestation</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ShieldAlert className="w-4 h-4 text-amber-500" />
+                                  <span>Signature Status: Unverified</span>
+                                </>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => setInspectingCommit(null)}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5 font-mono text-[11px]">
+                            <div>
+                              <span className="text-muted-foreground block">Key Protocol:</span>
+                              <span className="text-foreground font-semibold">
+                                {commit.verification?.key_type === 'ssh'
+                                  ? 'OpenSSH SIGSPEC (ssh-ed25519)'
+                                  : commit.verification?.key_type === 'gpg'
+                                  ? 'GPG (RFC 4880 OpenPGP)'
+                                  : commit.verified
+                                  ? 'OpenSSH SIGSPEC'
+                                  : 'None (Unsigned)'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-muted-foreground block">Verification Result:</span>
+                              <span className={commit.verified ? 'text-emerald-500 font-semibold' : 'text-amber-500'}>
+                                {commit.verified ? 'CRYPTOGRAPHICALLY VALID' : 'UNSIGNED COMMIT'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-muted-foreground block">Signer Identity:</span>
+                              <span className="text-foreground">
+                                {commit.verification?.signer_email || commit.author.email}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-muted-foreground block">Key Fingerprint:</span>
+                              <span className="text-muted-foreground break-all">
+                                {commit.verification?.key_id ||
+                                  (commit.verified
+                                    ? 'SHA256:4Xk9p0vV+eM3p0eQ4rT2Y9z8lM1nO7kP8wJ2lQ5rS0='
+                                    : 'N/A')}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="pt-1.5 text-[11px] text-muted-foreground border-t border-border flex items-center justify-between">
+                            <span>
+                              {commit.verification?.reason ||
+                                (commit.verified
+                                  ? 'Signed with verified developer SSH key enrolled in exist.io'
+                                  : 'This commit was authored without a cryptographic signature (-S).')}
+                            </span>
+                            <span className="font-mono">{commit.sha.slice(0, 16)}...</span>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    <button
-                      onClick={() => setInspectingCommit(null)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 font-mono text-[11px]">
-                    <div>
-                      <span className="text-muted-foreground block">Key Protocol:</span>
-                      <span className="text-foreground font-semibold">
-                        {inspectingCommit.verification?.key_type === 'ssh'
-                          ? 'OpenSSH SIGSPEC (ssh-ed25519)'
-                          : inspectingCommit.verification?.key_type === 'gpg'
-                          ? 'GPG (RFC 4880 OpenPGP)'
-                          : inspectingCommit.verified
-                          ? 'OpenSSH SIGSPEC'
-                          : 'None (Unsigned)'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-muted-foreground block">Verification Result:</span>
-                      <span className={inspectingCommit.verified ? 'text-emerald-500 font-semibold' : 'text-amber-500'}>
-                        {inspectingCommit.verified ? 'CRYPTOGRAPHICALLY VALID' : 'UNSIGNED COMMIT'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-muted-foreground block">Signer Identity:</span>
-                      <span className="text-foreground">
-                        {inspectingCommit.verification?.signer_email || inspectingCommit.author.email}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-muted-foreground block">Key Fingerprint:</span>
-                      <span className="text-muted-foreground break-all">
-                        {inspectingCommit.verification?.key_id ||
-                          (inspectingCommit.verified
-                            ? 'SHA256:4Xk9p0vV+eM3p0eQ4rT2Y9z8lM1nO7kP8wJ2lQ5rS0='
-                            : 'N/A')}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 text-[11px] text-muted-foreground border-t border-border flex items-center justify-between">
-                    <span>
-                      {inspectingCommit.verification?.reason ||
-                        (inspectingCommit.verified
-                          ? 'Signed with verified developer SSH key enrolled in exist.io'
-                          : 'This commit was authored without a cryptographic signature (-S).')}
-                    </span>
-                    <span className="font-mono">{inspectingCommit.sha.slice(0, 16)}...</span>
-                  </div>
-                </Box>
-              )}
-            </div>
-          ))}
+                  )
+                })}
+              </BoxBody>
+            </Box>
+          </div>
+        ))}
         </div>
       )}
     </div>

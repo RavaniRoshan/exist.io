@@ -11,7 +11,8 @@ export interface NavTabItem {
 export interface UnderlineNavProps {
   tabs: NavTabItem[]
   activeTab: string
-  onChange: (id: string) => void
+  onChange?: (id: string) => void
+  onTabChange?: (id: string) => void
   className?: string
   actions?: React.ReactNode
 }
@@ -24,18 +25,26 @@ export const UnderlineNav: React.FC<UnderlineNavProps> = ({
   tabs,
   activeTab,
   onChange,
+  onTabChange,
   className,
   actions,
 }) => {
+  const handleSelect = (id: string) => {
+    if (onTabChange) onTabChange(id)
+    else if (onChange) onChange(id)
+  }
+
   return (
     <div className={cn('flex items-center justify-between border-b border-border w-full overflow-x-auto scrollbar-none', className)}>
-      <nav className="flex items-center gap-1 -mb-[1px]">
+      <nav className="flex items-center gap-1 -mb-[1px]" role="tablist">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
           return (
             <button
               key={tab.id}
-              onClick={() => onChange(tab.id)}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => handleSelect(tab.id)}
               className={cn(
                 'relative flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium transition-colors cursor-pointer select-none whitespace-nowrap outline-none',
                 isActive

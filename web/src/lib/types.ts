@@ -259,4 +259,53 @@ export interface AgentReviewResult {
   createdAt: string
 }
 
+export interface IssueLabel {
+  name: string
+  color: string
+  description?: string
+}
+
+export interface IssueComment {
+  id: string
+  author: string
+  isAgent?: boolean
+  body: string
+  createdAt: string
+}
+
+export interface Issue {
+  id: string
+  number: number
+  title: string
+  body: string
+  state: 'open' | 'closed'
+  author: string
+  assignees?: string[]
+  labels?: IssueLabel[]
+  createdAt: string
+  closedAt?: string
+  comments?: IssueComment[]
+}
+
+export interface ReleaseAsset {
+  name: string
+  size: number
+  downloadCount: number
+  sha256?: string
+}
+
+export interface ReleaseItem {
+  id: string
+  tagName: string
+  name: string
+  body: string
+  author: string
+  isDraft: boolean
+  isPrerelease: boolean
+  createdAt: string
+  publishedAt: string
+  commitSha: string
+  assets: ReleaseAsset[]
+}
+
 

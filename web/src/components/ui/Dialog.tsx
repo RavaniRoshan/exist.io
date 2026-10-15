@@ -4,8 +4,10 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface DialogProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen?: boolean
+  open?: boolean
+  onClose?: () => void
+  onOpenChange?: (open: boolean) => void
   title?: React.ReactNode
   description?: React.ReactNode
   children: React.ReactNode
@@ -18,21 +20,29 @@ export interface DialogProps {
  * Features 8px (rounded-lg) corners, crisp 1px borders, and structured header/body.
  */
 export const Dialog: React.FC<DialogProps> = ({
-  isOpen,
+  isOpen: propIsOpen,
+  open: propOpen,
   onClose,
+  onOpenChange,
   title,
   description,
   children,
   className,
   maxWidth = 'md',
 }) => {
+  const isCurrentlyOpen = propIsOpen !== undefined ? propIsOpen : Boolean(propOpen)
+  const handleClose = () => {
+    onClose?.()
+    onOpenChange?.(false)
+  }
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose()
+      if (e.key === 'Escape' && isCurrentlyOpen) handleClose()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [isCurrentlyOpen])
 
   const maxW = {
     sm: 'max-w-sm',
@@ -44,7 +54,7 @@ export const Dialog: React.FC<DialogProps> = ({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isCurrentlyOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <motion.div
@@ -52,7 +62,7 @@ export const Dialog: React.FC<DialogProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 bg-background/70 backdrop-blur-xs"
           />
 
@@ -76,7 +86,7 @@ export const Dialog: React.FC<DialogProps> = ({
                   {description && <p className="text-xs text-muted-foreground leading-normal">{description}</p>}
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -94,3 +104,19 @@ export const Dialog: React.FC<DialogProps> = ({
     </AnimatePresence>
   )
 }
+
+export const DialogHeader: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <div className={cn('space-y-1 pb-3 mb-3 border-b border-border', className)}>{children}</div>
+)
+
+export const DialogTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <h3 className={cn('text-sm font-semibold text-foreground leading-tight', className)}>{children}</h3>
+)
+
+export const DialogDescription: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <p className={cn('text-xs text-muted-foreground leading-normal', className)}>{children}</p>
+)
+
+export const DialogFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <div className={cn('flex items-center justify-end gap-2 pt-3 mt-3 border-t border-border', className)}>{children}</div>
+)

@@ -45,6 +45,12 @@ export interface PullRequestsViewProps {
   onSelectAgentConsole?: () => void
 }
 
+function getAuthorName(author: any): string {
+  if (!author) return 'dev'
+  if (typeof author === 'string') return author
+  return author.name || author.login || 'dev'
+}
+
 export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
   repo,
   onSelectAgentConsole: _onSelectAgentConsole,
@@ -71,13 +77,9 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
     try {
       const data = await getPullRequests(owner, repoName)
       setPrs(data)
-      if (data.length > 0 && !selectedPr) {
-        setSelectedPr(data[0])
-      }
     } catch {
       if (isDemoModeActive()) {
         setPrs(samplePullRequests)
-        setSelectedPr(samplePullRequests[0])
       } else {
         setPrs([])
       }
@@ -105,7 +107,7 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       const matchesTitle = pr.title.toLowerCase().includes(q)
-      const matchesAuthor = (pr.author || '').toLowerCase().includes(q)
+      const matchesAuthor = getAuthorName(pr.author).toLowerCase().includes(q)
       const matchesNumber = pr.number.toString().includes(q)
       return matchesTitle || matchesAuthor || matchesNumber
     }
@@ -290,7 +292,7 @@ git push origin feature/agent-capabilities`
                 </StateLabel>
 
                 <span className="text-muted-foreground">
-                  <strong className="text-foreground font-medium">{selectedPr.author || 'dev'}</strong> wants to merge 1 commit into{' '}
+                  <strong className="text-foreground font-medium">{getAuthorName(selectedPr.author)}</strong> wants to merge 1 commit into{' '}
                   <code className="px-1.5 py-0.5 rounded bg-secondary font-mono text-xs text-foreground border border-border">
                     {selectedPr.baseRef}
                   </code>{' '}
@@ -363,12 +365,12 @@ git push origin feature/agent-capabilities`
                       <BoxHeader className="bg-secondary/25 py-2">
                         <div className="flex items-center gap-2">
                           <LivingAvatar
-                            name={selectedPr.author || 'dev'}
+                            name={getAuthorName(selectedPr.author)}
                             isAgent={false}
                             status="offline"
                             size="sm"
                           />
-                          <span className="font-semibold text-foreground">{selectedPr.author || 'dev'}</span>
+                          <span className="font-semibold text-foreground">{getAuthorName(selectedPr.author)}</span>
                           <span className="text-muted-foreground">commented {selectedPr.createdAt || 'recently'}</span>
                         </div>
                         <Badge variant="outline" className="text-[10px]">
@@ -388,7 +390,7 @@ git push origin feature/agent-capabilities`
                         <GitCommit className="w-3 h-3 text-muted-foreground" />
                       </div>
                       <span>
-                        <strong className="text-foreground">{selectedPr.author || 'dev'}</strong> added 1 commit from branch <code className="font-mono">{selectedPr.headRef}</code>
+                        <strong className="text-foreground">{getAuthorName(selectedPr.author)}</strong> added 1 commit from branch <code className="font-mono">{selectedPr.headRef}</code>
                       </span>
                     </div>
 
@@ -648,8 +650,8 @@ git push origin feature/agent-capabilities`
                   </BoxHeader>
                   <BoxBody className="p-3 text-xs">
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <LivingAvatar name={selectedPr.author || 'dev'} isAgent={false} size="sm" />
-                      <span className="text-foreground font-medium">{selectedPr.author || 'dev'}</span>
+                      <LivingAvatar name={getAuthorName(selectedPr.author)} isAgent={false} size="sm" />
+                      <span className="text-foreground font-medium">{getAuthorName(selectedPr.author)}</span>
                     </div>
                   </BoxBody>
                 </Box>
@@ -871,7 +873,7 @@ git push origin feature/agent-capabilities`
                             <span>#{pr.number}</span>
                             <span>•</span>
                             <span>
-                              opened {pr.createdAt || 'recently'} by <strong className="text-foreground font-medium">{pr.author || 'dev'}</strong>
+                              opened {pr.createdAt || 'recently'} by <strong className="text-foreground font-medium">{getAuthorName(pr.author)}</strong>
                             </span>
                           </div>
                         </div>

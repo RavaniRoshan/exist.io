@@ -426,3 +426,113 @@ export const mockWebhookDeliveries = [
   },
 ]
 
+export const mockSampleIssues: import('./types').Issue[] = [
+  {
+    id: 'issue-1',
+    number: 1,
+    title: 'Support FIDO2 / WebAuthn hardware security keys for admin authentication',
+    body: 'For strict air-gapped sovereign clusters, we need hardware-bound WebAuthn credentials alongside SAML/OIDC and SSH CAs.',
+    state: 'open',
+    author: 'Roshan Ravani',
+    assignees: ['shiva', 'Exist Agent Reviewer'],
+    labels: [
+      { name: 'security', color: '#b60205', description: 'Security hardening and cryptographic policy' },
+      { name: 'enhancement', color: '#a2eeef', description: 'New feature or improvement' },
+    ],
+    createdAt: '2 days ago',
+    comments: [
+      {
+        id: 'ic-1',
+        author: 'Exist Agent Reviewer',
+        isAgent: true,
+        body: 'I inspected the auth handlers in `internal/auth/`. Adding WebAuthn requires implementing the FIDO2 credential creation and challenge-response ceremonies. I can prepare a draft implementation.',
+        createdAt: '1 day ago',
+      },
+      {
+        id: 'ic-2',
+        author: 'Roshan Ravani',
+        isAgent: false,
+        body: 'Approved. Proceed with implementing the WebAuthn challenge storage in SQLite WAL.',
+        createdAt: '5 hours ago',
+      },
+    ],
+  },
+  {
+    id: 'issue-2',
+    number: 2,
+    title: 'Optimize git-upload-pack packfile negotiation for large monorepos',
+    body: 'When fetching repositories with over 100,000 refs, packfile negotiation roundtrips can be reduced using shallow-since and want-ref capabilities.',
+    state: 'open',
+    author: 'dev-lead',
+    assignees: ['shiva'],
+    labels: [
+      { name: 'performance', color: '#d4c5f9', description: 'Performance and throughput optimization' },
+      { name: 'git-engine', color: '#1d76db', description: 'Smart-HTTP Git wire protocol' },
+    ],
+    createdAt: '3 days ago',
+    comments: [],
+  },
+  {
+    id: 'issue-3',
+    number: 3,
+    title: 'Verify SQLite WAL checkpoint concurrency under heavy parallel git push',
+    body: 'Load test SQLite WAL mode with 50 concurrent SSH and Smart-HTTP push workers to verify zero database locks.',
+    state: 'closed',
+    author: 'qa-engineer',
+    assignees: ['Exist Agent Reviewer'],
+    labels: [
+      { name: 'verified', color: '#0e8a16', description: 'Tested and verified in benchmark suite' },
+    ],
+    createdAt: '1 week ago',
+    closedAt: '2 days ago',
+    comments: [
+      {
+        id: 'ic-3',
+        author: 'Exist Agent Reviewer',
+        isAgent: true,
+        body: 'Completed 50-worker concurrent push benchmark. 0 lock timeouts recorded, WAL checkpoint completed in 1.4ms.',
+        createdAt: '2 days ago',
+      },
+    ],
+  },
+]
+
+export const mockSampleReleases: import('./types').ReleaseItem[] = [
+  {
+    id: 'rel-1',
+    tagName: 'v0.4.0-enterprise',
+    name: 'v0.4.0 Sovereign Enterprise & AI Agent Bridge',
+    body: `### What's Changed\n- **Sovereign Git Engine**: Pure-Go Smart-HTTP and Git SSH daemon on port 2222.\n- **Model Context Protocol**: 35 native tools mounted at \`/mcp\` for autonomous agents.\n- **SQLite WAL Ledger**: Transactional ref storage, cryptographic commit signing, and audit logging.\n- **GitHub Primer UI**: Pixel-accurate Primer design system with 6px squircle radius and OKLCH color theme.\n- **Enterprise Identity**: SAML 2.0, OIDC SSO, SCIM 2.0 user directory, and SSH CA enrollment.`,
+    author: 'shiva',
+    isDraft: false,
+    isPrerelease: false,
+    createdAt: '2026-10-15T06:00:00Z',
+    publishedAt: '2026-10-15T06:30:00Z',
+    commitSha: '5c92f55',
+    assets: [
+      { name: 'existd-linux-amd64.tar.gz', size: 34500000, downloadCount: 412, sha256: '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b' },
+      { name: 'existd-linux-arm64.tar.gz', size: 32800000, downloadCount: 289, sha256: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b' },
+      { name: 'existd-darwin-arm64.tar.gz', size: 33100000, downloadCount: 351, sha256: '4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9a8b7c6d5e' },
+      { name: 'exist-iac-terraform.zip', size: 1420000, downloadCount: 198, sha256: '3e2f1a0b9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d' },
+      { name: 'v0.4.0-enterprise.sig', size: 512, downloadCount: 140, sha256: '0d9e8f7a6b5c4d3e2f1a0b9a8b7c6d5e4f3a2b1c' },
+    ],
+  },
+  {
+    id: 'rel-2',
+    tagName: 'v0.3.0',
+    name: 'v0.3.0 Pure-Go Git Engine & MCP Server',
+    body: `Initial release featuring pure-Go Git transport, deterministic 3-way merge algorithm, and basic agent tool execution.`,
+    author: 'shiva',
+    isDraft: false,
+    isPrerelease: false,
+    createdAt: '2026-10-01T12:00:00Z',
+    publishedAt: '2026-10-01T14:00:00Z',
+    commitSha: '1a2b3c4',
+    assets: [
+      { name: 'existd-linux-amd64.tar.gz', size: 28400000, downloadCount: 820 },
+      { name: 'existd-darwin-arm64.tar.gz', size: 27900000, downloadCount: 654 },
+    ],
+  },
+]
+
+

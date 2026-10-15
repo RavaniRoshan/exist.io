@@ -13,6 +13,10 @@ import { CommitsView } from '@/components/views/CommitsView'
 import { AgentConsoleView } from '@/components/views/AgentConsoleView'
 import { RulesetsView } from '@/components/views/RulesetsView'
 import { WebhooksView } from '@/components/views/WebhooksView'
+import { UserProfileView } from '@/components/views/UserProfileView'
+import { GlobalHomeView } from '@/components/views/GlobalHomeView'
+import { IssuesView } from '@/components/views/IssuesView'
+import { ReleasesView } from '@/components/views/ReleasesView'
 import { ClusterHealth } from '@/components/views/admin/ClusterHealth'
 import { AuditLogs } from '@/components/views/admin/AuditLogs'
 import { SsoConfig } from '@/components/views/admin/SsoConfig'
@@ -21,7 +25,7 @@ import { defaultRepo } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'code' | 'prs' | 'commits' | 'agents' | 'rulesets' | 'webhooks' | 'admin'>('code')
+  const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin'>('code')
   const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
   const repo = defaultRepo
 
@@ -49,12 +53,35 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* 0. Enterprise Home Activity Feed */}
+        {activeTab === 'home' && (
+          <GlobalHomeView
+            onSelectRepo={() => setActiveTab('code')}
+            onSelectTab={(tab) => setActiveTab(tab as any)}
+          />
+        )}
+
+        {/* 0.1 User Profile & Keys Management */}
+        {activeTab === 'profile' && (
+          <UserProfileView
+            onSelectRepo={() => setActiveTab('code')}
+          />
+        )}
+
         {/* 1. Code & File Tree View */}
         {activeTab === 'code' && (
           <RepoOverview
             repo={repo}
             onSelectCommits={() => setActiveTab('commits')}
             onSelectAgentConsole={() => setActiveTab('agents')}
+          />
+        )}
+
+        {/* 1.5. Issues View */}
+        {activeTab === 'issues' && (
+          <IssuesView
+            repo={repo}
+            onSelectPullRequest={() => setActiveTab('prs')}
           />
         )}
 
@@ -69,6 +96,11 @@ export default function App() {
         {/* 3. Commits History View */}
         {activeTab === 'commits' && (
           <CommitsView repo={repo} />
+        )}
+
+        {/* 3.5. Releases & Tags View */}
+        {activeTab === 'releases' && (
+          <ReleasesView repo={repo} />
         )}
 
         {/* 4. Autonomous Agent Console & MCP Telemetry */}

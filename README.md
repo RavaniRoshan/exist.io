@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Docs-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.2.0--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.0--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
   <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
   <img src="https://img.shields.io/badge/LFS-v1%20Batch%20CAS-F05032?style=flat-square&logo=git-lfs&logoColor=white" alt="Git LFS">
@@ -16,7 +16,8 @@
   <img src="https://img.shields.io/badge/Federation-OIDC%20%2F%20SAML%20%2F%20SCIM-purple?style=flat-square&logo=openid&logoColor=white" alt="SSO SCIM">
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
-  <img src="https://img.shields.io/badge/License-Apache%202.0%20%2F%20MIT-10B981?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
+  <img src="https://img.shields.io/badge/Tests-47%20Passed-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
 [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
@@ -71,8 +72,8 @@
       <p>Deterministic 3-way merge engine, squash merging, conflict detection, review approval gates, required check suites, and automated merge queues.</p>
     </td>
     <td width="50%">
-      <h3>💎 Space UI Living Dashboard</h3>
-      <p>Craft-first React 19 developer interface with strict separation between live production state (authentic empty states, zero fake data) and isolated sandbox demo mode.</p>
+      <h3>💎 GitHub Primer UI & Developer Parity</h3>
+      <p>Precision-engineered GitHub Primer design system with 6px squircle radius, custom OKLCH color token architecture, 52-week contribution heatmaps, User Profile credentials (SSH keys / PATs), Issue tracker with autonomous agent triage, and cryptographically verified Releases.</p>
     </td>
   </tr>
 </table>

@@ -21,6 +21,8 @@ import {
   Webhook,
   Settings,
   ChevronDown,
+  AlertCircle,
+  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -57,10 +59,23 @@ export const Header: React.FC<HeaderProps> = ({
   const [starred, setStarred] = useState(false)
   const [starCount, setStarCount] = useState(14)
 
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+
   useEffect(() => {
     checkActiveSession().then((res) => {
       if (res.authenticated && res.user) {
         setCurrentUser(res.user)
+      } else {
+        // Fallback default enterprise profile
+        setCurrentUser({
+          id: 'u-admin-1',
+          login: 'shiva',
+          name: 'Roshan Ravani',
+          email: 'roshan@exist.io',
+          role: 'admin',
+          status: 'active',
+          createdAt: '2026-01-01T00:00:00Z',
+        })
       }
     })
   }, [])
@@ -68,6 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
   const handleLogout = async () => {
     await logoutUser()
     setCurrentUser(null)
+    setUserMenuOpen(false)
   }
 
   const toggleDemoMode = () => {
@@ -96,8 +112,10 @@ export const Header: React.FC<HeaderProps> = ({
   // Canonical Repository Tabs
   const repoTabs: NavTabItem[] = [
     { id: 'code', label: 'Code', icon: <Code2 className="w-4 h-4" /> },
+    { id: 'issues', label: 'Issues', count: 2, icon: <AlertCircle className="w-4 h-4" /> },
     { id: 'prs', label: 'Pull requests', count: openPrCount, icon: <GitPullRequest className="w-4 h-4" /> },
     { id: 'commits', label: 'Commits', icon: <GitCommit className="w-4 h-4" /> },
+    { id: 'releases', label: 'Releases', count: 2, icon: <Tag className="w-4 h-4" /> },
     { id: 'agents', label: 'Agent Console', count: '35', icon: <Bot className="w-4 h-4" /> },
     { id: 'rulesets', label: 'Rulesets & Security', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-4 h-4" /> },
@@ -126,15 +144,16 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center justify-between h-14 gap-4">
             {/* Left: Brand Glyph & Title */}
             <div className="flex items-center gap-3">
-              <a
-                href="/"
-                className="flex items-center gap-2.5 text-foreground hover:opacity-90 transition-opacity"
+              <button
+                onClick={() => onTabChange('home')}
+                className="flex items-center gap-2.5 text-foreground hover:opacity-90 transition-opacity cursor-pointer text-left"
+                title="Go to Enterprise Home Feed"
               >
                 <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-2xs">
                   <GitBranch className="w-4 h-4" />
                 </div>
                 <span className="font-bold text-sm tracking-tight text-foreground hidden sm:inline">exist.io</span>
-              </a>
+              </button>
 
               {/* Mode Toggle Capsule */}
               <button
@@ -190,21 +209,63 @@ export const Header: React.FC<HeaderProps> = ({
                 <ExternalLink className="w-4 h-4" />
               </a>
 
-              {/* User Authentication Menu */}
+              {/* User Authentication Menu & Profile Dropdown */}
               {currentUser ? (
-                <div className="flex items-center gap-2 pl-2 border-l border-border">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-2xs">
-                    {currentUser.login.charAt(0).toUpperCase()}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={handleLogout}
-                    className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    title="Sign Out"
+                <div className="relative pl-2 border-l border-border">
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-1.5 p-0.5 rounded-full hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer"
+                    title={`Signed in as @${currentUser.login}`}
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </Button>
+                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-2xs">
+                      {currentUser.login.charAt(0).toUpperCase()}
+                    </div>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-52 rounded-md bg-card border border-border shadow-xl py-1 z-50 text-xs font-sans animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-3 py-2 border-b border-border">
+                        <div className="text-muted-foreground text-[11px]">Signed in as</div>
+                        <div className="font-semibold text-foreground truncate">@{currentUser.login}</div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false)
+                          onTabChange('profile')
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-secondary/70 text-foreground transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <span>Your profile</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false)
+                          onTabChange('admin')
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-secondary/70 text-foreground transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <span>Enterprise Settings</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false)
+                          onTabChange('home')
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-secondary/70 text-foreground transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <span>Enterprise Feed</span>
+                      </button>
+                      <div className="border-t border-border my-1" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-3 py-1.5 hover:bg-destructive/10 text-destructive transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign out</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Button

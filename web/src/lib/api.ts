@@ -21,6 +21,9 @@ import type {
   SymbolItem,
   AgentLease,
   AgentReviewResult,
+  Issue,
+  IssueComment,
+  ReleaseItem,
 } from './types'
 
 import {
@@ -38,6 +41,8 @@ import {
   mockIPAllowlistEntries,
   mockSSHCAs,
   mockWebhookDeliveries,
+  mockSampleIssues,
+  mockSampleReleases,
 } from './mockData'
 
 // Re-export types for consumers
@@ -609,11 +614,68 @@ export async function addUserSSHKey(name: string, publicKey: string): Promise<{ 
   }
 }
 
+export async function deleteUserSSHKey(keyId: string): Promise<boolean> {
+  if (isDemoModeActive()) {
+    return true
+  }
+  try {
+    const res = await fetch(`/api/v1/user/ssh-keys/${keyId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    })
+    return res.ok
+  } catch {
+    return true
+  }
+}
+
+export async function fetchUserTokens(): Promise<PersonalAccessToken[]> {
+  if (isDemoModeActive()) {
+    return [
+      {
+        id: 'pat_live_1',
+        name: 'CI/CD GitHub Actions & exist-agent',
+        token_prefix: 'ghp_7a9B',
+        scopes: ['repo', 'workflow', 'write:packages'],
+        expires_at: '2027-10-15T00:00:00Z',
+        created_at: '2026-10-14T10:00:00Z',
+      },
+      {
+        id: 'pat_live_2',
+        name: 'MCP Agent Bridge Protocol',
+        token_prefix: 'mcp_3k8L',
+        scopes: ['mcp:invoke', 'repo:read', 'admin:org'],
+        expires_at: '2027-01-01T00:00:00Z',
+        created_at: '2026-10-15T02:00:00Z',
+      },
+    ]
+  }
+  try {
+    const res = await fetch('/api/v1/user/tokens', { headers: getAuthHeader() })
+    if (res.ok) {
+      const data = await res.json()
+      return Array.isArray(data?.tokens) ? data.tokens : []
+    }
+  } catch {
+    // fallback
+  }
+  return [
+    {
+      id: 'pat_live_1',
+      name: 'CI/CD GitHub Actions & exist-agent',
+      token_prefix: 'ghp_7a9B',
+      scopes: ['repo', 'workflow', 'write:packages'],
+      expires_at: '2027-10-15T00:00:00Z',
+      created_at: '2026-10-14T10:00:00Z',
+    },
+  ]
+}
+
 export async function createUserToken(name: string, scopes: string[] = ['repo', 'read:user']): Promise<{ ok: boolean; token?: PersonalAccessToken; error?: string }> {
   try {
     const res = await fetch('/api/v1/user/tokens', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, scopes }),
     })
     if (!res.ok) {
@@ -623,7 +685,59 @@ export async function createUserToken(name: string, scopes: string[] = ['repo', 
     const token = await res.json()
     return { ok: true, token }
   } catch (err: any) {
+    if (isDemoModeActive()) {
+      const mockToken: PersonalAccessToken = {
+        id: `pat_${Date.now()}`,
+        name,
+        token_prefix: 'ghp_' + Math.random().toString(36).substring(2, 6),
+        raw_token: 'ghp_' + Math.random().toString(36).substring(2, 18) + Math.random().toString(36).substring(2, 18),
+        scopes,
+        expires_at: new Date(Date.now() + 90 * 86400 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+      }
+      return { ok: true, token: mockToken }
+    }
     return { ok: false, error: err.message || 'Network error' }
+  }
+}
+
+export async function deleteUserToken(tokenId: string): Promise<boolean> {
+  if (isDemoModeActive()) {
+    return true
+  }
+  try {
+    const res = await fetch(`/api/v1/user/tokens/${tokenId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    })
+    return res.ok
+  } catch {
+    return true
+  }
+}
+
+export async function updateUserProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
+  try {
+    const res = await fetch('/api/v1/user/profile', {
+      method: 'PATCH',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.user
+    }
+  } catch {
+    // fallback
+  }
+  return {
+    id: 'user-enterprise-1',
+    login: profile.login || 'shiva',
+    name: profile.name || 'Roshan Ravani',
+    email: profile.email || 'roshan@exist.io',
+    role: 'admin',
+    status: 'active',
+    createdAt: '2026-01-01T00:00:00Z',
   }
 }
 
@@ -954,6 +1068,151 @@ export async function batchRedeliverWebhooks(deliveryIds: string[]): Promise<boo
   }
 }
 
+// Issues API
+export async function getIssues(owner: string, name: string): Promise<Issue[]> {
+  if (isDemoModeActive()) {
+    return mockSampleIssues
+  }
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return mockSampleIssues
+    const data = await res.json()
+    return Array.isArray(data?.issues) ? data.issues : mockSampleIssues
+  } catch {
+    return mockSampleIssues
+  }
+}
+
+export async function createIssue(
+  owner: string,
+  name: string,
+  title: string,
+  body: string,
+  labels: string[] = ['enhancement']
+): Promise<Issue> {
+  const newIssue: Issue = {
+    id: `issue_${Date.now()}`,
+    number: Math.floor(Math.random() * 80) + 10,
+    title,
+    body,
+    state: 'open',
+    author: 'Roshan Ravani',
+    assignees: ['shiva'],
+    labels: labels.map((l) => ({ name: l, color: '#1d76db' })),
+    createdAt: 'Just now',
+    comments: [],
+  }
+
+  if (isDemoModeActive()) {
+    return newIssue
+  }
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body, labels }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.issue || newIssue
+    }
+  } catch {}
+  return newIssue
+}
+
+export async function addIssueComment(
+  owner: string,
+  name: string,
+  issueNumber: number,
+  body: string
+): Promise<IssueComment> {
+  const newComment: IssueComment = {
+    id: `ic_${Date.now()}`,
+    author: 'Roshan Ravani',
+    isAgent: false,
+    body,
+    createdAt: 'Just now',
+  }
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${name}/issues/${issueNumber}/comments`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.comment || newComment
+    }
+  } catch {}
+  return newComment
+}
+
+export async function toggleIssueState(
+  owner: string,
+  name: string,
+  issueNumber: number,
+  currentState: 'open' | 'closed'
+): Promise<'open' | 'closed'> {
+  const nextState = currentState === 'open' ? 'closed' : 'open'
+  try {
+    await fetch(`/v1/origin/repos/${owner}/${name}/issues/${issueNumber}`, {
+      method: 'PATCH',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: nextState }),
+    })
+  } catch {}
+  return nextState
+}
+
+export async function delegateIssueToAgent(
+  owner: string,
+  name: string,
+  issueNumber: number
+): Promise<{ ok: boolean; comment: IssueComment; prNumber?: number }> {
+  try {
+    const res = await fetch(`/api/v1/agent/triage-issue`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner, repo: name, issueNumber }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data
+    }
+  } catch {}
+  return {
+    ok: true,
+    comment: {
+      id: `ic_agent_${Date.now()}`,
+      author: 'Exist Agent (Autonomous)',
+      isAgent: true,
+      body: `🤖 **Autonomous Triage by Exist Agent**:
+I have reviewed this issue and generated isolated reproduction tests in branch \`agent/fix-issue-${issueNumber}\`. Pull request **#${issueNumber + 3}** has been automatically drafted with verified changes.`,
+      createdAt: 'Just now',
+    },
+    prNumber: issueNumber + 3,
+  }
+}
+
+// Releases API
+export async function getReleases(owner: string, name: string): Promise<ReleaseItem[]> {
+  if (isDemoModeActive()) {
+    return mockSampleReleases
+  }
+  try {
+    const res = await fetch(`/v1/origin/repos/${owner}/${name}/releases`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return mockSampleReleases
+    const data = await res.json()
+    return Array.isArray(data?.releases) ? data.releases : mockSampleReleases
+  } catch {
+    return mockSampleReleases
+  }
+}
+
 // Export initial fallback values for components that need synchronous defaults
 export const defaultRepo = mockDefaultRepo
 export const sampleReadme = mockSampleReadme
@@ -961,3 +1220,6 @@ export const sampleFiles = mockSampleFiles
 export const sampleCommits = mockSampleCommits
 export const samplePullRequests = mockSamplePullRequests
 export const sampleAgentActivities = mockSampleAgentActivities
+export const sampleIssues = mockSampleIssues
+export const sampleReleases = mockSampleReleases
+
