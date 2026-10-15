@@ -25,6 +25,7 @@ type Config struct {
 
 	SSHAddr        string
 	SSHHostKeyPath string
+	JWTSecret      string
 }
 
 // Load reads configuration from environment variables, falling back to safe self-hosted defaults.
@@ -36,6 +37,7 @@ func Load() Config {
 	gitURL := getEnvFirst([]string{"EXIST_GIT_URL", "EXIST_GIT_HOST"}, defaultGitURL)
 	sshAddr := getEnv("EXIST_SSH_ADDR", "127.0.0.1:2222")
 	sshHostKeyPath := getEnv("EXIST_SSH_HOST_KEY", dataDir+"/ssh_host_key")
+	jwtSecret := getEnv("EXIST_JWT_SECRET", "exist-ephemeral-agent-lease-signing-key")
 
 	return Config{
 		ListenAddr:     listenAddr,
@@ -46,6 +48,7 @@ func Load() Config {
 		GitHost:        gitURL,
 		SSHAddr:        sshAddr,
 		SSHHostKeyPath: sshHostKeyPath,
+		JWTSecret:      jwtSecret,
 	}
 }
 

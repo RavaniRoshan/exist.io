@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"exist.io/internal/store"
+	"exist.io/internal/symbolsearch"
 	"exist.io/pkg/idgen"
 	"github.com/go-git/go-git/v6/plumbing/object"
 )
@@ -1084,6 +1085,40 @@ func BuiltinTools() []ToolDef {
 			InputSchema: makeSchema(map[string]any{}, nil),
 			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
 				return s.store.ListNamespaces(ctx, 100)
+			},
+		},
+		// 35. search_symbols
+		{
+			Name:        "search_symbols",
+			Description: "Search code symbols (functions, structs, classes, types, interfaces) across repository source files",
+			ReadOnly:    true,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug": map[string]any{"type": "string", "description": "Repository owner namespace"},
+				"repoName":  map[string]any{"type": "string", "description": "Repository name"},
+				"query":     map[string]any{"type": "string", "description": "Symbol name or substring to search for"},
+				"ref":       map[string]any{"type": "string", "description": "Optional branch, tag, or commit SHA (defaults to default branch)"},
+				"kind":      map[string]any{"type": "string", "description": "Optional kind filter: function, method, struct, class, interface, type, constant"},
+				"limit":     map[string]any{"type": "integer", "description": "Maximum number of results to return (default 50)"},
+			}, []string{"ownerSlug", "repoName"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				query := getString(args, "query")
+				ref := getString(args, "ref")
+				kind := getString(args, "kind")
+				limit := getInt(args, "limit")
+				if limit <= 0 {
+					limit = 50
+				}
+				if ref == "" {
+					repo, err := s.store.GetRepo(ctx, owner, name)
+					if err == nil && repo.DefaultBranch != "" {
+						ref = repo.DefaultBranch
+					} else {
+						ref = "HEAD"
+					}
+				}
+				return symbolsearch.Search(ctx, s.git, owner, name, ref, query, kind, limit)
 			},
 		},
 	}

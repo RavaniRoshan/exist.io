@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"time"
 
+	"exist.io/internal/agentactivity"
 	"exist.io/internal/audit"
 	"exist.io/internal/auth"
 	"exist.io/internal/config"
@@ -24,6 +25,7 @@ import (
 	"exist.io/internal/origin"
 	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
+	"exist.io/pkg/agentlease"
 )
 
 // App is the composition root for exist.io. It owns configuration, metadata
@@ -129,6 +131,14 @@ func Open(cfg config.Config) (*App, error) {
 			"events": events,
 		})
 	})
+
+	// Autonomous Agent Activity Stream & Capability Leases
+	mux.HandleFunc("GET /api/v1/agent/activities", agentactivity.Handler(agentactivity.DefaultHub))
+	leaseSecret := []byte(cfg.JWTSecret)
+	if len(leaseSecret) == 0 {
+		leaseSecret = []byte("exist-ephemeral-agent-lease-signing-key")
+	}
+	mux.HandleFunc("POST /api/v1/agent/leases", agentlease.Handler(leaseSecret))
 
 	// Web Authentication & Session Management
 	mux.HandleFunc("POST /api/v1/auth/login", auth.LoginHandler(db))

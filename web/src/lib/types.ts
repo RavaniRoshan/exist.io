@@ -8,6 +8,8 @@ export interface RepoInfo {
   isPrivate: boolean
   starsCount: number
   forksCount: number
+  commitsCount?: number
+  branchesCount?: number
   updatedAt: string
   cloneUrlHttp: string
   cloneUrlSsh: string
@@ -218,4 +220,43 @@ export interface RulesetRecord {
   includedRefNames?: string[]
   rules?: Array<{ type: string; parameters?: Record<string, any> }>
 }
+
+export interface SymbolItem {
+  name: string
+  kind: string
+  file: string
+  line: number
+  signature?: string
+  container?: string
+  doc?: string
+}
+
+export interface AgentLease {
+  token: string
+  id: string
+  agentId: string
+  repoId: string
+  issuedAt: string
+  expiresAt: string
+}
+
+export interface AgentReviewResult {
+  verdict: 'approve' | 'request_changes' | 'comment'
+  conclusion: 'success' | 'failure' | 'neutral'
+  score: number
+  summary: string
+  overviewMd: string
+  violations: Array<{
+    file: string
+    line: number
+    severity: 'error' | 'warning' | 'info'
+    rule: string
+    message: string
+    snippet?: string
+  }>
+  reviewId: string
+  checkRunId: string
+  createdAt: string
+}
+
 

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Signatures-OpenSSH%20%26%20GPG-teal?style=flat-square&logo=gnupg&logoColor=white" alt="Signatures">
   <img src="https://img.shields.io/badge/Federation-OIDC%20%2F%20SAML%20%2F%20SCIM-purple?style=flat-square&logo=openid&logoColor=white" alt="SSO SCIM">
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
-  <img src="https://img.shields.io/badge/Agents-MCP%2034%20Tools-8A2BE2?style=flat-square" alt="MCP Server">
+  <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/License-Apache%202.0%20%2F%20MIT-10B981?style=flat-square" alt="License">
 </p>
 
@@ -25,7 +25,7 @@
 
 ---
 
-**exist.io** gives engineering teams and agent developers a standalone, enterprise-ready Git forge that runs entirely on infrastructure you control. It bridges human collaboration and AI automation with dual Git transports (Smart-HTTP + embedded pure-Go SSH on port 2222), Git Large File Storage (LFS) v1 with file locking, real-time OpenSSH & GPG commit signature verification, enterprise identity federation (OIDC, SAML 2.0, and RFC 7644 SCIM 2.0 user sync), official Infrastructure as Code (Terraform / OpenTofu and Kubernetes Helm), and a native Model Context Protocol (MCP) server exposing 34 specialized tools directly to AI coding agents.
+**exist.io** gives engineering teams and agent developers a standalone, enterprise-ready Git forge that runs entirely on infrastructure you control. It bridges human collaboration and AI automation with dual Git transports (Smart-HTTP + embedded pure-Go SSH on port 2222), Git Large File Storage (LFS) v1 with file locking, real-time OpenSSH & GPG commit signature verification, enterprise identity federation (OIDC, SAML 2.0, and RFC 7644 SCIM 2.0 user sync), official Infrastructure as Code (Terraform / OpenTofu and Kubernetes Helm), autonomous AI agent PR code reviews, ephemeral capability leases, pure-Go AST symbol search, and a native Model Context Protocol (MCP) server exposing 35 specialized tools directly to AI coding agents.
 
 > [!NOTE]
 > exist.io provides full wire compatibility with Origin forge interfaces while remaining 100% open-source and self-hosted with zero external proprietary dependencies.
@@ -57,8 +57,8 @@
   </tr>
   <tr>
     <td width="50%">
-      <h3>🤖 First-Class Agent Support (MCP)</h3>
-      <p>Embedded Model Context Protocol server exposing 34 JSON-RPC tools at <code>/mcp</code> and a sandboxed read-only endpoint at <code>/mcp/readonly</code> for Claude Code, Cursor, and Cline.</p>
+      <h3>🤖 First-Class Agent Support (MCP & Leases)</h3>
+      <p>Embedded Model Context Protocol server exposing 35 JSON-RPC tools at <code>/mcp</code> (including AST symbol search), cryptographic capability lease tokens, and automated PR code reviews for Claude Code, Cursor, and Cline.</p>
     </td>
     <td width="50%">
       <h3>🏗️ Infrastructure as Code (Terraform & Helm)</h3>

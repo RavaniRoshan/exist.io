@@ -22,9 +22,9 @@ This document outlines the evolutionary phases of the project, from current foun
 flowchart LR
     P1["Phase 1 (v0.1)<br/>Core Forge & MCP<br/><b>COMPLETED</b>"]
     P2["Phase 2 (v0.2)<br/>Enterprise Protocols & IaC<br/><b>COMPLETED</b>"]
-    P3["Phase 3 (v0.3)<br/>Visual Web Dashboard<br/><b>COMPLETED</b>"]
-    P4["Phase 4 (v0.4)<br/>Agent Sandbox Engine<br/><b>NEXT UP</b>"]
-    P5["Phase 5 (v0.5)<br/>Active-Active Raft Replication<br/><b>HORIZON</b>"]
+    P3["Phase 3 (v0.2)<br/>Space UI Dashboard<br/><b>COMPLETED</b>"]
+    P4["Phase 4 (v0.3)<br/>Autonomous Agent Review & Leases<br/><b>COMPLETED</b>"]
+    P5["Phase 5 (v0.4)<br/>Active-Active Raft Replication<br/><b>NEXT UP</b>"]
 
     P1 --> P2
     P2 --> P3
@@ -68,14 +68,15 @@ flowchart LR
 
 ---
 
-## Phase 4: Autonomous Agent Execution Sandbox (v0.3.0) — NEXT UP
+## Phase 4: Autonomous Agent Execution & Review Sandbox (v0.3.0) — COMPLETED
 
 Taking agent integration beyond passive MCP queries to active, forge-native autonomous workflows:
 
-- [ ] **Forge-Native Task Dispatcher:** Capability for `existd` to trigger containerized agent workers (Docker, Wasm, or microVMs) in response to repository events.
-- [ ] **Automated PR Review Agent:** Configurable agent hook that automatically reads PR diffs, executes linters, tests against local sandboxes, and posts line-level review suggestions.
-- [ ] **Ephemeral Agent Leases:** Short-lived, cryptographic capability tokens issued to autonomous agents that expire automatically after task completion.
-- [ ] **Agent Work Log & Audit Trail:** Full recording of agent tool invocations, prompts, and execution steps linked directly to pull request review threads.
+- [x] **Automated PR Review Agent (`internal/agentreviewer`):** Configurable reviewer that inspects diffs, detects leaked cryptographic keys/tokens, evaluates unit test coverage, outputs rich Markdown diagnostics, and reports check runs.
+- [x] **Ephemeral Agent Capability Leases (`pkg/agentlease`):** Short-lived, HMAC-SHA256 cryptographically signed capability tokens issued to autonomous agents with ref-prefix isolation (`refs/heads/agent/*`) and automatic expiration.
+- [x] **Pure-Go Semantic AST Symbol Search (`internal/symbolsearch`):** High-speed code symbol indexing across Go AST, TypeScript/JavaScript, and Python files; exposed via REST API and MCP tool `search_symbols`.
+- [x] **Agent Activity Telemetry Stream (`internal/agentactivity`):** Thread-safe bounded memory ring buffer streaming autonomous agent tool invocations and PR reviews to `GET /api/v1/agent/activities`.
+- [x] **Craft-First Space UI Integration:** Live PR review trigger action, merge execution, semantic symbol search popover, and capability lease issuance drawer.
 
 ---
 

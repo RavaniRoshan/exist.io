@@ -267,3 +267,31 @@ func TestPullRequests_FilesAndCommits(t *testing.T) {
 		t.Fatalf("unexpected commits response: %+v", commitsResp)
 	}
 }
+
+func TestPullRequests_TriggerAgentReview(t *testing.T) {
+	srv, db, h := testServer(t)
+	seedRepoWithBranches(t, srv, db, "acme", "rocket")
+
+	do(h, "POST", "/v1/origin/repos/acme/rocket/pulls", `{"title":"Telemetry PR","head":"feature-1","base":"main"}`)
+
+	// Trigger autonomous agent review
+	res := do(h, "POST", "/v1/origin/repos/acme/rocket/pulls/1/reviews/agent", "")
+	if res.Code != http.StatusOK {
+		t.Fatalf("agent review expected 200, got %d: %s", res.Code, res.Body.String())
+	}
+
+	var reviewResp struct {
+		Verdict    string `json:"verdict"`
+		Conclusion string `json:"conclusion"`
+		Score      int    `json:"score"`
+		ReviewID   string `json:"reviewId"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &reviewResp); err != nil {
+		t.Fatalf("unmarshal agent review: %v", err)
+	}
+
+	if reviewResp.Verdict == "" || reviewResp.ReviewID == "" {
+		t.Fatalf("unexpected empty review verdict or ID: %+v", reviewResp)
+	}
+}
+

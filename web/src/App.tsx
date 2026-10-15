@@ -127,6 +127,7 @@ export default function App() {
 
             {navSection === 'forge' && activeTab === 'pulls' && (
               <PullRequestsView
+                repo={repo}
                 onSelectAgentConsole={() => setActiveTab('agents')}
               />
             )}

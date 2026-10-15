@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"exist.io/internal/gitstore"
+	"exist.io/internal/symbolsearch"
 	"exist.io/pkg/scopes"
 )
 
@@ -27,6 +28,7 @@ func (s *Server) registerContents(mux *http.ServeMux) {
 	s.register("OriginService_GrepContents", read)
 	s.register("OriginService_ListCommitFiles", read)
 	s.register("OriginService_CompareCommits", read)
+	s.register("OriginService_SearchSymbols", read)
 
 	base := "/v1/origin/repos/{ownerSlug}/{repoName}"
 	mux.Handle("GET "+base+"/contents", s.guard("OriginService_GetContents", s.getContents))
@@ -40,6 +42,7 @@ func (s *Server) registerContents(mux *http.ServeMux) {
 	mux.Handle("GET "+base+"/tarball", s.guard("OriginService_GetRepoTarball", s.getTarball))
 	mux.Handle("POST "+base+"/contents:grep", s.guard("OriginService_GrepContents", s.grepContents))
 	mux.Handle("GET "+base+"/commits/{sha}/files", s.guard("OriginService_ListCommitFiles", s.listCommitFiles))
+	mux.Handle("GET "+base+"/symbols", s.guard("OriginService_SearchSymbols", s.searchSymbols))
 }
 
 // contentDTO is the Origin Content shape (file or directory).
@@ -365,3 +368,42 @@ func baseName(p string) string {
 	}
 	return p
 }
+
+func (s *Server) searchSymbols(w http.ResponseWriter, r *http.Request) {
+	owner, name, ok := s.openRepo(w, r)
+	if !ok {
+		return
+	}
+
+	ref := r.URL.Query().Get("ref")
+	if ref == "" {
+		repo, err := s.store.GetRepo(r.Context(), owner, name)
+		if err == nil && repo.DefaultBranch != "" {
+			ref = repo.DefaultBranch
+		} else {
+			ref = "HEAD"
+		}
+	}
+
+	query := r.URL.Query().Get("q")
+	kind := r.URL.Query().Get("kind")
+	limit := 50
+	if lStr := r.URL.Query().Get("limit"); lStr != "" {
+		if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	symbols, err := symbolsearch.Search(r.Context(), s.git, owner, name, ref, query, kind, limit)
+	if err != nil {
+		internalError(w, "symbol search failed: "+err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"symbols": symbols,
+		"ref":     ref,
+		"count":   len(symbols),
+	})
+}
+

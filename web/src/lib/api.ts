@@ -18,6 +18,9 @@ import type {
   IPAllowlistEntry,
   SSHCARecord,
   RulesetRecord,
+  SymbolItem,
+  AgentLease,
+  AgentReviewResult,
 } from './types'
 
 import {
@@ -123,30 +126,59 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
   }
 }
 
-export async function getFiles(owner: string, name: string, ref = 'main'): Promise<FileItem[]> {
+export async function getFiles(owner: string, name: string, ref = 'main', path = ''): Promise<FileItem[]> {
   if (isDemoModeActive()) {
     return mockSampleFiles
   }
 
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/trees/${ref}`, {
+    const params = new URLSearchParams()
+    if (ref) params.set('ref', ref)
+    if (path) params.set('path', path)
+
+    const res = await fetch(`/v1/origin/repos/${owner}/${name}/contents?${params.toString()}`, {
       headers: getAuthHeader(),
     })
     if (!res.ok) return []
     const data = await res.json()
-    if (!Array.isArray(data?.tree)) return []
-    return data.tree.map((f: any) => ({
-      name: f.name || f.path,
-      path: f.path,
-      type: f.type === 'tree' ? 'tree' : 'blob',
-      size: f.size,
-      lastCommitMessage: f.last_commit_message || 'Commit update',
-      lastCommitDate: f.last_commit_date || 'Recently',
-    }))
+    if (Array.isArray(data?.entries)) {
+      return data.entries.map((f: any) => ({
+        name: f.name || f.path,
+        path: f.path,
+        type: f.type === 'dir' ? 'tree' : 'blob',
+        size: f.size ? parseInt(f.size, 10) : 0,
+        lastCommitMessage: 'Commit update',
+        lastCommitDate: 'Recently',
+      }))
+    }
+    return []
   } catch {
     return [] // Real clean empty state in production
   }
 }
+
+export async function getFileContent(owner: string, name: string, path: string, ref = 'main'): Promise<string> {
+  if (isDemoModeActive()) {
+    if (path === 'README.md') return mockSampleReadme
+    return `// Sample contents of ${path}`
+  }
+
+  try {
+    const params = new URLSearchParams({ path, ref })
+    const res = await fetch(`/v1/origin/repos/${owner}/${name}/contents?${params.toString()}`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return ''
+    const data = await res.json()
+    if (data.encoding === 'base64' && data.content) {
+      return atob(data.content)
+    }
+    return data.content || ''
+  } catch {
+    return ''
+  }
+}
+
 
 export async function getCommits(owner: string, name: string, ref = 'main'): Promise<CommitItem[]> {
   if (isDemoModeActive()) {
@@ -200,8 +232,148 @@ export async function getAgentActivities(): Promise<AgentActivityItem[]> {
   if (isDemoModeActive()) {
     return mockSampleAgentActivities
   }
-  return [] // In production, streams live events from telemetry sink
+  try {
+    const res = await fetch('/api/v1/agent/activities')
+    if (!res.ok) return []
+    const data = await res.json()
+    if (!Array.isArray(data?.activities)) return []
+    return data.activities.map((a: any) => ({
+      id: a.id || `act-${Date.now()}`,
+      agentName: a.agentName || 'exist-agent',
+      agentType: (a.agentType as any) || 'exist-mcp',
+      toolName: a.toolName || a.action || 'operation',
+      status: a.status === 'success' ? 'success' : a.status === 'failed' ? 'error' : 'executing',
+      latencyMs: a.durationMs || 14,
+      timestamp: a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : 'Just now',
+      requestPayload: { resource: a.resource, action: a.action },
+      responseSummary: a.details || 'Completed autonomously',
+    }))
+  } catch {
+    return []
+  }
 }
+
+export async function triggerAgentReview(owner: string, repo: string, prNumber: number): Promise<AgentReviewResult> {
+  if (isDemoModeActive()) {
+    return {
+      verdict: 'approve',
+      conclusion: 'success',
+      score: 98,
+      summary: 'Autonomous review completed in sandbox demo mode.',
+      overviewMd: '## Autonomous Review Passed\n\nNo security vulnerabilities or policy anomalies detected in sandbox.',
+      violations: [],
+      reviewId: `demo-rev-${Date.now()}`,
+      checkRunId: `demo-cr-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  const res = await fetch(`/v1/origin/repos/${owner}/${repo}/pulls/${prNumber}/reviews/agent`, {
+    method: 'POST',
+    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Review failed (HTTP ${res.status}): ${errText}`)
+  }
+  return res.json()
+}
+
+export async function mergePullRequest(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  method: 'squash' | 'merge' = 'squash',
+  commitTitle?: string,
+  commitMessage?: string
+): Promise<{ mergeCommitSha: string }> {
+  if (isDemoModeActive()) {
+    return { mergeCommitSha: 'a1b2c3d4e5f67890demo' }
+  }
+
+  const res = await fetch(`/v1/origin/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
+    method: 'POST',
+    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mergeMethod: method,
+      commitTitle,
+      commitMessage,
+    }),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Merge failed (HTTP ${res.status}): ${errText}`)
+  }
+  return res.json()
+}
+
+export async function searchRepoSymbols(
+  owner: string,
+  repo: string,
+  query: string,
+  ref: string = '',
+  kind: string = ''
+): Promise<SymbolItem[]> {
+  if (isDemoModeActive()) {
+    return [
+      { name: 'App', kind: 'function', file: 'src/App.tsx', line: 12, signature: 'export function App()' },
+      { name: 'RepoOverview', kind: 'function', file: 'src/components/views/RepoOverview.tsx', line: 18 },
+      { name: 'PullRequestsView', kind: 'function', file: 'src/components/views/PullRequestsView.tsx', line: 20 },
+      { name: 'Store', kind: 'struct', file: 'internal/gitstore/gitstore.go', line: 28, signature: 'type Store struct' },
+    ].filter((s) => !query || s.name.toLowerCase().includes(query.toLowerCase()))
+  }
+
+  try {
+    const params = new URLSearchParams()
+    if (query) params.set('q', query)
+    if (ref) params.set('ref', ref)
+    if (kind) params.set('kind', kind)
+
+    const res = await fetch(`/v1/origin/repos/${owner}/${repo}/symbols?${params.toString()}`, {
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data?.symbols) ? data.symbols : []
+  } catch {
+    return []
+  }
+}
+
+export async function issueAgentLease(
+  agentId: string,
+  repoId: string,
+  allowedPrefixes: string[] = ['refs/heads/agent/', 'refs/heads/feat/'],
+  ttlSeconds: number = 900
+): Promise<AgentLease> {
+  if (isDemoModeActive()) {
+    return {
+      token: 'demo_lease_token_hmac_sha256_mock',
+      id: `lease_${Date.now()}`,
+      agentId,
+      repoId,
+      issuedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+    }
+  }
+
+  const res = await fetch('/api/v1/agent/leases', {
+    method: 'POST',
+    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      agentId,
+      repoId,
+      allowedRefPrefixes: allowedPrefixes,
+      ttlSeconds,
+    }),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to issue lease (HTTP ${res.status}): ${errText}`)
+  }
+  return res.json()
+}
+
 
 export async function getAuditEvents(): Promise<AuditEvent[]> {
   if (isDemoModeActive()) {

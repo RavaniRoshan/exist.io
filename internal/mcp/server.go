@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"exist.io/internal/agentactivity"
 	"exist.io/internal/audit"
 	"exist.io/internal/gitstore"
 	"exist.io/internal/metrics"
@@ -150,8 +152,34 @@ func (s *Server) Handler(readonly bool) http.Handler {
 			}
 
 			metrics.DefaultRegistry.IncMCPCalls()
+			start := time.Now()
 
 			res, err := tool.Handler(ctx, s, params.Arguments)
+			durationMs := int(time.Since(start).Milliseconds())
+
+			status := "success"
+			if err != nil {
+				status = "failed"
+			}
+
+			repoName := ""
+			if val, ok := params.Arguments["repo_name"]; ok {
+				repoName = fmt.Sprintf("%v", val)
+			} else if val, ok := params.Arguments["repoName"]; ok {
+				repoName = fmt.Sprintf("%v", val)
+			}
+
+			agentactivity.DefaultHub.Record(agentactivity.Activity{
+				AgentName:  "MCP Agent",
+				AgentType:  "exist-mcp",
+				Action:     "tool_call",
+				ToolName:   params.Name,
+				Resource:   repoName,
+				Status:     status,
+				DurationMs: durationMs,
+				Details:    fmt.Sprintf("Invoked tool %q", params.Name),
+			})
+
 			if err != nil {
 				writeRPCResult(w, req.ID, toolCallResult{
 					Content: []toolCallContent{{Type: "text", Text: err.Error()}},
@@ -165,7 +193,7 @@ func (s *Server) Handler(readonly bool) http.Handler {
 					Actor:     "agent-mcp",
 					ActorType: "agent",
 					Action:    "mcp.tool_execute:" + params.Name,
-					Resource:  fmt.Sprintf("%v", params.Arguments["repo_name"]),
+					Resource:  repoName,
 					Severity:  audit.SeverityInfo,
 					Details:   fmt.Sprintf("Autonomous agent executed mutating tool %q", params.Name),
 				})

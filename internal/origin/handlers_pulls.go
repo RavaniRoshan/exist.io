@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"exist.io/internal/agentreviewer"
 	"exist.io/internal/auth"
 	"exist.io/internal/engine"
 	"exist.io/internal/gitstore"
@@ -48,6 +49,7 @@ func (s *Server) registerPulls(mux *http.ServeMux) {
 	s.register("OriginService_DisablePullRequestAutoMerge", reqPullsWrite)
 	s.register("OriginService_ListPullRequestFiles", reqPullsRead)
 	s.register("OriginService_ListPullRequestCommits", reqPullsRead)
+	s.register("OriginService_CreateAgentReview", reqPullsWrite)
 
 	// Routes
 	dispatcher := s.pullsDispatcher()
@@ -81,6 +83,7 @@ func (s *Server) pullsDispatcher() http.Handler {
 	hRemoveReaction := s.guard("OriginService_RemovePullRequestCommentReaction", s.removePullRequestCommentReaction)
 
 	hCreateReview := s.guard("OriginService_CreatePullRequestReview", s.createPullRequestReview)
+	hAgentReview := s.guard("OriginService_CreateAgentReview", s.triggerAgentReview)
 	hListReviews := s.guard("OriginService_ListPullRequestReviews", s.listPullRequestReviews)
 	hUpdateReview := s.guard("OriginService_UpdatePullRequestReview", s.updatePullRequestReview)
 	hDismissReview := s.guard("OriginService_DismissPullRequestReview", s.dismissPullRequestReview)
@@ -261,6 +264,10 @@ func (s *Server) pullsDispatcher() http.Handler {
 		if len(parts) == 3 {
 			switch parts[1] {
 			case "reviews":
+				if parts[2] == "agent" && method == http.MethodPost {
+					hAgentReview.ServeHTTP(w, r)
+					return
+				}
 				if method == http.MethodPatch {
 					r.SetPathValue("reviewId", parts[2])
 					hUpdateReview.ServeHTTP(w, r)
@@ -1124,3 +1131,36 @@ func (s *Server) listPullRequestCommits(w http.ResponseWriter, r *http.Request) 
 		"nextPageToken": "",
 	})
 }
+
+func (s *Server) triggerAgentReview(w http.ResponseWriter, r *http.Request) {
+	owner, name, ok := s.openRepo(w, r)
+	if !ok {
+		return
+	}
+	repo, err := s.store.GetRepo(r.Context(), owner, name)
+	if err != nil {
+		notFound(w, "repository not found")
+		return
+	}
+
+	num, err := strconv.Atoi(r.PathValue("pullNumber"))
+	if err != nil {
+		badRequest(w, "invalid pull number")
+		return
+	}
+
+	pr, err := s.store.GetPullRequest(r.Context(), repo.ID, num)
+	if err != nil {
+		notFound(w, "pull request not found")
+		return
+	}
+
+	res, err := agentreviewer.ReviewPullRequest(r.Context(), s.store, s.git, owner, repo, pr)
+	if err != nil {
+		internalError(w, "agent review failed: "+err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, res)
+}
+

@@ -1,15 +1,15 @@
 ---
 title: Model Context Protocol (MCP) tool catalog
-description: Complete technical reference of all 34 MCP tools exposed by exist.io for AI coding agents.
+description: Complete technical reference of all 35 MCP tools exposed by exist.io for AI coding agents.
 ---
 
-exist.io exposes **34 specialized tools** over the [Model Context Protocol](https://modelcontextprotocol.io) at `/mcp` (read-write) and `/mcp/readonly` (sandboxed read-only).
+exist.io exposes **35 specialized tools** over the [Model Context Protocol](https://modelcontextprotocol.io) at `/mcp` (read-write) and `/mcp/readonly` (sandboxed read-only).
 
 Every tool call uses standard JSON-RPC 2.0 with method `tools/call`.
 
 ---
 
-## 1. Repository & Git Navigation (10 tools)
+## 1. Repository & Git Navigation (11 tools)
 
 | Tool Name | Scope | Parameters | Description |
 | :--- | :--- | :--- | :--- |
@@ -17,6 +17,7 @@ Every tool call uses standard JSON-RPC 2.0 with method `tools/call`.
 | `repo_list` | Read | `owner` (string), `limit` (int, opt) | List repositories within a namespace. |
 | `repo_tree` | Read | `owner` (string), `repo` (string), `ref` (string, opt), `recursive` (bool, opt) | Recursively inspect file trees at a specified commit, branch, or tag. |
 | `file_read` | Read | `owner` (string), `repo` (string), `path` (string), `ref` (string, opt) | Read the content, encoding, and byte size of a file blob. |
+| `search_symbols` | Read | `ownerSlug`, `repoName`, `query`, `ref` (opt), `kind` (opt), `limit` (opt) | Pure-Go AST semantic symbol search (functions, structs, classes, interfaces). |
 | `commit_get` | Read | `owner` (string), `repo` (string), `sha` (string) | Get commit metadata, author, committer, and parent hashes. |
 | `commit_list` | Read | `owner` (string), `repo` (string), `ref` (string, opt), `limit` (int, opt) | List commits reachable from a reference. |
 | `branch_list` | Read | `owner` (string), `repo` (string) | List all branches in the repository with target commit SHAs. |

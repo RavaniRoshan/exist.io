@@ -42,7 +42,7 @@ exist.io has progressed from an early design concept to a launch-ready, enterpri
 - Line-level review threads, general comments, emoji reactions, and label assignment.
 
 ### 8. Model Context Protocol (MCP) Server (Complete)
-- Native Model Context Protocol (MCP) server exposing 34 specialized tools over JSON-RPC 2.0 at `/mcp` and sandboxed `/mcp/readonly`.
+- Native Model Context Protocol (MCP) server exposing 35 specialized tools over JSON-RPC 2.0 at `/mcp` and sandboxed `/mcp/readonly`.
 - Seamless integration with Claude Code, Cursor, Cline, and autonomous agent loops.
 
 ### 9. Space UI Living Dashboard & Environment Separation (Complete)
@@ -50,12 +50,20 @@ exist.io has progressed from an early design concept to a launch-ready, enterpri
 - Strict isolation between **Production Mode** (live backend APIs with authentic empty states) and **Sandbox Demo Mode** (isolated fixtures).
 - Live telemetry dashboard answering operator questions: cluster health, SQLite WAL sync, active Git streams, and Prometheus targets.
 
+### 10. Autonomous Agent Reviewer & Capability Leases (Complete)
+- Automated pull request code reviewer (`internal/agentreviewer`) analyzing diffs, detecting leaked credentials, evaluating test coverage, and reporting check runs.
+- Ephemeral HMAC-SHA256 signed capability leases (`pkg/agentlease`) granting short-lived, ref-scoped permissions (`refs/heads/agent/*`) to autonomous agents.
+- Real-time agent activity stream ring buffer (`internal/agentactivity`) with live dashboard telemetry.
+
+### 11. Pure-Go Semantic AST Symbol Search (Complete)
+- High-speed code symbol extraction using standard library `go/parser` and `go/token`, plus TypeScript/JavaScript and Python scanners.
+- Exposed via REST endpoint (`GET /v1/origin/repos/{owner}/{repo}/symbols`) and MCP tool `search_symbols`.
+
 ---
 
 ## Future horizons
 
-### 10. Native Semantic Code Search & Graph
-- Pure-Go tree-sitter AST indexing and semantic symbol navigation across repositories without external language servers.
-
-### 11. Multi-Region Active-Active Raft Replication
-- Raft-coordinated distributed metadata consensus across multi-region edge nodes for global enterprise topologies.
+### 12. Multi-Region Active-Active Raft Replication
+- Raft-coordinated metadata consensus across geographically distributed nodes.
+- Distributed packfile sharding across MinIO / S3 buckets with local read caching.
+- Disaster recovery failover controller with continuous Litestream S3 sync.
