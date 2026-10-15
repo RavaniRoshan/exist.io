@@ -23,11 +23,12 @@ import { ClusterHealth } from '@/components/views/admin/ClusterHealth'
 import { AuditLogs } from '@/components/views/admin/AuditLogs'
 import { SsoConfig } from '@/components/views/admin/SsoConfig'
 import { EnterpriseUsers } from '@/components/views/admin/EnterpriseUsers'
-import { defaultRepo } from '@/lib/api'
+import { RepoSettingsView } from '@/components/views/RepoSettingsView'
+import { defaultRepo, getRepoInfo } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin'>('code')
+  const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin' | 'settings'>('code')
   const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
   const [tourOpen, setTourOpen] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
@@ -161,6 +162,20 @@ export default function App() {
           <WebhooksView />
         )}
 
+        {/* 6.5. Repository Settings & Collaborators */}
+        {activeTab === 'settings' && (
+          <RepoSettingsView
+            repo={currentRepo}
+            onRepoUpdated={() => {
+              getRepoInfo(currentRepo.ownerSlug, currentRepo.name).then(setCurrentRepo)
+            }}
+            onRepoDeleted={() => {
+              handleSelectRepo('')
+              setActiveTab('home')
+            }}
+          />
+        )}
+
         {/* 7. Enterprise Admin & Settings View (Classic 2-column layout) */}
         {activeTab === 'admin' && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
@@ -240,7 +255,7 @@ export default function App() {
             </a>
             <span className="text-border">|</span>
             <span className="text-foreground font-semibold">
-              exist.io v0.4.0-enterprise
+              exist.io v0.4.4-enterprise
             </span>
           </div>
         </div>

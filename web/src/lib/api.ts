@@ -1569,6 +1569,110 @@ export async function getReleases(owner: string, name: string): Promise<ReleaseI
   }
 }
 
+export interface CollaboratorItem {
+  id: string
+  login: string
+  name: string
+  role: string
+  permission: string
+  createdAt: string
+}
+
+export interface RepoSettingsPayload {
+  default_branch?: string
+  visibility?: string
+  allow_merge_commit?: boolean
+  allow_squash_merge?: boolean
+  delete_branch_on_merge?: boolean
+}
+
+export async function updateRepoSettings(
+  owner: string,
+  name: string,
+  payload: RepoSettingsPayload
+): Promise<any> {
+  if (isDemoModeActive()) {
+    return { ok: true }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to update repo settings: ${errText}`)
+  }
+  return res.json()
+}
+
+export async function getCollaborators(owner: string, name: string): Promise<CollaboratorItem[]> {
+  if (isDemoModeActive()) {
+    return [
+      { id: '1', login: 'shiva', name: 'Roshan Ravani', role: 'Admin', permission: 'admin', createdAt: 'Recently' },
+      { id: '2', login: 'alex', name: 'Alex Developer', role: 'Write', permission: 'write', createdAt: 'Yesterday' },
+    ]
+  }
+
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/collaborators`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data?.collaborators) ? data.collaborators : []
+  } catch {
+    return []
+  }
+}
+
+export async function addCollaborator(
+  owner: string,
+  name: string,
+  login: string,
+  role = 'write'
+): Promise<CollaboratorItem> {
+  if (isDemoModeActive()) {
+    return {
+      id: `collab-${Date.now()}`,
+      login,
+      name: login,
+      role: role.toUpperCase(),
+      permission: role,
+      createdAt: 'Just now',
+    }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/collaborators`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ login, role }),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to add collaborator: ${errText}`)
+  }
+  const data = await res.json()
+  return data.collaborator
+}
+
+export async function removeCollaborator(
+  owner: string,
+  name: string,
+  login: string
+): Promise<void> {
+  if (isDemoModeActive()) {
+    return
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/collaborators/${login}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Failed to remove collaborator: ${errText}`)
+  }
+}
+
 // Export initial fallback values for components that need synchronous defaults
 export const defaultRepo = mockDefaultRepo
 export const sampleReadme = mockSampleReadme

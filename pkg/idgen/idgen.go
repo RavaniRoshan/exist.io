@@ -57,3 +57,4 @@ func NewRulesetBypassActor() string { return New("rsba") }
 func NewCheckRunAnnotation() string { return New("cra") }
 func NewIssue() string              { return New("issue") }
 func NewIssueComment() string       { return New("ic") }
+func NewGrant() string              { return New("grant") }

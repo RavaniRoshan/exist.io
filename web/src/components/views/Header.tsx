@@ -124,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'agents', label: 'Agent Console', count: '35', icon: <Bot className="w-4 h-4" /> },
     { id: 'rulesets', label: 'Rulesets & Security', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-4 h-4" /> },
-    { id: 'admin', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+    { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
   ]
 
   return (

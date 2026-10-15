@@ -126,14 +126,33 @@ describe('App End-to-End Navigation', () => {
     })
   })
 
-  it('navigates to Enterprise Settings view when clicking Settings tab', async () => {
+  it('navigates to Repository Settings view when clicking Settings tab', async () => {
     render(<App />)
 
     const settingsTab = screen.getByRole('tab', { name: /settings/i })
     fireEvent.click(settingsTab)
 
     await waitFor(() => {
-      expect(screen.getByText('Enterprise Settings')).toBeInTheDocument()
+      expect(screen.getByText('Repository Settings')).toBeInTheDocument()
+      expect(screen.getByText('General Repository Configuration')).toBeInTheDocument()
+      expect(screen.getByText('Pull Request Merge Buttons')).toBeInTheDocument()
+    })
+  })
+
+  it('navigates to Enterprise Settings view via the user avatar menu', async () => {
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByTitle(/signed in as @shiva/i)).toBeInTheDocument()
+    })
+
+    const avatarBtn = screen.getByTitle(/signed in as @shiva/i)
+    fireEvent.click(avatarBtn)
+
+    const adminItem = screen.getByText('Enterprise Settings')
+    fireEvent.click(adminItem)
+
+    await waitFor(() => {
       expect(screen.getByText('Cluster Health & Metrics')).toBeInTheDocument()
       expect(screen.getByText('Single Sign-On (SAML/OIDC)')).toBeInTheDocument()
     })

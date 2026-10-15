@@ -320,6 +320,219 @@ func Open(cfg config.Config) (*App, error) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "deleted": owner + "/" + name})
 	})
 
+	mux.HandleFunc("PATCH /api/v1/repos/{owner}/{name}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+
+		var req struct {
+			DefaultBranch       *string `json:"default_branch"`
+			Visibility          *string `json:"visibility"`
+			AllowMergeCommit    *bool   `json:"allow_merge_commit"`
+			AllowSquashMerge    *bool   `json:"allow_squash_merge"`
+			DeleteBranchOnMerge *bool   `json:"delete_branch_on_merge"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		u := store.RepoUpdate{
+			DefaultBranch:       req.DefaultBranch,
+			Visibility:          req.Visibility,
+			AllowMergeCommit:    req.AllowMergeCommit,
+			AllowSquashMerge:    req.AllowSquashMerge,
+			DeleteBranchOnMerge: req.DeleteBranchOnMerge,
+		}
+
+		if err := db.UpdateRepo(r.Context(), owner, name, u); err != nil {
+			http.Error(w, "Failed to update repository: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Failed to reload repository: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":   true,
+			"repo": repo,
+		})
+	})
+
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/collaborators", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"collaborators": []any{}})
+			return
+		}
+
+		grants, err := db.ListRepositoryGrants(r.Context(), repo.ID)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"collaborators": []any{}})
+			return
+		}
+
+		type collabItem struct {
+			ID         string `json:"id"`
+			Login      string `json:"login"`
+			Name       string `json:"name"`
+			Role       string `json:"role"`
+			Permission string `json:"permission"`
+			CreatedAt  string `json:"createdAt"`
+		}
+
+		collaborators := make([]collabItem, 0, len(grants)+1)
+		// Owner is always default admin
+		collaborators = append(collaborators, collabItem{
+			ID:         "owner",
+			Login:      owner,
+			Name:       owner,
+			Role:       "Admin",
+			Permission: "admin",
+			CreatedAt:  repo.CreatedAt,
+		})
+
+		for _, g := range grants {
+			if g.PrincipalKind == "user" && g.UserID != "" {
+				user, err := db.GetUser(r.Context(), g.UserID)
+				if err == nil && user.Login != owner {
+					roleName := "Write"
+					if len(g.Permission) > 0 {
+						roleName = strings.ToUpper(g.Permission[:1]) + g.Permission[1:]
+					}
+					collaborators = append(collaborators, collabItem{
+						ID:         g.ID,
+						Login:      user.Login,
+						Name:       user.Name,
+						Role:       roleName,
+						Permission: g.Permission,
+						CreatedAt:  g.CreatedAt,
+					})
+				}
+			}
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"collaborators": collaborators})
+	})
+
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/collaborators", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			Login string `json:"login"`
+			Role  string `json:"role"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Login = strings.TrimSpace(req.Login)
+		if req.Login == "" {
+			http.Error(w, "User login is required", http.StatusBadRequest)
+			return
+		}
+		perm := strings.ToLower(req.Role)
+		if perm == "" {
+			perm = "write"
+		}
+
+		user, err := db.GetUserByLogin(r.Context(), req.Login)
+		if err != nil {
+			http.Error(w, "User not found: "+req.Login, http.StatusNotFound)
+			return
+		}
+
+		grant := store.Grant{
+			ID:            idgen.NewGrant(),
+			Scope:         "repository",
+			NamespaceID:   repo.NamespaceID,
+			RepoID:        repo.ID,
+			PrincipalKind: "user",
+			UserID:        user.ID,
+			Permission:    perm,
+		}
+
+		stored, err := db.UpsertGrant(r.Context(), grant)
+		if err != nil {
+			http.Error(w, "Failed to add collaborator: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		roleName := "Write"
+		if len(stored.Permission) > 0 {
+			roleName = strings.ToUpper(stored.Permission[:1]) + stored.Permission[1:]
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"collaborator": map[string]any{
+				"id":         stored.ID,
+				"login":      user.Login,
+				"name":       user.Name,
+				"role":       roleName,
+				"permission": stored.Permission,
+			},
+		})
+	})
+
+	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/collaborators/{login}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		login := r.PathValue("login")
+		user, err := db.GetUserByLogin(r.Context(), login)
+		if err != nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		principal := store.GrantPrincipal{UserID: user.ID}
+		if err := db.DeleteGrant(r.Context(), "repository", repo.NamespaceID, repo.ID, principal); err != nil {
+			http.Error(w, "Failed to remove collaborator: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "removed": login})
+	})
+
 	// Direct File Commit & In-Browser File Creation (Web & API)
 	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/files", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

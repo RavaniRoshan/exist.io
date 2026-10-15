@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Docs-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.0--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.4--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
   <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
   <img src="https://img.shields.io/badge/LFS-v1%20Batch%20CAS-F05032?style=flat-square&logo=git-lfs&logoColor=white" alt="Git LFS">
@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-66%20Passed%20(18%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/Tests-70%20Passed%20(19%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
 [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
@@ -94,6 +94,16 @@
     <td width="50%">
       <h3>📝 Native SQLite Issues & Thread Discussions</h3>
       <p>Monotonically sequenced issue tracking, threaded comments, and state transitions (open/closed) backed directly by the embedded SQLite WAL engine with zero external database dependencies.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>⚙️ Repository Settings & Collaborators Access</h3>
+      <p>Granular repository configuration including default branch selection, PR squash/merge commit strategies, auto-branch pruning, role-based collaborator access grants (Read/Write/Admin), and guarded Danger Zone repository deletion.</p>
+    </td>
+    <td width="50%">
+      <h3>🪝 Webhook Delivery Engine</h3>
+      <p>Outbound webhook dispatching with HMAC-SHA256 signature verification, live test pings, delivery attempt audit log, and per-event subscription routing.</p>
     </td>
   </tr>
 </table>
