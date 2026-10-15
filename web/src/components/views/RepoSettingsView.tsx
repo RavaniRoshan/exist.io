@@ -19,6 +19,7 @@ import {
   Send,
   RefreshCw,
   ChevronRight,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { Box, BoxHeader, BoxBody, BoxRow, BoxFooter } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -28,6 +29,7 @@ import { LivingAvatar } from '@/components/ui/LivingAvatar'
 import { ChangeVisibilityModal } from '@/components/modals/ChangeVisibilityModal'
 import { ArchiveRepoModal } from '@/components/modals/ArchiveRepoModal'
 import { RenameRepoModal } from '@/components/modals/RenameRepoModal'
+import { TransferRepoModal } from '@/components/modals/TransferRepoModal'
 import {
   type RepoInfo,
   type BranchItem,
@@ -123,6 +125,7 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
   const [changeVisModalOpen, setChangeVisModalOpen] = useState(false)
   const [archiveModalOpen, setArchiveModalOpen] = useState(false)
   const [renameModalOpen, setRenameModalOpen] = useState(false)
+  const [transferModalOpen, setTransferModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [confirmDeleteInput, setConfirmDeleteInput] = useState('')
   const [deletingRepo, setDeletingRepo] = useState(false)
@@ -1055,6 +1058,28 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
                 </Button>
               </div>
 
+              {/* Transfer Repository Row */}
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Transfer ownership</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Transfer this repository to another user or to an organization where you have admin rights.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="repo-transfer-btn"
+                  onClick={() => setTransferModalOpen(true)}
+                  className="shrink-0 text-xs text-amber-500 hover:bg-amber-500/10 border-amber-500/30"
+                >
+                  Transfer ownership
+                </Button>
+              </div>
+
               {/* Delete Repository Row */}
               <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-destructive/5">
                 <div className="space-y-1">
@@ -1219,6 +1244,18 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({
         onSuccess={(newName) => {
           if (onRepoUpdated) onRepoUpdated()
           window.location.hash = `#/${owner}/${newName}/settings`
+        }}
+      />
+
+      {/* Transfer Repository Modal */}
+      <TransferRepoModal
+        isOpen={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        owner={owner}
+        repoName={repoName}
+        onSuccess={(newOwner, targetRepo) => {
+          if (onRepoUpdated) onRepoUpdated()
+          window.location.hash = `#/${newOwner}/${targetRepo}/settings`
         }}
       />
       {/* Add Deploy Key Dialog */}

@@ -137,6 +137,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	needsWrite := isReceive || isLFSWrite
+	if needsWrite && repo.Archived {
+		http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+		return
+	}
 	allowed, err := s.store.CheckRepoAccess(ctx, repo, userID, needsWrite)
 	if err != nil || !allowed {
 		http.Error(w, "Access denied", http.StatusForbidden)

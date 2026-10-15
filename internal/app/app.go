@@ -705,6 +705,125 @@ func Open(cfg config.Config) (*App, error) {
 		})
 	})
 
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/transfer", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+
+		if repo.Archived {
+			http.Error(w, "Repository is archived and cannot be transferred until unarchived", http.StatusForbidden)
+			return
+		}
+
+		var req struct {
+			NewOwner    string `json:"new_owner"`
+			ConfirmName string `json:"confirm_name"`
+			SudoSecret  string `json:"sudo_secret"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		targetOwner := strings.TrimSpace(req.NewOwner)
+		if targetOwner == "" {
+			http.Error(w, "Target owner namespace cannot be empty", http.StatusBadRequest)
+			return
+		}
+		if strings.EqualFold(targetOwner, owner) {
+			http.Error(w, "Target owner cannot be the current owner", http.StatusBadRequest)
+			return
+		}
+
+		expectedConfirm := owner + "/" + name
+		cleanConfirm := strings.TrimSpace(req.ConfirmName)
+		if cleanConfirm != expectedConfirm && cleanConfirm != name {
+			http.Error(w, fmt.Sprintf("Confirmation required: please type %q to transfer repository", expectedConfirm), http.StatusBadRequest)
+			return
+		}
+
+		cleanSecret := strings.TrimSpace(req.SudoSecret)
+		if cleanSecret == "" {
+			http.Error(w, "Sudo mode security authentication (password or personal access key) is required to transfer repository", http.StatusForbidden)
+			return
+		}
+
+		// Sudo mode verification
+		count, _ := db.CountUsers(r.Context())
+		if count > 0 {
+			var valid bool
+			if _, err := db.GetAPIKeyByHash(r.Context(), auth.HashCredential(cleanSecret)); err == nil {
+				valid = true
+			}
+			if !valid {
+				if user, uerr := db.GetUserByLogin(r.Context(), owner); uerr == nil && user.PasswordHash != "" {
+					if auth.CheckPassword(cleanSecret, user.PasswordHash) {
+						valid = true
+					}
+				}
+			}
+			if !valid {
+				http.Error(w, "Invalid security credentials for sudo mode", http.StatusForbidden)
+				return
+			}
+		}
+
+		// Check target namespace exists
+		if _, err := db.GetNamespaceBySlug(r.Context(), targetOwner); err != nil {
+			http.Error(w, fmt.Sprintf("Target namespace %q does not exist", targetOwner), http.StatusNotFound)
+			return
+		}
+
+		// Check if destination repository already exists
+		if _, err := db.GetRepo(r.Context(), targetOwner, name); err == nil {
+			http.Error(w, fmt.Sprintf("Repository %s/%s already exists in destination namespace", targetOwner, name), http.StatusConflict)
+			return
+		}
+
+		// Transfer Git repo on disk
+		if err := git.Transfer(owner, targetOwner, name); err != nil {
+			http.Error(w, "Failed to move Git repository directory on disk: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Transfer in database
+		if err := db.TransferRepo(r.Context(), owner, targetOwner, name); err != nil {
+			http.Error(w, "Failed to update repository namespace in database: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = audit.Log(audit.Event{
+			Actor:     "web-user",
+			ActorType: "user",
+			Action:    "repo.transferred",
+			Resource:  targetOwner + "/" + name,
+			Severity:  audit.SeverityWarning,
+			Details:   fmt.Sprintf("Repository ownership transferred from %s/%s to %s/%s", owner, name, targetOwner, name),
+		})
+
+		newRepo, err := db.GetRepo(r.Context(), targetOwner, name)
+		if err != nil {
+			http.Error(w, "Failed to load transferred repository: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":   true,
+			"repo": newRepo,
+		})
+	})
+
 	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/collaborators", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -778,6 +897,10 @@ func Open(cfg config.Config) (*App, error) {
 		repo, err := db.GetRepo(r.Context(), owner, name)
 		if err != nil {
 			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
 		}
 
@@ -854,6 +977,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 		login := r.PathValue("login")
 		user, err := db.GetUserByLogin(r.Context(), login)
 		if err != nil {
@@ -912,6 +1039,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 		var req struct {
 			Title    string `json:"title"`
 			Key      string `json:"key"`
@@ -948,6 +1079,12 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
 		}
 		id := r.PathValue("id")
@@ -1000,6 +1137,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 		var req struct {
 			URL         string   `json:"url"`
 			ContentType string   `json:"content_type"`
@@ -1045,6 +1186,12 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
 		}
 		id := r.PathValue("id")
@@ -1301,6 +1448,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 
 		var req struct {
 			Title  string   `json:"title"`
@@ -1410,6 +1561,10 @@ func Open(cfg config.Config) (*App, error) {
 		repo, err := db.GetRepo(r.Context(), owner, name)
 		if err != nil {
 			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
 		}
 		num, err := strconv.Atoi(r.PathValue("number"))
@@ -1686,6 +1841,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 		var req struct {
 			Title string `json:"title"`
 			Head  string `json:"head"`
@@ -1810,6 +1969,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 		num, err := strconv.Atoi(r.PathValue("number"))
 		if err != nil {
 			http.Error(w, "Invalid PR number", http.StatusBadRequest)
@@ -1880,6 +2043,10 @@ func Open(cfg config.Config) (*App, error) {
 		repo, err := db.GetRepo(r.Context(), owner, name)
 		if err != nil {
 			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
 			return
 		}
 		num, err := strconv.Atoi(r.PathValue("number"))
@@ -2070,6 +2237,10 @@ func Open(cfg config.Config) (*App, error) {
 			http.Error(w, "Repository not found", http.StatusNotFound)
 			return
 		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 
 		var req struct {
 			TagName         string `json:"tag_name"`
@@ -2150,6 +2321,12 @@ func Open(cfg config.Config) (*App, error) {
 	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/releases/{id}", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
 		id := r.PathValue("id")
 		if err := db.DeleteRelease(r.Context(), id); err != nil {
 			http.Error(w, "Failed to delete release: "+err.Error(), http.StatusInternalServerError)

@@ -1708,6 +1708,31 @@ export async function updateRepoSettings(
   return res.json()
 }
 
+export async function transferRepository(
+  owner: string,
+  name: string,
+  payload: {
+    new_owner: string
+    confirm_name: string
+    sudo_secret: string
+  }
+): Promise<{ ok: boolean; repo?: any }> {
+  if (isDemoModeActive()) {
+    return { ok: true }
+  }
+
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/transfer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || 'Failed to transfer repository')
+  }
+  return res.json()
+}
+
 export async function getCollaborators(owner: string, name: string): Promise<CollaboratorItem[]> {
   if (isDemoModeActive()) {
     return [

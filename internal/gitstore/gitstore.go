@@ -111,6 +111,23 @@ func (s *Store) Rename(namespaceSlug, oldName, newName string) error {
 	return os.Rename(oldPath, newPath)
 }
 
+// Transfer moves a bare repository directory on disk from oldNamespaceSlug/repoName.git to newNamespaceSlug/repoName.git.
+func (s *Store) Transfer(oldNamespaceSlug, newNamespaceSlug, repoName string) error {
+	oldPath := s.repoPath(oldNamespaceSlug, repoName)
+	newParent := filepath.Join(s.root, newNamespaceSlug)
+	if err := os.MkdirAll(newParent, 0o755); err != nil {
+		return fmt.Errorf("gitstore: create target namespace dir: %w", err)
+	}
+	newPath := s.repoPath(newNamespaceSlug, repoName)
+	if _, err := os.Stat(oldPath); err != nil {
+		return fmt.Errorf("gitstore: source repo %s/%s does not exist: %w", oldNamespaceSlug, repoName, err)
+	}
+	if _, err := os.Stat(newPath); err == nil {
+		return fmt.Errorf("gitstore: destination repo %s/%s already exists", newNamespaceSlug, repoName)
+	}
+	return os.Rename(oldPath, newPath)
+}
+
 // Clone clones a remote repository into the store as a bare repo and returns it.
 // This is used by GitHub mirroring (Phase 5).
 func (s *Store) Clone(namespaceSlug, repoName, remoteURL string, auth *Auth) (*git.Repository, error) {

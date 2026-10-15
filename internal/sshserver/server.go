@@ -258,6 +258,12 @@ func (s *Server) executeGitCommand(conn *ssh.ServerConn, channel ssh.Channel, ra
 		return
 	}
 
+	if isReceive && repo.Archived {
+		fmt.Fprintf(channel.Stderr(), "exist.io: repository %s/%s is archived and read-only\n", ownerSlug, repoName)
+		sendExitStatus(channel, 1)
+		return
+	}
+
 	userID := conn.Permissions.Extensions["user_id"]
 	deployKeyID := conn.Permissions.Extensions["deploy_key_id"]
 	if deployKeyID != "" {

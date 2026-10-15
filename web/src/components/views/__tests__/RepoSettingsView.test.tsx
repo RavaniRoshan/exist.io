@@ -248,4 +248,19 @@ describe('RepoSettingsView', () => {
     const confirmDeleteBtn = screen.getByRole('button', { name: /i understand, delete this repository/i })
     expect(confirmDeleteBtn).not.toBeDisabled()
   })
+
+  it('opens transfer ownership modal from Danger Zone', async () => {
+    render(<RepoSettingsView repo={mockRepo} />)
+
+    const dangerTab = screen.getByRole('button', { name: /danger zone/i })
+    fireEvent.click(dangerTab)
+
+    const transferBtn = screen.getByTestId('repo-transfer-btn')
+    expect(transferBtn).toBeInTheDocument()
+    fireEvent.click(transferBtn)
+
+    expect(screen.getByText('Transfer repository ownership')).toBeInTheDocument()
+    expect(screen.getByTestId('transfer-owner-input')).toBeInTheDocument()
+    expect(screen.getByTestId('transfer-confirm-input')).toBeInTheDocument()
+  })
 })

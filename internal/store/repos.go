@@ -309,6 +309,39 @@ func (db *DB) RenameRepo(ctx context.Context, ownerSlug, oldName, newName string
 	return nil
 }
 
+// TransferRepo transfers repository ownership to a different namespace.
+func (db *DB) TransferRepo(ctx context.Context, oldOwnerSlug, newOwnerSlug, repoName string) error {
+	oldOwnerSlug = strings.TrimSpace(oldOwnerSlug)
+	newOwnerSlug = strings.TrimSpace(newOwnerSlug)
+	repoName = strings.TrimSpace(repoName)
+	if newOwnerSlug == "" || repoName == "" {
+		return fmt.Errorf("owner and repo name cannot be empty")
+	}
+	if strings.EqualFold(oldOwnerSlug, newOwnerSlug) {
+		return fmt.Errorf("target owner is the same as current owner")
+	}
+
+	targetNs, err := db.GetNamespaceBySlug(ctx, newOwnerSlug)
+	if err != nil {
+		return fmt.Errorf("target owner namespace %q not found: %w", newOwnerSlug, err)
+	}
+
+	newFullName := newOwnerSlug + "/" + repoName
+	res, err := db.sql.ExecContext(ctx, `UPDATE repos SET namespace_id = ?, full_name = ?, updated_at = ?
+		WHERE namespace_id = (SELECT id FROM namespaces WHERE slug = ?) AND name = ?`,
+		targetNs.ID, newFullName, now(), oldOwnerSlug, repoName)
+	if err != nil {
+		if isConflict(err) {
+			return fmt.Errorf("%w: repository %s already exists in target namespace", ErrConflict, newFullName)
+		}
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // RepoUpdate is a partial repo update; nil fields are left unchanged.
 type RepoUpdate struct {
 	Name                *string

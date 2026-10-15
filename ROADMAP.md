@@ -97,10 +97,11 @@ Achieving pixel-accurate developer ergonomics and end-user workflow parity with 
 - [x] **Repository Creation & Preset Templates Engine:** In-modal creation with automated README initialization, `.gitignore` templates (Go, Node, Python, Rust), and SPDX license generation (MIT, Apache-2.0, BSD-3-Clause).
 - [x] **Danger Zone Sudo Mode Security (`ChangeVisibilityModal`):** Multi-step consequence warnings, repository path confirmation string, and Sudo Mode credential challenge (password, API key, cluster admin token).
 - [x] **Atomic Repository Rename (`RenameRepoModal`):** Atomic rename across SQLite WAL and bare Git object directories on disk with full audit logging.
-- [x] **Repository Archival Read-Only Freeze (`ArchiveRepoModal`):** Complete repository lock preventing pushes and edits, accompanied by read-only notice banner in repository header.
+- [x] **Repository Archival Read-Only Freeze (`ArchiveRepoModal`):** Complete repository freeze preventing Smart-HTTP and SSH pushes, issue/PR creation, PR merges, comments, releases, and hook alterations with persistent read-only notice banner.
+- [x] **Repository Transfer Ownership (`TransferRepoModal`):** Sudo mode credential challenge, repository path confirmation string, atomic disk directory relocation across namespaces, and full preservation of git objects, issues, PRs, deploy keys, and webhooks.
 - [x] **Repository Deploy Keys & SSH Isolation:** OpenSSH public key enrollment, SHA-256 fingerprinting, strict repository UUID isolation, and read-only push rejection in embedded pure-Go SSH server.
 - [x] **Repository Webhooks & Delivery History:** Event subscriptions (push, pull_request, issues, release), HMAC-SHA256 signatures, test ping dispatch, HTTP response inspection drawer, and 1-click redeliver.
-- [x] **100% Comprehensive Unit Test Coverage:** 128 automated unit tests across 35 suites in Vitest with zero failures and verified production bundle build.
+- [x] **100% Comprehensive Unit Test Coverage:** 133 automated unit tests across 36 suites in Vitest with zero failures and verified production bundle build.
 
 ---
 

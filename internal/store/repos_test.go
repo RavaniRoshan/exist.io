@@ -137,6 +137,22 @@ func TestRepoUpdate(t *testing.T) {
 	if _, err := db.GetRepo(ctx, "acme", "w"); err != ErrNotFound {
 		t.Errorf("GetRepo(oldName) = %v, want ErrNotFound", err)
 	}
+
+	// Test repository transfer
+	seedNamespace(t, db, "initech")
+	if err := db.TransferRepo(ctx, "acme", "initech", "quantum"); err != nil {
+		t.Fatalf("TransferRepo: %v", err)
+	}
+	transferred, err := db.GetRepo(ctx, "initech", "quantum")
+	if err != nil {
+		t.Fatalf("GetRepo(initech/quantum): %v", err)
+	}
+	if transferred.FullName != "initech/quantum" {
+		t.Errorf("got FullName %q, want initech/quantum", transferred.FullName)
+	}
+	if _, err := db.GetRepo(ctx, "acme", "quantum"); err != ErrNotFound {
+		t.Errorf("GetRepo(acme/quantum) = %v, want ErrNotFound", err)
+	}
 }
 
 func TestListReposPagination(t *testing.T) {
