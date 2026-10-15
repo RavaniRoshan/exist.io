@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Docs-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.5--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.6--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
   <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
   <img src="https://img.shields.io/badge/LFS-v1%20Batch%20CAS-F05032?style=flat-square&logo=git-lfs&logoColor=white" alt="Git LFS">
@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-76%20Passed%20(21%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/Tests-88%20Passed%20(25%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
 [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)

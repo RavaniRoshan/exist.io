@@ -24,7 +24,7 @@ import { AuditLogs } from '@/components/views/admin/AuditLogs'
 import { SsoConfig } from '@/components/views/admin/SsoConfig'
 import { EnterpriseUsers } from '@/components/views/admin/EnterpriseUsers'
 import { RepoSettingsView } from '@/components/views/RepoSettingsView'
-import { defaultRepo, getRepoInfo } from '@/lib/api'
+import { defaultRepo, getRepoInfo, getRepositories, isDemoModeActive } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function App() {
@@ -46,17 +46,8 @@ export default function App() {
       owner = parts[0]
       name = parts[1]
     }
-    setCurrentRepo({
-      ownerSlug: owner,
-      name: name,
-      description: `Enterprise repository ${owner}/${name}`,
-      defaultBranch: 'main',
-      isPrivate: false,
-      starsCount: 0,
-      forksCount: 0,
-      updatedAt: 'Just now',
-      cloneUrlHttp: `http://${window.location.host}/${owner}/${name}.git`,
-      cloneUrlSsh: `git@${window.location.hostname}:2222/${owner}/${name}.git`,
+    getRepoInfo(owner, name).then((info) => {
+      setCurrentRepo(info)
     })
     setActiveTab('code')
   }
@@ -66,6 +57,25 @@ export default function App() {
     const completed = localStorage.getItem('exist_onboarding_tour_completed')
     if (completed !== 'true') {
       setTourOpen(true)
+    }
+
+    // In live mode, dynamically resolve the active primary repository from cluster
+    if (!isDemoModeActive()) {
+      getRepositories().then((repos) => {
+        if (repos && repos.length > 0) {
+          const first = repos[0]
+          let owner = 'shiva'
+          let name = first.name
+          if (first.full_name && first.full_name.includes('/')) {
+            const parts = first.full_name.split('/')
+            owner = parts[0]
+            name = parts[1]
+          }
+          getRepoInfo(owner, name).then((info) => {
+            setCurrentRepo(info)
+          })
+        }
+      })
     }
   }, [])
 
@@ -255,7 +265,7 @@ export default function App() {
             </a>
             <span className="text-border">|</span>
             <span className="text-foreground font-semibold">
-              exist.io v0.4.5-enterprise
+              exist.io v0.4.6-enterprise
             </span>
           </div>
         </div>

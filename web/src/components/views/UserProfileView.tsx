@@ -37,6 +37,7 @@ import {
   deleteUserToken,
   checkActiveSession,
   getRepositories,
+  getCommits,
   deleteRepository,
   isDemoModeActive,
   type UserProfile,
@@ -160,8 +161,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
   // Repositories tab filter & dynamic repos
   const [repoSearch, setRepoSearch] = useState('')
   const [repoTypeFilter, setRepoTypeFilter] = useState<'all' | 'public' | 'private'>('all')
-  const [userRepos, setUserRepos] = useState<PinnedRepo[]>(pinnedReposData)
+  const [userRepos, setUserRepos] = useState<PinnedRepo[]>(() => (isDemoModeActive() ? pinnedReposData : []))
   const [isCreateRepoModalOpen, setIsCreateRepoModalOpen] = useState(false)
+  const [liveCommitCount, setLiveCommitCount] = useState(0)
 
   // Load initial session, keys, tokens, and live repos
   useEffect(() => {
@@ -178,7 +180,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
 
   const loadRepos = () => {
     if (!isDemoModeActive()) {
-      getRepositories().then((live) => {
+      getRepositories().then(async (live) => {
         if (live && live.length > 0) {
           setUserRepos(
             live.map((r) => ({
@@ -192,6 +194,17 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
               isPrivate: r.is_private,
             }))
           )
+
+          let count = 0
+          for (const r of live) {
+            const owner = r.full_name?.split('/')[0] || 'shiva'
+            const cmts = await getCommits(owner, r.name)
+            count += cmts.length
+          }
+          setLiveCommitCount(count)
+        } else {
+          setUserRepos([])
+          setLiveCommitCount(0)
         }
       })
     }
@@ -217,7 +230,12 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
       const days: number[] = []
       for (let d = 0; d < 7; d++) {
         if (isLive) {
-          days.push(0)
+          // In live production mode, reflect real commits on recent calendar blocks
+          if (liveCommitCount > 0 && w === 51 && d < liveCommitCount) {
+            days.push(Math.min(3, Math.max(1, liveCommitCount)))
+          } else {
+            days.push(0)
+          }
         } else {
           seed = (seed * 9301 + 49297) % 233280
           const rand = seed / 233280
@@ -230,7 +248,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
       weeks.push(days)
     }
     return weeks
-  }, [])
+  }, [liveCommitCount])
 
   const handleAddSSHKey = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -561,7 +579,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-foreground">
-                    {isDemoModeActive() || userRepos.length > 0 ? '2,842 contributions in the last year' : '0 contributions in the last year'}
+                    {isDemoModeActive() ? '2,842 contributions in the last year' : `${liveCommitCount} ${liveCommitCount === 1 ? 'contribution' : 'contributions'} in the last year`}
                   </h3>
                   <div className="text-xs text-muted-foreground hover:underline cursor-pointer">
                     Contribution settings ▾

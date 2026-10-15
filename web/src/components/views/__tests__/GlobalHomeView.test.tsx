@@ -2,6 +2,15 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import React from 'react'
 import { GlobalHomeView } from '../GlobalHomeView'
+import * as api from '@/lib/api'
+
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof api>('@/lib/api')
+  return {
+    ...actual,
+    isDemoModeActive: vi.fn().mockReturnValue(true),
+  }
+})
 
 describe('GlobalHomeView', () => {
   it('renders top repositories and filters repositories based on search input', () => {

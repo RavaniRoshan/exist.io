@@ -8,6 +8,7 @@ vi.mock('@/lib/api', async () => {
   const actual = await vi.importActual<typeof api>('@/lib/api')
   return {
     ...actual,
+    isDemoModeActive: vi.fn().mockReturnValue(true),
     checkActiveSession: vi.fn().mockResolvedValue({
       authenticated: true,
       user: {

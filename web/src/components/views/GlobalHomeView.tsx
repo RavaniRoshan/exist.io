@@ -22,9 +22,11 @@ import { CreateRepoModal } from '@/components/modals/CreateRepoModal'
 import {
   getRepositories,
   getAgentActivities,
+  getCommits,
+  getReleases,
+  getPullRequests,
   isDemoModeActive,
   type RepositoryRecord,
-  type AgentActivityItem,
 } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -95,6 +97,69 @@ const enterpriseFeed: ActivityEvent[] = [
   },
 ]
 
+const defaultDemoRepos: RepositoryRecord[] = [
+  {
+    id: 'repo-1',
+    name: 'exist.io',
+    full_name: 'shiva/exist.io',
+    default_branch: 'main',
+    visibility: 'public',
+    is_private: false,
+    clone_url: 'http://localhost:8080/shiva/exist.io.git',
+    web_url: 'http://localhost:8080/shiva/exist.io',
+    description: 'Sovereign GitHub Enterprise alternative with MCP',
+    updated_at: 'Just now',
+  },
+  {
+    id: 'repo-2',
+    name: 'agentic-mcp-bridge',
+    full_name: 'shiva/agentic-mcp-bridge',
+    default_branch: 'main',
+    visibility: 'public',
+    is_private: false,
+    clone_url: 'http://localhost:8080/shiva/agentic-mcp-bridge.git',
+    web_url: 'http://localhost:8080/shiva/agentic-mcp-bridge',
+    description: '35+ Git operations over Model Context Protocol',
+    updated_at: '2 hours ago',
+  },
+  {
+    id: 'repo-3',
+    name: 'sqlite-git-wal',
+    full_name: 'shiva/sqlite-git-wal',
+    default_branch: 'main',
+    visibility: 'public',
+    is_private: false,
+    clone_url: 'http://localhost:8080/shiva/sqlite-git-wal.git',
+    web_url: 'http://localhost:8080/shiva/sqlite-git-wal',
+    description: 'Transactional ref storage and cryptographic audit ledger',
+    updated_at: 'Yesterday',
+  },
+  {
+    id: 'repo-4',
+    name: 'iac-terraform-enterprise',
+    full_name: 'shiva/iac-terraform-enterprise',
+    default_branch: 'main',
+    visibility: 'public',
+    is_private: false,
+    clone_url: 'http://localhost:8080/shiva/iac-terraform-enterprise.git',
+    web_url: 'http://localhost:8080/shiva/iac-terraform-enterprise',
+    description: 'Air-gapped multi-cloud IaC provisioning',
+    updated_at: '3 days ago',
+  },
+  {
+    id: 'repo-5',
+    name: 'enterprise-auth-scim',
+    full_name: 'shiva/enterprise-auth-scim',
+    default_branch: 'main',
+    visibility: 'private',
+    is_private: true,
+    clone_url: 'http://localhost:8080/shiva/enterprise-auth-scim.git',
+    web_url: 'http://localhost:8080/shiva/enterprise-auth-scim',
+    description: 'SAML 2.0 and SCIM 2.0 enterprise identity sync',
+    updated_at: '5 days ago',
+  },
+]
+
 export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
   onSelectRepo,
   onSelectTab,
@@ -107,96 +172,102 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Real or sandbox repositories
-  const [repos, setRepos] = useState<RepositoryRecord[]>([
-    {
-      id: 'repo-1',
-      name: 'exist.io',
-      full_name: 'shiva/exist.io',
-      default_branch: 'main',
-      visibility: 'public',
-      is_private: false,
-      clone_url: 'http://localhost:8080/shiva/exist.io.git',
-      web_url: 'http://localhost:8080/shiva/exist.io',
-      description: 'Sovereign GitHub Enterprise alternative with MCP',
-      updated_at: 'Just now',
-    },
-    {
-      id: 'repo-2',
-      name: 'agentic-mcp-bridge',
-      full_name: 'shiva/agentic-mcp-bridge',
-      default_branch: 'main',
-      visibility: 'public',
-      is_private: false,
-      clone_url: 'http://localhost:8080/shiva/agentic-mcp-bridge.git',
-      web_url: 'http://localhost:8080/shiva/agentic-mcp-bridge',
-      description: '35+ Git operations over Model Context Protocol',
-      updated_at: '2 hours ago',
-    },
-    {
-      id: 'repo-3',
-      name: 'sqlite-git-wal',
-      full_name: 'shiva/sqlite-git-wal',
-      default_branch: 'main',
-      visibility: 'public',
-      is_private: false,
-      clone_url: 'http://localhost:8080/shiva/sqlite-git-wal.git',
-      web_url: 'http://localhost:8080/shiva/sqlite-git-wal',
-      description: 'Transactional ref storage and cryptographic audit ledger',
-      updated_at: 'Yesterday',
-    },
-    {
-      id: 'repo-4',
-      name: 'iac-terraform-enterprise',
-      full_name: 'shiva/iac-terraform-enterprise',
-      default_branch: 'main',
-      visibility: 'public',
-      is_private: false,
-      clone_url: 'http://localhost:8080/shiva/iac-terraform-enterprise.git',
-      web_url: 'http://localhost:8080/shiva/iac-terraform-enterprise',
-      description: 'Air-gapped multi-cloud IaC provisioning',
-      updated_at: '3 days ago',
-    },
-    {
-      id: 'repo-5',
-      name: 'enterprise-auth-scim',
-      full_name: 'shiva/enterprise-auth-scim',
-      default_branch: 'main',
-      visibility: 'private',
-      is_private: true,
-      clone_url: 'http://localhost:8080/shiva/enterprise-auth-scim.git',
-      web_url: 'http://localhost:8080/shiva/enterprise-auth-scim',
-      description: 'SAML 2.0 and SCIM 2.0 enterprise identity sync',
-      updated_at: '5 days ago',
-    },
-  ])
+  const [repos, setRepos] = useState<RepositoryRecord[]>(() => (isDemoModeActive() ? defaultDemoRepos : []))
 
   // Real or sandbox events
-  const [events, setEvents] = useState<ActivityEvent[]>(enterpriseFeed)
+  const [events, setEvents] = useState<ActivityEvent[]>(() => (isDemoModeActive() ? enterpriseFeed : []))
 
   useEffect(() => {
-    // If running in live production mode, fetch live cluster repositories and agent activities
+    // If running in live production mode, fetch live cluster repositories and aggregate activities
     if (!isDemoModeActive()) {
-      getRepositories().then((liveRepos) => {
+      getRepositories().then(async (liveRepos) => {
         if (liveRepos && liveRepos.length > 0) {
           setRepos(liveRepos)
+
+          const combinedEvents: ActivityEvent[] = []
+
+          // 1. Fetch agent activities
+          try {
+            const acts = await getAgentActivities()
+            if (acts && acts.length > 0) {
+              acts.forEach((a, idx) => {
+                combinedEvents.push({
+                  id: a.id || `agent-${idx}`,
+                  type: 'agent',
+                  actor: a.agentName || 'exist-agent',
+                  action: `executed ${a.toolName}`,
+                  target: typeof a.requestPayload?.resource === 'string' ? a.requestPayload.resource : 'repository',
+                  timestamp: a.timestamp || 'Recently',
+                  details: a.responseSummary,
+                })
+              })
+            }
+          } catch {}
+
+          // 2. Fetch recent commits from primary repo
+          try {
+            const first = liveRepos[0]
+            const owner = first.full_name?.split('/')[0] || 'shiva'
+            const commits = await getCommits(owner, first.name)
+            if (commits && commits.length > 0) {
+              commits.slice(0, 5).forEach((c) => {
+                combinedEvents.push({
+                  id: `commit-${c.sha}`,
+                  type: 'commit',
+                  actor: c.author.name,
+                  action: 'pushed commit to branch',
+                  target: `${first.full_name || first.name} (${first.default_branch || 'main'})`,
+                  timestamp: c.timestamp,
+                  details: c.message,
+                  sha: c.shortSha,
+                })
+              })
+            }
+          } catch {}
+
+          // 3. Fetch releases from primary repo
+          try {
+            const first = liveRepos[0]
+            const owner = first.full_name?.split('/')[0] || 'shiva'
+            const releases = await getReleases(owner, first.name)
+            if (releases && releases.length > 0) {
+              releases.slice(0, 3).forEach((rel) => {
+                combinedEvents.push({
+                  id: `rel-${rel.id}`,
+                  type: 'release',
+                  actor: rel.author || 'shiva',
+                  action: 'published enterprise release',
+                  target: rel.tagName,
+                  timestamp: rel.publishedAt || 'Recently',
+                  details: rel.body || `${rel.name} release archive`,
+                })
+              })
+            }
+          } catch {}
+
+          // 4. Fetch PRs from primary repo
+          try {
+            const first = liveRepos[0]
+            const owner = first.full_name?.split('/')[0] || 'shiva'
+            const prs = await getPullRequests(owner, first.name)
+            if (prs && prs.length > 0) {
+              prs.slice(0, 5).forEach((p) => {
+                combinedEvents.push({
+                  id: `pr-${p.number}`,
+                  type: 'pr',
+                  actor: p.author || 'shiva',
+                  action: p.state === 'merged' ? 'merged pull request' : p.state === 'closed' ? 'closed pull request' : 'opened pull request',
+                  target: `#${p.number} ${p.title}`,
+                  timestamp: p.createdAt || 'Recently',
+                  details: p.body,
+                })
+              })
+            }
+          } catch {}
+
+          setEvents(combinedEvents)
         } else {
           setRepos([])
-        }
-      })
-
-      getAgentActivities().then((acts: AgentActivityItem[]) => {
-        if (acts && acts.length > 0) {
-          const liveEvents: ActivityEvent[] = acts.map((a, idx) => ({
-            id: a.id || `live-${idx}`,
-            type: 'agent',
-            actor: a.agentName || 'exist-agent',
-            action: `executed ${a.toolName}`,
-            target: typeof a.requestPayload?.resource === 'string' ? a.requestPayload.resource : 'repository',
-            timestamp: a.timestamp || 'Recently',
-            details: a.responseSummary,
-          }))
-          setEvents(liveEvents)
-        } else {
           setEvents([])
         }
       })

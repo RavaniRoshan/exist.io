@@ -176,7 +176,7 @@ describe('App End-to-End Navigation', () => {
     await waitFor(() => {
       expect(screen.getByText('Roshan Ravani')).toBeInTheDocument()
       expect(screen.getByText('@shiva')).toBeInTheDocument()
-      expect(screen.getByText(/2,842 contributions in the last year/i)).toBeInTheDocument()
+      expect(screen.getByText(/contributions in the last year/i)).toBeInTheDocument()
     })
   })
 

@@ -99,6 +99,27 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
   }
 
   try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}`)
+    if (res.ok) {
+      const data = await res.json()
+      return {
+        ownerSlug: owner,
+        name: name,
+        description: data.description || 'Enterprise repository on exist.io',
+        defaultBranch: data.defaultBranch || data.default_branch || 'main',
+        isPrivate: Boolean(data.isPrivate || data.is_private || data.visibility === 'private'),
+        starsCount: data.starsCount || data.stars_count || 0,
+        forksCount: data.forksCount || data.forks_count || 0,
+        updatedAt: data.updatedAt || data.updated_at || 'Recently',
+        cloneUrlHttp: data.cloneUrl || data.clone_url || `http://${window.location.host}/${owner}/${name}.git`,
+        cloneUrlSsh: `git@${window.location.hostname}:2222/${owner}/${name}.git`,
+      }
+    }
+  } catch {
+    // fallback to origin
+  }
+
+  try {
     const res = await fetch(`/v1/origin/repos/${owner}/${name}`, {
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
     })
@@ -108,13 +129,13 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
       ownerSlug: owner,
       name: name,
       description: data.description || 'Enterprise repository on exist.io',
-      defaultBranch: data.default_branch || 'main',
-      isPrivate: Boolean(data.private),
-      starsCount: data.stars_count || 0,
-      forksCount: data.forks_count || 0,
-      updatedAt: data.updated_at || 'Recently',
-      cloneUrlHttp: `http://${window.location.host}/${owner}/${name}.git`,
-      cloneUrlSsh: `git@${window.location.hostname}:${owner}/${name}.git`,
+      defaultBranch: data.defaultBranch || data.default_branch || 'main',
+      isPrivate: Boolean(data.isPrivate || data.is_private || data.visibility === 'private'),
+      starsCount: data.starsCount || data.stars_count || 0,
+      forksCount: data.forksCount || data.forks_count || 0,
+      updatedAt: data.updatedAt || data.updated_at || 'Recently',
+      cloneUrlHttp: data.cloneUrl || data.clone_url || `http://${window.location.host}/${owner}/${name}.git`,
+      cloneUrlSsh: `git@${window.location.hostname}:2222/${owner}/${name}.git`,
     }
   } catch (err) {
     console.warn(`[exist.io API] Production fetch for repo ${owner}/${name} failed, presenting empty shell:`, err)
@@ -128,7 +149,7 @@ export async function getRepoInfo(owner: string, name: string): Promise<RepoInfo
       forksCount: 0,
       updatedAt: 'Just now',
       cloneUrlHttp: `http://${window.location.host}/${owner}/${name}.git`,
-      cloneUrlSsh: `git@${window.location.hostname}:${owner}/${name}.git`,
+      cloneUrlSsh: `git@${window.location.hostname}:2222/${owner}/${name}.git`,
     }
   }
 }
@@ -303,16 +324,19 @@ export async function getFiles(owner: string, name: string, ref = 'main', path =
     if (ref) params.set('ref', ref)
     if (path) params.set('path', path)
 
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/contents?${params.toString()}`, {
-      headers: getAuthHeader(),
-    })
+    let res = await fetch(`/api/v1/repos/${owner}/${name}/contents?${params.toString()}`)
+    if (!res.ok) {
+      res = await fetch(`/v1/origin/repos/${owner}/${name}/contents?${params.toString()}`, {
+        headers: getAuthHeader(),
+      })
+    }
     if (!res.ok) return []
     const data = await res.json()
     if (Array.isArray(data?.entries)) {
       return data.entries.map((f: any) => ({
         name: f.name || f.path,
         path: f.path,
-        type: f.type === 'dir' ? 'tree' : 'blob',
+        type: (f.type === 'dir' || f.type === 'tree') ? 'tree' : 'blob',
         size: f.size ? parseInt(f.size, 10) : 0,
         lastCommitMessage: 'Commit update',
         lastCommitDate: 'Recently',
@@ -332,9 +356,12 @@ export async function getFileContent(owner: string, name: string, path: string, 
 
   try {
     const params = new URLSearchParams({ path, ref })
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/contents?${params.toString()}`, {
-      headers: getAuthHeader(),
-    })
+    let res = await fetch(`/api/v1/repos/${owner}/${name}/contents?${params.toString()}`)
+    if (!res.ok) {
+      res = await fetch(`/v1/origin/repos/${owner}/${name}/contents?${params.toString()}`, {
+        headers: getAuthHeader(),
+      })
+    }
     if (!res.ok) return ''
     const data = await res.json()
     if (data.encoding === 'base64' && data.content) {
@@ -353,9 +380,12 @@ export async function getCommits(owner: string, name: string, ref = 'main'): Pro
   }
 
   try {
-    const res = await fetch(`/v1/origin/repos/${owner}/${name}/commits?ref=${ref}`, {
-      headers: getAuthHeader(),
-    })
+    let res = await fetch(`/api/v1/repos/${owner}/${name}/commits?ref=${ref}`)
+    if (!res.ok) {
+      res = await fetch(`/v1/origin/repos/${owner}/${name}/commits?ref=${ref}`, {
+        headers: getAuthHeader(),
+      })
+    }
     if (!res.ok) return []
     const data = await res.json()
     if (!Array.isArray(data?.commits)) return []

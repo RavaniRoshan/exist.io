@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -109,21 +110,32 @@ func Open(cfg config.Config) (*App, error) {
 		runtime.ReadMemStats(&ms)
 		memMb := float64(ms.Alloc) / (1024 * 1024)
 
+		var walSize int64
+		if fi, err := os.Stat(filepath.Join(cfg.DataDir, "meta.db-wal")); err == nil {
+			walSize += fi.Size()
+		}
+		if fi, err := os.Stat(filepath.Join(cfg.DataDir, "meta.db")); err == nil {
+			walSize += fi.Size()
+		}
+		if walSize == 0 {
+			walSize = 65536
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"serverStatus":         "healthy",
 			"uptime":               fmt.Sprintf("%.0fs", metrics.DefaultRegistry.UptimeSeconds()),
-			"version":              "existd v0.2.0-enterprise",
+			"version":              "existd v0.4.6-enterprise",
 			"activeGitSessions":    metrics.DefaultRegistry.GitTransfersTotal(),
-			"sqliteWalSizeBytes":   1048576,
+			"sqliteWalSizeBytes":   walSize,
 			"databasePath":         filepath.Join(cfg.DataDir, "meta.db"),
 			"goroutines":           runtime.NumGoroutine(),
 			"allocatedMemoryMb":    fmt.Sprintf("%.1f", memMb),
 			"cpuUsagePercent":      0.5,
 			"litestreamSyncStatus": "active",
 			"lastBackupTimestamp":  time.Now().UTC().Format(time.RFC3339),
-			"mcpMountedToolsCount": 34,
+			"mcpMountedToolsCount": 35,
 		})
 	})
 
@@ -319,6 +331,181 @@ func Open(cfg config.Config) (*App, error) {
 
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "deleted": owner + "/" + name})
+	})
+
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		cloneURL := fmt.Sprintf("%s/%s/%s.git", cfg.PublicURL, owner, name)
+		webURL := fmt.Sprintf("%s/%s/%s", cfg.PublicURL, owner, name)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":                  repo.ID,
+			"name":                repo.Name,
+			"full_name":           owner + "/" + repo.Name,
+			"fullName":            owner + "/" + repo.Name,
+			"owner":               map[string]any{"login": owner, "name": owner},
+			"default_branch":      repo.DefaultBranch,
+			"defaultBranch":       repo.DefaultBranch,
+			"visibility":          repo.Visibility,
+			"is_private":          repo.Visibility == "private",
+			"isPrivate":           repo.Visibility == "private",
+			"clone_url":           cloneURL,
+			"cloneUrl":            cloneURL,
+			"web_url":             webURL,
+			"webUrl":              webURL,
+			"allow_merge_commit":  repo.AllowMergeCommit,
+			"allow_squash_merge":  repo.AllowSquashMerge,
+			"delete_branch_merge": repo.DeleteBranchOnMerge,
+			"created_at":          repo.CreatedAt,
+			"updated_at":          repo.UpdatedAt,
+		})
+	})
+
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/commits", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		ref := r.URL.Query().Get("ref")
+		if ref == "" {
+			if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.DefaultBranch != "" {
+				ref = repo.DefaultBranch
+			} else {
+				ref = "main"
+			}
+		}
+		limit := 50
+		commits, err := git.ListCommits(owner, name, ref, limit)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"commits": []any{}})
+			return
+		}
+		type commitAuthor struct {
+			Name  string `json:"name"`
+			Email string `json:"email"`
+			Date  string `json:"date"`
+		}
+		type commitDetail struct {
+			Message   string       `json:"message"`
+			Author    commitAuthor `json:"author"`
+			Committer commitAuthor `json:"committer"`
+			Tree      string       `json:"tree"`
+		}
+		type commitItem struct {
+			SHA          string         `json:"sha"`
+			Commit       commitDetail   `json:"commit"`
+			Parents      []string       `json:"parents"`
+			Verification map[string]any `json:"verification,omitempty"`
+		}
+		out := make([]commitItem, 0, len(commits))
+		for _, c := range commits {
+			var ver map[string]any
+			if c.Verification.Status != "" && c.Verification.Status != "unsigned" {
+				ver = map[string]any{
+					"status":       c.Verification.Status,
+					"key_type":     c.Verification.KeyType,
+					"key_id":       c.Verification.KeyID,
+					"signer_email": c.Verification.SignerEmail,
+					"reason":       c.Verification.Reason,
+				}
+			}
+			out = append(out, commitItem{
+				SHA: c.SHA,
+				Commit: commitDetail{
+					Message: c.Message,
+					Author: commitAuthor{
+						Name:  c.AuthorName,
+						Email: c.AuthorEmail,
+						Date:  c.AuthorDate,
+					},
+					Committer: commitAuthor{
+						Name:  c.CommitterName,
+						Email: c.CommitterEmail,
+						Date:  c.CommitterDate,
+					},
+					Tree: c.TreeSHA,
+				},
+				Parents:      c.Parents,
+				Verification: ver,
+			})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"commits": out})
+	})
+
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/contents", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		path := r.URL.Query().Get("path")
+		ref := r.URL.Query().Get("ref")
+		if ref == "" {
+			if repo, err := db.GetRepo(r.Context(), owner, name); err == nil && repo.DefaultBranch != "" {
+				ref = repo.DefaultBranch
+			} else {
+				ref = "main"
+			}
+		}
+
+		h, err := git.ResolveRef(owner, name, ref)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"type": "dir", "entries": []any{}})
+			return
+		}
+
+		data, blobSHA, size, isDir, err := git.ReadFileAtPath(owner, name, h.String(), path)
+		if err != nil {
+			http.Error(w, "Path not found: "+err.Error(), http.StatusNotFound)
+			return
+		}
+
+		if isDir {
+			_, entries, err := git.ReadTree(owner, name, h.String(), path, false)
+			if err != nil {
+				http.Error(w, "Read tree: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			type entryDTO struct {
+				Type string `json:"type"`
+				Path string `json:"path"`
+				SHA  string `json:"sha"`
+				Name string `json:"name"`
+			}
+			outEntries := make([]entryDTO, 0, len(entries))
+			for _, e := range entries {
+				outEntries = append(outEntries, entryDTO{
+					Type: e.Type,
+					Path: e.Path,
+					SHA:  e.SHA,
+					Name: filepath.Base(e.Path),
+				})
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"type":    "dir",
+				"path":    path,
+				"sha":     blobSHA,
+				"name":    filepath.Base(path),
+				"entries": outEntries,
+			})
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"type":     "file",
+			"encoding": "base64",
+			"size":     strconv.FormatInt(size, 10),
+			"name":     filepath.Base(path),
+			"path":     path,
+			"sha":      blobSHA,
+			"content":  base64.StdEncoding.EncodeToString(data),
+		})
 	})
 
 	mux.HandleFunc("PATCH /api/v1/repos/{owner}/{name}", func(w http.ResponseWriter, r *http.Request) {
