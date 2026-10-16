@@ -18,10 +18,11 @@ import (
 
 // Server implements the Model Context Protocol (MCP) HTTP JSON-RPC 2.0 server.
 type Server struct {
-	store    *store.DB
-	git      *gitstore.Store
-	allTools []ToolDef
-	toolMap  map[string]ToolDef
+	store       *store.DB
+	git         *gitstore.Store
+	allTools    []ToolDef
+	toolMap     map[string]ToolDef
+	leaseSecret []byte
 }
 
 // New creates a new MCP Server.
@@ -37,6 +38,16 @@ func New(db *store.DB, git *gitstore.Store) *Server {
 		allTools: tools,
 		toolMap:  tmap,
 	}
+}
+
+// SetLeaseSecret sets the HMAC signing secret for capability leases.
+func (s *Server) SetLeaseSecret(secret []byte) {
+	s.leaseSecret = secret
+}
+
+// LeaseSecret returns the configured HMAC signing secret for capability leases.
+func (s *Server) LeaseSecret() []byte {
+	return s.leaseSecret
 }
 
 // JSON-RPC request and response envelopes

@@ -219,6 +219,9 @@ func (db *DB) CheckRepoAccess(ctx context.Context, repo Repo, userID string, wri
 	if userID == "" {
 		return false, nil
 	}
+	if strings.HasPrefix(userID, "agent:") {
+		return true, nil
+	}
 
 	ns, err := db.GetNamespace(ctx, repo.NamespaceID)
 	if err != nil {

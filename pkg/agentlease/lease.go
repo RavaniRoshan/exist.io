@@ -14,10 +14,11 @@ import (
 )
 
 var (
-	ErrExpiredLease    = errors.New("agent capability lease has expired")
+	ErrExpiredLease     = errors.New("agent capability lease has expired")
+	ErrRevokedLease     = errors.New("agent capability lease has been revoked")
 	ErrInvalidSignature = errors.New("invalid lease signature")
-	ErrRefNotAllowed   = errors.New("agent is not permitted to mutate this ref under active lease")
-	ErrMalformedToken  = errors.New("malformed lease token")
+	ErrRefNotAllowed    = errors.New("agent is not permitted to mutate this ref under active lease")
+	ErrMalformedToken   = errors.New("malformed lease token")
 )
 
 // Lease represents a short-lived, cryptographically scoped capability granted to an AI coding agent.

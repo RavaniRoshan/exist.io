@@ -2966,6 +2966,9 @@ func Open(cfg config.Config) (*App, error) {
 	mux.Handle("GET /v1/origin/openapi.yaml", openapi.Handler())
 
 	mcpServer := mcp.New(db, git)
+	if cfg.JWTSecret != "" {
+		mcpServer.SetLeaseSecret([]byte(cfg.JWTSecret))
+	}
 	mux.Handle("/mcp", mcpServer.Handler(false))
 	mux.Handle("/mcp/readonly", mcpServer.Handler(true))
 
@@ -2978,6 +2981,9 @@ func Open(cfg config.Config) (*App, error) {
 	lfsServer := gitlfs.New(db, lfsDir, cfg.PublicURL)
 
 	gitTransport := gittransport.NewServer(db, git, lfsServer)
+	if cfg.JWTSecret != "" {
+		gitTransport.SetLeaseSecret([]byte(cfg.JWTSecret))
+	}
 	uiHandler := webui.Handler()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path

@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"exist.io/internal/audit"
 	"exist.io/internal/metrics"
@@ -35,6 +37,51 @@ func PreReceiveHook(r io.Reader, stderr io.Writer) error {
 		if !revRegex.MatchString(oldRev) || !revRegex.MatchString(newRev) {
 			fmt.Fprintf(stderr, "remote: error: Invalid git revision format\n")
 			return fmt.Errorf("invalid git revision format: %s..%s", oldRev, newRev)
+		}
+
+		// Agent capability lease enforcement
+		if os.Getenv("EXIST_LEASE_TOKEN") != "" || os.Getenv("EXIST_LEASE_ID") != "" {
+			if expStr := os.Getenv("EXIST_LEASE_EXPIRES_AT"); expStr != "" {
+				if exp, err := time.Parse(time.RFC3339, expStr); err == nil && time.Now().UTC().After(exp) {
+					fmt.Fprintf(stderr, "remote: error: GH007: Agent capability lease has expired\n")
+					return fmt.Errorf("agent capability lease expired")
+				}
+			}
+
+			// Disallowed ref prefixes (e.g. main, master)
+			if disallowedStr := os.Getenv("EXIST_LEASE_DISALLOWED_REFS"); disallowedStr != "" {
+				disallowed := strings.Split(disallowedStr, ",")
+				for _, dis := range disallowed {
+					if dis != "" && strings.HasPrefix(refName, dis) {
+						fmt.Fprintf(stderr, "remote: error: GH007: Agent capability lease prohibited from modifying ref %s\n", refName)
+						return fmt.Errorf("agent capability lease ref prohibited: %s", refName)
+					}
+				}
+			}
+
+			// Allowed ref prefixes (default: refs/heads/agent/)
+			allowedStr := os.Getenv("EXIST_LEASE_ALLOWED_REFS")
+			if allowedStr == "" {
+				allowedStr = "refs/heads/agent/"
+			}
+			allowed := strings.Split(allowedStr, ",")
+			permitted := false
+			for _, allow := range allowed {
+				if allow != "" && strings.HasPrefix(refName, allow) {
+					permitted = true
+					break
+				}
+			}
+			if !permitted {
+				fmt.Fprintf(stderr, "remote: error: GH007: Agent capability lease violation: ref %s is outside allowed prefixes %v\n", refName, allowed)
+				return fmt.Errorf("agent capability lease ref violation: %s", refName)
+			}
+
+			// Agents under lease cannot delete refs
+			if strings.Trim(newRev, "0") == "" {
+				fmt.Fprintf(stderr, "remote: error: GH007: Agent capability lease does not permit deleting refs (%s)\n", refName)
+				return fmt.Errorf("agent capability lease deletion prohibited")
+			}
 		}
 
 		// Ref deletion: all zeros

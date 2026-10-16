@@ -113,6 +113,9 @@ func EvaluateMerge(
 						continue
 					}
 					checkName, _ := m["name"].(string)
+					if checkName == "" {
+						checkName, _ = m["context"].(string)
+					}
 					groupKey, _ := m["groupKey"].(string)
 					runKey, _ := m["runKey"].(string)
 

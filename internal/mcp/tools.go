@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"exist.io/internal/engine"
 	"exist.io/internal/store"
 	"exist.io/internal/symbolsearch"
+	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
 	"github.com/go-git/go-git/v6/plumbing/object"
 )
@@ -324,6 +326,12 @@ func BuiltinTools() []ToolDef {
 				name := getString(args, "repoName")
 				base := getString(args, "base")
 				head := getString(args, "head")
+				if baseHash, err := s.git.ResolveRef(owner, name, base); err == nil {
+					base = baseHash.String()
+				}
+				if headHash, err := s.git.ResolveRef(owner, name, head); err == nil {
+					head = headHash.String()
+				}
 				return s.git.DiffCommits(owner, name, base, head)
 			},
 		},
@@ -581,6 +589,26 @@ func BuiltinTools() []ToolDef {
 				if err != nil {
 					return nil, err
 				}
+
+				// Evaluate merge rulesets and check runs
+				rulesets, _ := s.store.ListRulesets(ctx, repo.ID)
+				reviews, _ := s.store.ListReviews(ctx, pr.ID)
+				approvedCount := 0
+				for _, rev := range reviews {
+					if !rev.Dismissed && (rev.State == "approved" || rev.State == "approve") {
+						approvedCount++
+					}
+				}
+				checkRuns, _ := s.store.ListCheckRunsForCommit(ctx, repo.ID, pr.HeadSHA, "", "", 100, 0)
+				evalRes := engine.EvaluateMerge(ctx, rulesets, repo.DefaultBranch, pr.BaseRef, "agent", "", approvedCount, checkRuns)
+				if !evalRes.Allowed {
+					var msgs []string
+					for _, b := range evalRes.Blockers {
+						msgs = append(msgs, b.Message)
+					}
+					return nil, fmt.Errorf("merge blocked by ruleset: %s", strings.Join(msgs, "; "))
+				}
+
 				sig := object.Signature{Name: "Exist Agent", Email: "agent@exist.io", When: time.Now().UTC()}
 				commitSHA, err := s.git.Merge(owner, name, pr.BaseRef, pr.HeadRef, method, sig, fmt.Sprintf("Merge PR #%d: %s", pr.Number, pr.Title))
 				if err != nil {
@@ -703,7 +731,7 @@ func BuiltinTools() []ToolDef {
 					ID:            idgen.NewPRComment(),
 					RepoID:        repo.ID,
 					PullRequestID: pr.ID,
-					AuthorUserID:  "usr_agent",
+					AuthorUserID:  "",
 					Body:          body,
 				}
 				if err := s.store.CreateComment(ctx, comment); err != nil {
@@ -1119,6 +1147,523 @@ func BuiltinTools() []ToolDef {
 					}
 				}
 				return symbolsearch.Search(ctx, s.git, owner, name, ref, query, kind, limit)
+			},
+		},
+		// 36. repo_tree (canonical alias for get_git_tree)
+		{
+			Name:        "repo_tree",
+			Description: "Get the directory tree of a repository at a ref",
+			ReadOnly:    true,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug": map[string]any{"type": "string", "description": "Owner namespace"},
+				"repoName":  map[string]any{"type": "string", "description": "Repository name"},
+				"ref":       map[string]any{"type": "string", "description": "Git commit SHA, branch or tag (default: HEAD)"},
+				"path":      map[string]any{"type": "string", "description": "Subdirectory path to list (default: root)"},
+				"recursive": map[string]any{"type": "boolean", "description": "Recursively list subtree"},
+			}, []string{"ownerSlug", "repoName"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				ref := getString(args, "ref")
+				if ref == "" {
+					ref = "HEAD"
+				}
+				path := getString(args, "path")
+				recursive := getBool(args, "recursive")
+				sha, entries, err := s.git.ReadTree(owner, name, ref, path, recursive)
+				if err != nil {
+					return nil, err
+				}
+				return map[string]any{
+					"sha":     sha,
+					"tree":    entries,
+					"entries": len(entries),
+				}, nil
+			},
+		},
+		// 37. file_read (canonical alias for get_file_contents)
+		{
+			Name:        "file_read",
+			Description: "Read the content of a file in a repository at a given ref",
+			ReadOnly:    true,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug": map[string]any{"type": "string", "description": "Owner namespace"},
+				"repoName":  map[string]any{"type": "string", "description": "Repository name"},
+				"path":      map[string]any{"type": "string", "description": "File path in repository"},
+				"ref":       map[string]any{"type": "string", "description": "Commit or branch ref (default: HEAD)"},
+			}, []string{"ownerSlug", "repoName", "path"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				path := getString(args, "path")
+				ref := getString(args, "ref")
+				if ref == "" {
+					ref = "HEAD"
+				}
+				data, sha, size, isDir, err := s.git.ReadFileAtPath(owner, name, ref, path)
+				if err != nil {
+					return nil, err
+				}
+				if isDir {
+					return map[string]any{"type": "dir", "path": path}, nil
+				}
+				return map[string]any{
+					"path":          path,
+					"sha":           sha,
+					"size":          size,
+					"content":       string(data),
+					"base64Content": base64.StdEncoding.EncodeToString(data),
+				}, nil
+			},
+		},
+		// 38. diff_compare (canonical alias for compare_commits)
+		{
+			Name:        "diff_compare",
+			Description: "Compare differences between two commit SHAs or branches",
+			ReadOnly:    true,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug": map[string]any{"type": "string", "description": "Owner namespace"},
+				"repoName":  map[string]any{"type": "string", "description": "Repository name"},
+				"base":      map[string]any{"type": "string", "description": "Base ref or commit SHA"},
+				"head":      map[string]any{"type": "string", "description": "Head ref or commit SHA"},
+			}, []string{"ownerSlug", "repoName", "base", "head"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				base := getString(args, "base")
+				head := getString(args, "head")
+				if baseHash, err := s.git.ResolveRef(owner, name, base); err == nil {
+					base = baseHash.String()
+				}
+				if headHash, err := s.git.ResolveRef(owner, name, head); err == nil {
+					head = headHash.String()
+				}
+				return s.git.DiffCommits(owner, name, base, head)
+			},
+		},
+		// 39. symbol_search (canonical alias for search_symbols)
+		{
+			Name:        "symbol_search",
+			Description: "Search code symbols across repository source files",
+			ReadOnly:    true,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug": map[string]any{"type": "string", "description": "Repository owner namespace"},
+				"repoName":  map[string]any{"type": "string", "description": "Repository name"},
+				"query":     map[string]any{"type": "string", "description": "Symbol name or substring to search for"},
+				"ref":       map[string]any{"type": "string", "description": "Optional branch, tag, or commit SHA (defaults to default branch)"},
+				"kind":      map[string]any{"type": "string", "description": "Optional kind filter: function, method, struct, class, interface, type, constant"},
+				"limit":     map[string]any{"type": "integer", "description": "Maximum number of results to return (default 50)"},
+			}, []string{"ownerSlug", "repoName"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				query := getString(args, "query")
+				ref := getString(args, "ref")
+				kind := getString(args, "kind")
+				limit := getInt(args, "limit")
+				if limit <= 0 {
+					limit = 50
+				}
+				if ref == "" {
+					repo, err := s.store.GetRepo(ctx, owner, name)
+					if err == nil && repo.DefaultBranch != "" {
+						ref = repo.DefaultBranch
+					} else {
+						ref = "HEAD"
+					}
+				}
+				return symbolsearch.Search(ctx, s.git, owner, name, ref, query, kind, limit)
+			},
+		},
+		// 40. pull_request_create (canonical alias for create_pull_request)
+		{
+			Name:        "pull_request_create",
+			Description: "Open a new pull request in a repository",
+			ReadOnly:    false,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug": map[string]any{"type": "string", "description": "Owner namespace"},
+				"repoName":  map[string]any{"type": "string", "description": "Repository name"},
+				"title":     map[string]any{"type": "string", "description": "Pull request title"},
+				"headRef":   map[string]any{"type": "string", "description": "Head branch"},
+				"baseRef":   map[string]any{"type": "string", "description": "Base branch (e.g. main)"},
+				"body":      map[string]any{"type": "string", "description": "Optional body/description"},
+			}, []string{"ownerSlug", "repoName", "title", "headRef", "baseRef"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				repo, err := s.store.GetRepo(ctx, owner, name)
+				if err != nil {
+					return nil, err
+				}
+				head := getString(args, "headRef")
+				base := getString(args, "baseRef")
+				title := getString(args, "title")
+				desc := getString(args, "body")
+				if desc == "" {
+					desc = getString(args, "description")
+				}
+
+				headHash, err := s.git.ResolveRef(owner, name, head)
+				if err != nil {
+					return nil, fmt.Errorf("resolve head ref %q: %w", head, err)
+				}
+				baseHash, err := s.git.ResolveRef(owner, name, base)
+				if err != nil {
+					return nil, fmt.Errorf("resolve base ref %q: %w", base, err)
+				}
+
+				pr := store.PullRequest{
+					ID:      idgen.NewPR(),
+					RepoID:  repo.ID,
+					Title:   title,
+					Body:    desc,
+					State:   "open",
+					HeadRef: head,
+					BaseRef: base,
+					HeadSHA: headHash.String(),
+					BaseSHA: baseHash.String(),
+				}
+				if err := s.store.CreatePullRequest(ctx, &pr); err != nil {
+					return nil, err
+				}
+				return pr, nil
+			},
+		},
+		// 41. thread_comment (post PR top-level comment or inline thread comment)
+		{
+			Name:        "thread_comment",
+			Description: "Post a top-level or inline review comment on a pull request",
+			ReadOnly:    false,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug":  map[string]any{"type": "string", "description": "Owner namespace"},
+				"repoName":   map[string]any{"type": "string", "description": "Repository name"},
+				"pullNumber": map[string]any{"type": "integer", "description": "Pull request number"},
+				"body":       map[string]any{"type": "string", "description": "Comment text"},
+				"path":       map[string]any{"type": "string", "description": "Optional file path for inline review comment"},
+				"line":       map[string]any{"type": "integer", "description": "Optional line number for inline review comment"},
+				"threadId":   map[string]any{"type": "string", "description": "Optional existing thread ID to reply to"},
+			}, []string{"ownerSlug", "repoName", "pullNumber", "body"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				num := getInt(args, "pullNumber")
+				body := getString(args, "body")
+				repo, err := s.store.GetRepo(ctx, owner, name)
+				if err != nil {
+					return nil, err
+				}
+				pr, err := s.store.GetPullRequest(ctx, repo.ID, num)
+				if err != nil {
+					return nil, err
+				}
+
+				threadID := getString(args, "threadId")
+				path := getString(args, "path")
+				line := getInt(args, "line")
+
+				if threadID != "" {
+					comment := store.PRComment{
+						ID:            idgen.NewPRComment(),
+						RepoID:        repo.ID,
+						PullRequestID: pr.ID,
+						ThreadID:      threadID,
+						AuthorUserID:  "",
+						Body:          body,
+					}
+					if err := s.store.CreateComment(ctx, comment); err != nil {
+						return nil, err
+					}
+					return comment, nil
+				}
+
+				if path != "" && line > 0 {
+					thread := store.PRThread{
+						ID:            idgen.NewPRThread(),
+						RepoID:        repo.ID,
+						PullRequestID: pr.ID,
+						Path:          path,
+						StartLine:     line,
+						EndLine:       line,
+						Side:          "RIGHT",
+						HeadSHA:       pr.HeadSHA,
+						BaseSHA:       pr.BaseSHA,
+					}
+					if err := s.store.CreateThread(ctx, thread); err != nil {
+						return nil, err
+					}
+					firstComment := store.PRComment{
+						ID:            idgen.NewPRComment(),
+						RepoID:        repo.ID,
+						PullRequestID: pr.ID,
+						ThreadID:      thread.ID,
+						AuthorUserID:  "",
+						Body:          body,
+						Path:          path,
+						Line:          line,
+						Side:          "RIGHT",
+						CommitSHA:     pr.HeadSHA,
+					}
+					if err := s.store.CreateComment(ctx, firstComment); err != nil {
+						return nil, err
+					}
+					return map[string]any{
+						"thread":  thread,
+						"comment": firstComment,
+					}, nil
+				}
+
+				comment := store.PRComment{
+					ID:            idgen.NewPRComment(),
+					RepoID:        repo.ID,
+					PullRequestID: pr.ID,
+					AuthorUserID:  "",
+					Body:          body,
+				}
+				if err := s.store.CreateComment(ctx, comment); err != nil {
+					return nil, err
+				}
+				return comment, nil
+			},
+		},
+		// 42. status_check_report
+		{
+			Name:        "status_check_report",
+			Description: "Create or update a commit status check run (e.g., CI tests or security lints)",
+			ReadOnly:    false,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug":  map[string]any{"type": "string", "description": "Repository owner namespace"},
+				"repoName":   map[string]any{"type": "string", "description": "Repository name"},
+				"headSha":    map[string]any{"type": "string", "description": "Commit SHA the check applies to"},
+				"name":       map[string]any{"type": "string", "description": "Name of the check run (e.g. ci/test)"},
+				"status":     map[string]any{"type": "string", "description": "Status (queued, in_progress, completed)"},
+				"conclusion": map[string]any{"type": "string", "description": "Conclusion (success, failure, neutral, cancelled, timed_out, skipped)"},
+				"title":      map[string]any{"type": "string", "description": "Output title"},
+				"summary":    map[string]any{"type": "string", "description": "Output summary description"},
+			}, []string{"ownerSlug", "repoName", "headSha", "name"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				headSha := getString(args, "headSha")
+				checkName := getString(args, "name")
+				status := getString(args, "status")
+				if status == "" {
+					status = "completed"
+				}
+				conclusion := getString(args, "conclusion")
+				if conclusion == "" && status == "completed" {
+					conclusion = "success"
+				}
+				title := getString(args, "title")
+				summary := getString(args, "summary")
+
+				repo, err := s.store.GetRepo(ctx, owner, name)
+				if err != nil {
+					return nil, err
+				}
+
+				now := time.Now().UTC().Format(time.RFC3339)
+				checkRun := store.CheckRun{
+					RepoID:            repo.ID,
+					SHA:               headSha,
+					Key:               checkName,
+					Name:              checkName,
+					Status:            status,
+					Conclusion:        conclusion,
+					OutputTitle:       title,
+					OutputSummary:     summary,
+					StartedAt:         now,
+					CompletedAt:       now,
+					ExternalUpdatedAt: now,
+				}
+				saved, outcome, err := s.store.UpsertCheckRun(ctx, checkRun)
+				if err != nil {
+					return nil, fmt.Errorf("upsert check run: %w", err)
+				}
+				return map[string]any{
+					"outcome": outcome,
+					"check":   saved,
+				}, nil
+			},
+		},
+		// 43. pull_request_merge (canonical alias for merge_pull_request with policy enforcement)
+		{
+			Name:        "pull_request_merge",
+			Description: "Merge a pull request with ruleset and status check enforcement",
+			ReadOnly:    false,
+			InputSchema: makeSchema(map[string]any{
+				"ownerSlug":   map[string]any{"type": "string", "description": "Owner namespace"},
+				"repoName":    map[string]any{"type": "string", "description": "Repository name"},
+				"pullNumber":  map[string]any{"type": "integer", "description": "Pull request number"},
+				"mergeMethod": map[string]any{"type": "string", "description": "Merge method (merge, squash)"},
+			}, []string{"ownerSlug", "repoName", "pullNumber"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				owner := getString(args, "ownerSlug")
+				name := getString(args, "repoName")
+				num := getInt(args, "pullNumber")
+				method := getString(args, "mergeMethod")
+				if method == "" {
+					method = "merge"
+				}
+				repo, err := s.store.GetRepo(ctx, owner, name)
+				if err != nil {
+					return nil, err
+				}
+				pr, err := s.store.GetPullRequest(ctx, repo.ID, num)
+				if err != nil {
+					return nil, err
+				}
+
+				// Evaluate merge rulesets and check runs
+				rulesets, _ := s.store.ListRulesets(ctx, repo.ID)
+				reviews, _ := s.store.ListReviews(ctx, pr.ID)
+				approvedCount := 0
+				for _, rev := range reviews {
+					if !rev.Dismissed && (rev.State == "approved" || rev.State == "approve") {
+						approvedCount++
+					}
+				}
+				checkRuns, _ := s.store.ListCheckRunsForCommit(ctx, repo.ID, pr.HeadSHA, "", "", 100, 0)
+				evalRes := engine.EvaluateMerge(ctx, rulesets, repo.DefaultBranch, pr.BaseRef, "agent", "", approvedCount, checkRuns)
+				if !evalRes.Allowed {
+					var msgs []string
+					for _, b := range evalRes.Blockers {
+						msgs = append(msgs, b.Message)
+					}
+					return nil, fmt.Errorf("merge blocked by ruleset: %s", strings.Join(msgs, "; "))
+				}
+
+				sig := object.Signature{Name: "Exist Agent", Email: "agent@exist.io", When: time.Now().UTC()}
+				commitSHA, err := s.git.Merge(owner, name, pr.BaseRef, pr.HeadRef, method, sig, fmt.Sprintf("Merge PR #%d: %s", pr.Number, pr.Title))
+				if err != nil {
+					return nil, fmt.Errorf("git merge: %w", err)
+				}
+				if err := s.store.SetPullRequestMergeResult(ctx, pr.ID, commitSHA); err != nil {
+					return nil, err
+				}
+				return s.store.GetPullRequest(ctx, repo.ID, num)
+			},
+		},
+		// 44. lease_request
+		{
+			Name:        "lease_request",
+			Description: "Request an ephemeral HMAC-SHA256 capability lease scoped to refs/heads/agent/*",
+			ReadOnly:    false,
+			InputSchema: makeSchema(map[string]any{
+				"agentId":        map[string]any{"type": "string", "description": "Agent identifier"},
+				"repoId":         map[string]any{"type": "string", "description": "Repository ID or owner/name"},
+				"allowedRefs":    map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Allowed ref prefixes (defaults to ['refs/heads/agent/'])"},
+				"disallowedRefs": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Disallowed ref prefixes (defaults to ['refs/heads/main', 'refs/heads/master'])"},
+				"ttlSeconds":     map[string]any{"type": "integer", "description": "Time to live in seconds (default 900)"},
+			}, []string{"agentId", "repoId"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				secret := s.LeaseSecret()
+				if len(secret) == 0 {
+					return nil, fmt.Errorf("lease signing secret is not configured")
+				}
+				agentID := getString(args, "agentId")
+				repoID := getString(args, "repoId")
+				if strings.Contains(repoID, "/") {
+					parts := strings.Split(repoID, "/")
+					if repo, err := s.store.GetRepo(ctx, parts[0], parts[1]); err == nil {
+						repoID = repo.ID
+					}
+				}
+				allowed := getStringSlice(args, "allowedRefs")
+				if len(allowed) == 0 {
+					allowed = []string{"refs/heads/agent/"}
+				}
+				disallowed := getStringSlice(args, "disallowedRefs")
+				if len(disallowed) == 0 {
+					disallowed = []string{"refs/heads/main", "refs/heads/master"}
+				}
+				ttlSec := getInt(args, "ttlSeconds")
+				if ttlSec <= 0 {
+					ttlSec = 900
+				}
+				token, lease, err := agentlease.Issue(secret, agentID, repoID, allowed, disallowed, time.Duration(ttlSec)*time.Second)
+				if err != nil {
+					return nil, fmt.Errorf("issue lease: %w", err)
+				}
+				return map[string]any{
+					"token":                 token,
+					"id":                    lease.ID,
+					"agentId":               lease.AgentID,
+					"repoId":                lease.RepoID,
+					"allowedRefPrefixes":    lease.AllowedRefPrefixes,
+					"disallowedRefPrefixes": lease.DisallowedRefPrefixes,
+					"issuedAt":              lease.IssuedAt.Format(time.RFC3339),
+					"expiresAt":             lease.ExpiresAt.Format(time.RFC3339),
+				}, nil
+			},
+		},
+		// 45. lease_inspect
+		{
+			Name:        "lease_inspect",
+			Description: "Verify and inspect an ephemeral capability lease token",
+			ReadOnly:    true,
+			InputSchema: makeSchema(map[string]any{
+				"token": map[string]any{"type": "string", "description": "Capability lease token"},
+			}, []string{"token"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				secret := s.LeaseSecret()
+				if len(secret) == 0 {
+					return nil, fmt.Errorf("lease signing secret is not configured")
+				}
+				token := getString(args, "token")
+				lease, err := agentlease.Verify(secret, token)
+				if err != nil {
+					return nil, err
+				}
+				revoked := false
+				if s.store != nil {
+					isRev, _ := s.store.IsAgentLeaseRevoked(ctx, lease.ID)
+					revoked = isRev
+				}
+				return map[string]any{
+					"id":                    lease.ID,
+					"agentId":               lease.AgentID,
+					"repoId":                lease.RepoID,
+					"allowedRefPrefixes":    lease.AllowedRefPrefixes,
+					"disallowedRefPrefixes": lease.DisallowedRefPrefixes,
+					"issuedAt":              lease.IssuedAt.Format(time.RFC3339),
+					"expiresAt":             lease.ExpiresAt.Format(time.RFC3339),
+					"revoked":               revoked,
+				}, nil
+			},
+		},
+		// 46. lease_revoke
+		{
+			Name:        "lease_revoke",
+			Description: "Revoke an active capability lease by ID",
+			ReadOnly:    false,
+			InputSchema: makeSchema(map[string]any{
+				"leaseId": map[string]any{"type": "string", "description": "Lease ID to revoke"},
+				"agentId": map[string]any{"type": "string", "description": "Optional agent ID"},
+				"repoId":  map[string]any{"type": "string", "description": "Optional repository ID"},
+				"reason":  map[string]any{"type": "string", "description": "Optional revocation reason"},
+			}, []string{"leaseId"}),
+			Handler: func(ctx context.Context, s *Server, args map[string]any) (any, error) {
+				leaseID := getString(args, "leaseId")
+				agentID := getString(args, "agentId")
+				if agentID == "" {
+					agentID = "agent-mcp"
+				}
+				repoID := getString(args, "repoId")
+				if repoID == "" {
+					repoID = "*"
+				}
+				reason := getString(args, "reason")
+				if reason == "" {
+					reason = "agent task finished"
+				}
+				if err := s.store.RevokeAgentLease(ctx, leaseID, agentID, repoID, reason); err != nil {
+					return nil, fmt.Errorf("revoke lease: %w", err)
+				}
+				return map[string]any{
+					"revoked": true,
+					"leaseId": leaseID,
+					"reason":  reason,
+				}, nil
 			},
 		},
 	}

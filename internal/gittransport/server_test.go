@@ -14,6 +14,7 @@ import (
 	"exist.io/internal/auth"
 	"exist.io/internal/gitstore"
 	"exist.io/internal/store"
+	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
 
 	"github.com/go-git/go-git/v6/plumbing/object"
@@ -235,5 +236,138 @@ func TestGitSmartHTTPProtocolAndClonePush(t *testing.T) {
 	denyOut, err := denyCmd.CombinedOutput()
 	if err == nil {
 		t.Fatalf("expected push to be denied for read-only user, but succeeded: %s", string(denyOut))
+	}
+}
+
+func TestGitSmartHTTP_AgentLeaseEnforcement(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.Open(":memory:")
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	defer db.Close()
+
+	gitDir := filepath.Join(t.TempDir(), "git")
+	git, err := gitstore.New(gitDir)
+	if err != nil {
+		t.Fatalf("gitstore.New: %v", err)
+	}
+
+	// Build existd for pre-receive hook execution
+	existdBin := filepath.Join(t.TempDir(), "existd")
+	buildCmd := exec.Command("go", "build", "-o", existdBin, "exist.io/cmd/existd")
+	if out, err := buildCmd.CombinedOutput(); err != nil {
+		t.Fatalf("build existd: %v\nOutput: %s", err, string(out))
+	}
+	t.Setenv("EXISTD_PATH", existdBin)
+
+	// 1. Seed user & namespace
+	userID := idgen.NewUser()
+	if _, err := db.UpsertUserByEmail(ctx, "admin@exist.io", func() string { return userID }); err != nil {
+		t.Fatal(err)
+	}
+	nsID := idgen.NewNS()
+	if err := db.CreateNamespace(ctx, store.Namespace{
+		ID:          nsID,
+		Slug:        "agentteam",
+		Type:        "user",
+		Name:        "Agent Team",
+		OwnerUserID: userID,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// 2. Seed repo
+	repoID := idgen.NewRepo()
+	if err := db.CreateRepo(ctx, store.Repo{
+		ID:            repoID,
+		NamespaceID:   nsID,
+		Name:          "agent-repo",
+		FullName:      "agentteam/agent-repo",
+		DefaultBranch: "main",
+		Visibility:    "private",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := git.Init("agentteam", "agent-repo", "main"); err != nil {
+		t.Fatal(err)
+	}
+	sig := object.Signature{Name: "Admin", Email: "admin@exist.io", When: time.Now().UTC()}
+	if _, err := git.WriteFiles("agentteam", "agent-repo", "main", []gitstore.FileChange{
+		{Path: "README.md", Content: "# Agent Repo\n"},
+	}, sig, "Initial commit"); err != nil {
+		t.Fatal(err)
+	}
+
+	leaseSecret := []byte("agent-signing-secret-key-12345678")
+	gitHandler := NewServer(db, git)
+	gitHandler.SetLeaseSecret(leaseSecret)
+	srv := httptest.NewServer(gitHandler)
+	defer srv.Close()
+
+	// 3. Issue valid capability lease
+	tok, lease, err := agentlease.Issue(leaseSecret, "agent-007", repoID, []string{"refs/heads/agent/"}, []string{"refs/heads/main"}, 15*time.Minute)
+	if err != nil {
+		t.Fatalf("issue lease: %v", err)
+	}
+
+	// 4. Test real git clone with lease token as Basic Auth password
+	cloneDir := filepath.Join(t.TempDir(), "cloned-agent")
+	authCloneURL := strings.Replace(srv.URL, "http://", "http://agent:"+tok+"@", 1) + "/agentteam/agent-repo.git"
+
+	cmd := exec.Command("git", "clone", authCloneURL, cloneDir)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git clone under lease failed: %v\nOutput: %s", err, string(out))
+	}
+
+	gitExec := func(dir string, args ...string) (string, error) {
+		c := exec.Command("git", args...)
+		c.Dir = dir
+		c.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=Agent007",
+			"GIT_AUTHOR_EMAIL=agent007@exist.io",
+			"GIT_COMMITTER_NAME=Agent007",
+			"GIT_COMMITTER_EMAIL=agent007@exist.io",
+		)
+		out, err := c.CombinedOutput()
+		return string(out), err
+	}
+
+	// 5. Create feature on refs/heads/agent/patch-1 and push -> MUST SUCCEED
+	_, _ = gitExec(cloneDir, "checkout", "-b", "agent/patch-1")
+	if err := os.WriteFile(filepath.Join(cloneDir, "agent_work.txt"), []byte("agent work\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = gitExec(cloneDir, "add", "agent_work.txt")
+	_, _ = gitExec(cloneDir, "commit", "-m", "agent patch")
+	out, err := gitExec(cloneDir, "push", "origin", "agent/patch-1:refs/heads/agent/patch-1")
+	if err != nil {
+		t.Fatalf("push to refs/heads/agent/patch-1 failed: %v\nOutput: %s", err, out)
+	}
+
+	// 6. Push to refs/heads/main -> MUST FAIL with GH007
+	out, err = gitExec(cloneDir, "push", "origin", "agent/patch-1:refs/heads/main")
+	if err == nil {
+		t.Fatalf("expected push to refs/heads/main to be rejected under lease, but succeeded: %s", out)
+	}
+	if !strings.Contains(out, "GH007") {
+		t.Fatalf("expected GH007 error in push output, got: %s", out)
+	}
+
+	// 7. Expired lease -> MUST FAIL with 401
+	expiredTok, _, _ := agentlease.Issue(leaseSecret, "agent-007", repoID, []string{"refs/heads/agent/"}, nil, -1*time.Minute)
+	expiredURL := strings.Replace(srv.URL, "http://", "http://agent:"+expiredTok+"@", 1) + "/agentteam/agent-repo.git"
+	out, err = gitExec(cloneDir, "push", expiredURL, "agent/patch-1:refs/heads/agent/patch-2")
+	if err == nil {
+		t.Fatalf("expected push with expired lease to fail, but succeeded: %s", out)
+	}
+
+	// 8. Revoked lease -> MUST FAIL with 401
+	if err := db.RevokeAgentLease(ctx, lease.ID, "agent-007", repoID, "task cancelled"); err != nil {
+		t.Fatalf("revoke lease: %v", err)
+	}
+	out, err = gitExec(cloneDir, "push", authCloneURL, "agent/patch-1:refs/heads/agent/patch-3")
+	if err == nil {
+		t.Fatalf("expected push with revoked lease to fail, but succeeded: %s", out)
 	}
 }

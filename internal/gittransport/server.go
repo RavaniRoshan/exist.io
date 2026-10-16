@@ -23,6 +23,7 @@ import (
 	"exist.io/internal/gitstore"
 	"exist.io/internal/metrics"
 	"exist.io/internal/store"
+	"exist.io/pkg/agentlease"
 )
 
 // Server implements authenticated Git Smart HTTP transport for exist.io repositories.
@@ -36,6 +37,7 @@ type Server struct {
 	lfs         *gitlfs.Server
 	backendPath string
 	sem         chan struct{}
+	leaseSecret []byte
 }
 
 // NewServer returns an initialized Git Smart HTTP transport Server.
@@ -51,6 +53,11 @@ func NewServer(store *store.DB, git *gitstore.Store, lfs ...*gitlfs.Server) *Ser
 		backendPath: findGitBackend(),
 		sem:         make(chan struct{}, 64),
 	}
+}
+
+// SetLeaseSecret sets the signing secret used to verify agent capability leases.
+func (s *Server) SetLeaseSecret(secret []byte) {
+	s.leaseSecret = secret
 }
 
 // SetLFS sets the Git LFS server instance.
@@ -114,7 +121,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := s.authenticate(ctx, r)
+	userID, activeLease, activeLeaseToken, err := s.authenticate(ctx, r, &repo)
 	if err != nil {
 		w.Header().Set("WWW-Authenticate", `Basic realm="exist.io"`)
 		http.Error(w, "Authentication required", http.StatusUnauthorized)
@@ -175,24 +182,38 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	s.execBackend(w, r, ownerSlug, repoName, subPath, userID)
+	s.execBackend(w, r, ownerSlug, repoName, subPath, userID, activeLease, activeLeaseToken)
 }
 
-func (s *Server) authenticate(ctx context.Context, r *http.Request) (string, error) {
-	// 1. Basic Auth (standard Git credential helper)
+func (s *Server) authenticate(ctx context.Context, r *http.Request, repo *store.Repo) (string, *agentlease.Lease, string, error) {
+	// 1. Basic Auth (standard Git credential helper or capability lease)
 	if user, pass, ok := r.BasicAuth(); ok {
+		if len(s.leaseSecret) > 0 {
+			if lease, err := agentlease.Verify(s.leaseSecret, pass); err == nil {
+				if leaseErr := s.validateLease(ctx, repo, lease); leaseErr != nil {
+					return "", nil, "", leaseErr
+				}
+				return "agent:" + lease.AgentID, lease, pass, nil
+			}
+			if lease, err := agentlease.Verify(s.leaseSecret, user); err == nil {
+				if leaseErr := s.validateLease(ctx, repo, lease); leaseErr != nil {
+					return "", nil, "", leaseErr
+				}
+				return "agent:" + lease.AgentID, lease, user, nil
+			}
+		}
 		if id, err := s.checkCredential(ctx, pass); err == nil {
-			return id, nil
+			return id, nil, "", nil
 		}
 		if id, err := s.checkCredential(ctx, user); err == nil {
-			return id, nil
+			return id, nil, "", nil
 		}
 		u, err := s.store.GetUserByLogin(ctx, user)
 		if err != nil {
 			u, err = s.store.GetUserByEmail(ctx, user)
 		}
 		if err == nil && u.PasswordHash != "" && auth.CheckPassword(u.PasswordHash, pass) {
-			return u.ID, nil
+			return u.ID, nil, "", nil
 		}
 	}
 
@@ -200,13 +221,21 @@ func (s *Server) authenticate(ctx context.Context, r *http.Request) (string, err
 	authHeader := r.Header.Get("Authorization")
 	if strings.HasPrefix(authHeader, "Bearer ") {
 		tok := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+		if len(s.leaseSecret) > 0 {
+			if lease, err := agentlease.Verify(s.leaseSecret, tok); err == nil {
+				if leaseErr := s.validateLease(ctx, repo, lease); leaseErr != nil {
+					return "", nil, "", leaseErr
+				}
+				return "agent:" + lease.AgentID, lease, tok, nil
+			}
+		}
 		if id, err := s.checkCredential(ctx, tok); err == nil {
-			return id, nil
+			return id, nil, "", nil
 		}
 		if sess, _, err := s.store.GetSessionByHash(ctx, auth.HashCredential(tok)); err == nil {
 			exp, err := time.Parse(time.RFC3339, sess.ExpiresAt)
 			if err == nil && time.Now().Before(exp) {
-				return sess.UserID, nil
+				return sess.UserID, nil, "", nil
 			}
 		}
 	}
@@ -216,12 +245,25 @@ func (s *Server) authenticate(ctx context.Context, r *http.Request) (string, err
 		if sess, _, err := s.store.GetSessionByHash(ctx, auth.HashCredential(cookie.Value)); err == nil {
 			exp, err := time.Parse(time.RFC3339, sess.ExpiresAt)
 			if err == nil && time.Now().Before(exp) {
-				return sess.UserID, nil
+				return sess.UserID, nil, "", nil
 			}
 		}
 	}
 
-	return "", errors.New("unauthenticated")
+	return "", nil, "", errors.New("unauthenticated")
+}
+
+func (s *Server) validateLease(ctx context.Context, repo *store.Repo, lease *agentlease.Lease) error {
+	if lease.RepoID != "*" && repo != nil && lease.RepoID != repo.ID {
+		return errors.New("lease does not grant access to this repository")
+	}
+	if s.store != nil {
+		revoked, err := s.store.IsAgentLeaseRevoked(ctx, lease.ID)
+		if err == nil && revoked {
+			return agentlease.ErrRevokedLease
+		}
+	}
+	return nil
 }
 
 func (s *Server) checkCredential(ctx context.Context, cred string) (string, error) {
@@ -262,7 +304,7 @@ func (s *Server) checkCredential(ctx context.Context, cred string) (string, erro
 	return "", errors.New("invalid credential")
 }
 
-func (s *Server) execBackend(w http.ResponseWriter, r *http.Request, ownerSlug, repoName, subPath, userID string) {
+func (s *Server) execBackend(w http.ResponseWriter, r *http.Request, ownerSlug, repoName, subPath, userID string, activeLease *agentlease.Lease, activeLeaseToken string) {
 	select {
 	case s.sem <- struct{}{}:
 		defer func() { <-s.sem }()
@@ -285,6 +327,18 @@ func (s *Server) execBackend(w http.ResponseWriter, r *http.Request, ownerSlug, 
 		"QUERY_STRING="+r.URL.RawQuery,
 		"REQUEST_METHOD="+r.Method,
 	)
+	if activeLease != nil {
+		cmd.Env = append(cmd.Env,
+			"EXIST_LEASE_TOKEN="+activeLeaseToken,
+			"EXIST_LEASE_ID="+activeLease.ID,
+			"EXIST_LEASE_ALLOWED_REFS="+strings.Join(activeLease.AllowedRefPrefixes, ","),
+			"EXIST_LEASE_DISALLOWED_REFS="+strings.Join(activeLease.DisallowedRefPrefixes, ","),
+			"EXIST_LEASE_EXPIRES_AT="+activeLease.ExpiresAt.Format(time.RFC3339),
+		)
+	}
+	if existdPath := os.Getenv("EXISTD_PATH"); existdPath != "" {
+		cmd.Env = append(cmd.Env, "EXISTD_PATH="+existdPath)
+	}
 	cmd.Stdin = r.Body
 
 	stdout, err := cmd.StdoutPipe()

@@ -100,9 +100,13 @@ func EnsureHooks(repoPath string) error {
 	}
 	preReceive := filepath.Join(hooksDir, "pre-receive")
 
-	exe, err := os.Executable()
-	if err != nil || exe == "" || strings.HasSuffix(exe, ".test") {
-		exe = "existd"
+	exe := os.Getenv("EXISTD_PATH")
+	if exe == "" {
+		var err error
+		exe, err = os.Executable()
+		if err != nil || exe == "" || strings.HasSuffix(exe, ".test") {
+			exe = "existd"
+		}
 	}
 
 	content := fmt.Sprintf("#!/bin/sh\nif command -v \"%s\" >/dev/null 2>&1; then\n  exec \"%s\" hook pre-receive\nfi\nexit 0\n", exe, exe)

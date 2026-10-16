@@ -202,7 +202,7 @@ func (db *DB) UpsertCheckRun(ctx context.Context, r CheckRun) (CheckRun, string,
 	var existing CheckRun
 	var isRerequestableInt int
 	err := db.sql.QueryRowContext(ctx, `
-		SELECT id, repo_id, check_suite_id, sha, IFNULL(base_sha, ''), IFNULL(key, ''), name,
+		SELECT id, repo_id, IFNULL(check_suite_id, ''), sha, IFNULL(base_sha, ''), IFNULL(key, ''), IFNULL(name, ''),
 		       status, IFNULL(conclusion, ''), IFNULL(details_url, ''), IFNULL(external_id, ''),
 		       IFNULL(output_title, ''), IFNULL(output_summary, ''), IFNULL(output_text, ''),
 		       IFNULL(external_updated_at, ''), IFNULL(started_at, ''), IFNULL(completed_at, ''),
@@ -315,7 +315,7 @@ func (db *DB) UpsertCheckRun(ctx context.Context, r CheckRun) (CheckRun, string,
 			is_rerequestable, rerequested_at, rerequested_by_user_id,
 			actor_user_id, created_at, updated_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?,
+			?, ?, NULLIF(?, ''), ?, ?, ?, ?,
 			?, NULLIF(?, ''), ?, ?,
 			?, ?, ?,
 			?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''),
@@ -340,7 +340,7 @@ func (db *DB) GetCheckRun(ctx context.Context, id string) (CheckRun, error) {
 	var r CheckRun
 	var isRerequestableInt int
 	err := db.sql.QueryRowContext(ctx, `
-		SELECT id, repo_id, check_suite_id, sha, IFNULL(base_sha, ''), IFNULL(key, ''), name,
+		SELECT id, repo_id, IFNULL(check_suite_id, ''), sha, IFNULL(base_sha, ''), IFNULL(key, ''), IFNULL(name, ''),
 		       status, IFNULL(conclusion, ''), IFNULL(details_url, ''), IFNULL(external_id, ''),
 		       IFNULL(output_title, ''), IFNULL(output_summary, ''), IFNULL(output_text, ''),
 		       IFNULL(external_updated_at, ''), IFNULL(started_at, ''), IFNULL(completed_at, ''),
@@ -374,7 +374,7 @@ func (db *DB) ListCheckRunsForSuite(ctx context.Context, suiteID string, limit, 
 		limit = 50
 	}
 	rows, err := db.sql.QueryContext(ctx, `
-		SELECT id, repo_id, check_suite_id, sha, IFNULL(base_sha, ''), IFNULL(key, ''), name,
+		SELECT id, repo_id, IFNULL(check_suite_id, ''), sha, IFNULL(base_sha, ''), IFNULL(key, ''), IFNULL(name, ''),
 		       status, IFNULL(conclusion, ''), IFNULL(details_url, ''), IFNULL(external_id, ''),
 		       IFNULL(output_title, ''), IFNULL(output_summary, ''), IFNULL(output_text, ''),
 		       IFNULL(external_updated_at, ''), IFNULL(started_at, ''), IFNULL(completed_at, ''),
@@ -420,7 +420,7 @@ func (db *DB) ListCheckRunsForCommit(ctx context.Context, repoID, sha, checkName
 	}
 
 	query := `
-		SELECT id, repo_id, check_suite_id, sha, IFNULL(base_sha, ''), IFNULL(key, ''), name,
+		SELECT id, repo_id, IFNULL(check_suite_id, ''), sha, IFNULL(base_sha, ''), IFNULL(key, ''), IFNULL(name, ''),
 		       status, IFNULL(conclusion, ''), IFNULL(details_url, ''), IFNULL(external_id, ''),
 		       IFNULL(output_title, ''), IFNULL(output_summary, ''), IFNULL(output_text, ''),
 		       IFNULL(external_updated_at, ''), IFNULL(started_at, ''), IFNULL(completed_at, ''),
