@@ -1,0 +1,68 @@
+version: 2
+project_name: exist
+
+builds:
+  - id: existd
+    dir: .
+    main: ./cmd/existd
+    binary: existd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X 'exist.io/internal/cli.Version={{ .Version }}'
+
+  - id: exist
+    dir: .
+    main: ./cmd/exist
+    binary: exist
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X 'exist.io/internal/cli.Version={{ .Version }}'
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - TRADEMARK.md
+      - SECURITY.md
+
+checksum:
+  name_template: "SHA256SUMS"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

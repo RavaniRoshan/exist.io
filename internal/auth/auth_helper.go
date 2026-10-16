@@ -41,7 +41,7 @@ func ResolveUser(ctx context.Context, db *store.DB, r *http.Request) (*store.Use
 		tokHash := HashCredential(raw)
 
 		// 2a. Check personal access token / API key
-		if strings.HasPrefix(raw, "key_") || strings.HasPrefix(raw, "crsr_") {
+		if strings.HasPrefix(raw, "key_") || strings.HasPrefix(raw, "pat_") || strings.HasPrefix(raw, "crsr_") {
 			key, err := db.GetAPIKeyByHash(ctx, tokHash)
 			if err == nil && key.ID != "" {
 				if key.RevokedAt.Valid && key.RevokedAt.String != "" {

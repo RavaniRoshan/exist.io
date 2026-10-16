@@ -56,10 +56,60 @@ func main() {
 		}
 
 		fmt.Println("exist.io bootstrap complete!")
-		fmt.Printf("User:      %s (id: %s)\n", res.User.Email, res.User.ID)
-		fmt.Printf("Namespace: %s (id: %s)\n", res.Namespace.Slug, res.Namespace.ID)
-		fmt.Printf("API Key:   %s\n", res.RawKey)
-		fmt.Println("\nIMPORTANT: Store this API key securely. It will not be shown again.")
+		fmt.Println("--------------------------------------------------------------------------------")
+		fmt.Printf("User:       %s (id: %s)\n", res.User.Email, res.User.ID)
+		fmt.Printf("Namespace:  %s (id: %s)\n", res.Namespace.Slug, res.Namespace.ID)
+		fmt.Printf("Repository: %s\n", res.Repo.FullName)
+		fmt.Printf("API Key:    %s\n", res.RawKey)
+		fmt.Println("--------------------------------------------------------------------------------")
+		fmt.Println("IMPORTANT: Store this API key securely. It will not be shown again.")
+		fmt.Println()
+		fmt.Println("=== Agent Configuration Snippets ===")
+		fmt.Println()
+		fmt.Println("Claude Code (~/.claude/settings.json or command line):")
+		fmt.Printf("  claude mcp add exist %s/mcp --header \"Authorization: Bearer %s\"\n\n", cfg.PublicURL, res.RawKey)
+		fmt.Println("  Or add to ~/.claude/settings.json:")
+		fmt.Printf(`  {
+    "mcpServers": {
+      "exist": {
+        "url": "%s/mcp",
+        "headers": {
+          "Authorization": "Bearer %s"
+        }
+      }
+    }
+  }`+"\n", cfg.PublicURL, res.RawKey)
+		fmt.Println()
+		fmt.Println("Cursor (.cursor/mcp.json):")
+		fmt.Printf(`  {
+    "mcpServers": {
+      "exist": {
+        "url": "%s/mcp",
+        "headers": {
+          "Authorization": "Bearer %s"
+        }
+      }
+    }
+  }`+"\n", cfg.PublicURL, res.RawKey)
+		fmt.Println()
+		fmt.Println("Cline (cline_mcp_settings.json):")
+		fmt.Printf(`  {
+    "mcpServers": {
+      "exist": {
+        "url": "%s/mcp",
+        "headers": {
+          "Authorization": "Bearer %s"
+        },
+        "disabled": false,
+        "autoApprove": []
+      }
+    }
+  }`+"\n", cfg.PublicURL, res.RawKey)
+		fmt.Println()
+		fmt.Println("Codex (TOML):")
+		fmt.Printf(`  [mcp.servers.exist]
+  url = "%s/mcp"
+  headers = { Authorization = "Bearer %s" }`+"\n", cfg.PublicURL, res.RawKey)
 		return
 	}
 

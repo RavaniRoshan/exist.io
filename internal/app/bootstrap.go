@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-git/go-git/v6/plumbing/object"
+
 	"exist.io/internal/auth"
 	"exist.io/internal/config"
+	"exist.io/internal/gitstore"
 	"exist.io/internal/store"
 	"exist.io/pkg/idgen"
 )
@@ -16,12 +19,14 @@ import (
 type BootstrapResult struct {
 	User      store.User
 	Namespace store.Namespace
+	Repo      store.Repo
 	RawKey    string
 	KeyPrefix string
 }
 
 // Bootstrap initializes the first administrator account, namespace, admin grant,
-// and initial API key. It fails if any users already exist in the database.
+// initial API key, and starter repository with an initial commit.
+// It fails if any users already exist in the database.
 func Bootstrap(ctx context.Context, cfg config.Config, email, namespaceSlug string) (*BootstrapResult, error) {
 	if email == "" {
 		return nil, errors.New("bootstrap: email cannot be empty")
@@ -100,9 +105,51 @@ func Bootstrap(ctx context.Context, cfg config.Config, email, namespaceSlug stri
 		return nil, fmt.Errorf("bootstrap: store key: %w", err)
 	}
 
+	// 5. Create First Repository ("demo")
+	repoName := "demo"
+	fullName := namespaceSlug + "/" + repoName
+	repoID := idgen.NewRepo()
+	repoRecord := store.Repo{
+		ID:                  repoID,
+		NamespaceID:         nsID,
+		Name:                repoName,
+		FullName:            fullName,
+		Description:         "Initial repository created during bootstrap",
+		DefaultBranch:       "main",
+		Visibility:          "public",
+		CloneURL:            fmt.Sprintf("%s/%s.git", cfg.GitURL, fullName),
+		WebURL:              fmt.Sprintf("%s/%s", cfg.PublicURL, fullName),
+		AllowMergeCommit:    true,
+		AllowSquashMerge:    true,
+		DeleteBranchOnMerge: false,
+	}
+	if err := application.Store.CreateRepo(ctx, repoRecord); err != nil {
+		return nil, fmt.Errorf("bootstrap: create initial repo: %w", err)
+	}
+
+	if _, err := application.Git.Init(namespaceSlug, repoName, "main"); err != nil {
+		return nil, fmt.Errorf("bootstrap: git init: %w", err)
+	}
+
+	initialChanges := []gitstore.FileChange{
+		{
+			Path:    "README.md",
+			Content: fmt.Sprintf("# %s\n\nWelcome to exist.io — the neutral, self-hosted Git forge for coding agents.\n", repoName),
+		},
+	}
+	sig := object.Signature{
+		Name:  "exist.io",
+		Email: email,
+		When:  time.Now().UTC(),
+	}
+	if _, err := application.Git.WriteFiles(namespaceSlug, repoName, "main", initialChanges, sig, "Initial commit"); err != nil {
+		return nil, fmt.Errorf("bootstrap: write initial commit: %w", err)
+	}
+
 	return &BootstrapResult{
 		User:      user,
 		Namespace: ns,
+		Repo:      repoRecord,
 		RawKey:    rawKey,
 		KeyPrefix: prefix,
 	}, nil
