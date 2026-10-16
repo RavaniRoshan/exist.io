@@ -157,6 +157,27 @@ To ensure realistic expectations, exist.io documents its design constraints expl
 
 ---
 
+## 📊 Proven Performance & Concurrency Benchmarks
+
+Empirically measured using the autonomous agent benchmark harness ([`bench/main.go`](bench/main.go), detailed report in [`docs/benchmarks.md`](docs/benchmarks.md)):
+
+| Concurrency Tier | Lease Issuance (p50 / p95) | Git Clone (p50 / p95) | Git Push (p50 / p95) | PR Open (p50 / p95) | Full Agent Loop (p50 / p95) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **1 Agent (Baseline)** | 5 ms / 5 ms | 61 ms / 62 ms | 1.94 s / 2.04 s | 9 ms / 9 ms | **2.02 s / 2.12 s** |
+| **5 Concurrent Agents** | 10 ms / 50 ms | 72 ms / 83 ms | 2.66 s / 2.90 s | 11 ms / 14 ms | **2.76 s / 2.99 s** |
+| **20 Concurrent Agents** | 63 ms / 527 ms | 161 ms / 404 ms | 8.90 s / 9.18 s | 53 ms / 182 ms | **9.28 s / 9.66 s** |
+
+Reproduce benchmarks or verify active API conformance anytime:
+```bash
+# Run multi-agent concurrent benchmark
+go run ./bench/main.go
+
+# Verify live REST API & MCP conformance against any running daemon
+exist conformance --endpoint http://localhost:8080 --token <your-api-key>
+```
+
+---
+
 ## 🧪 Experimental Modules (Scope Freeze)
 
 The following modules build cleanly and pass automated unit tests, but are frozen for the v0.5.0-beta release while focus is locked on the core agent loop:

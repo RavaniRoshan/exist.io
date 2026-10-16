@@ -82,6 +82,8 @@ func (c *CLI) Run(args []string) error {
 		return c.runApp(args[1:])
 	case "api":
 		return c.runAPI(args[1:])
+	case "conformance":
+		return c.runConformance(args[1:])
 	default:
 		return fmt.Errorf("unknown command %q. Run 'exist --help' for usage", args[0])
 	}
@@ -96,6 +98,7 @@ Commands:
   exist pr                 Manage pull requests
   exist app                Manage apps
   exist api <endpoint>     Make an authenticated request to REST API
+  exist conformance        Run API conformance test suite against existd
 
 Options:
   --version                 Show version number
