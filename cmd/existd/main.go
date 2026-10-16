@@ -132,8 +132,13 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr:    cfg.ListenAddr,
-		Handler: application.Handler(),
+		Addr:              cfg.ListenAddr,
+		Handler:           application.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      120 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	shutdown := make(chan os.Signal, 1)

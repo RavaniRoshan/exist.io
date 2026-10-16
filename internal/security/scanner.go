@@ -40,6 +40,11 @@ func NewScanner() *Scanner {
 				Regex:       regexp.MustCompile(`\bAKIA[0-9A-Z]{16}\b`),
 			},
 			{
+				ID:          "aws-secret-key",
+				Description: "AWS Secret Access Key Assignment",
+				Regex:       regexp.MustCompile(`(?i)\baws_secret_access_key\s*[:=]\s*["']?[A-Za-z0-9/+=]{40}["']?`),
+			},
+			{
 				ID:          "slack-token",
 				Description: "Slack API or Bot Token",
 				Regex:       regexp.MustCompile(`\bxox[baprs]-[0-9a-zA-Z]{10,48}\b`),
@@ -47,12 +52,22 @@ func NewScanner() *Scanner {
 			{
 				ID:          "private-key",
 				Description: "Unencrypted Private Key Block",
-				Regex:       regexp.MustCompile(`-----BEGIN (RSA|OPENSSH|EC|DSA|PGP) PRIVATE KEY`),
+				Regex:       regexp.MustCompile(`-----BEGIN (?:[A-Z0-9_-]+ )?PRIVATE KEY`),
 			},
 			{
-				ID:          "github-pat",
-				Description: "GitHub Personal Access Token",
-				Regex:       regexp.MustCompile(`\bghp_[0-9a-zA-Z]{36}\b`),
+				ID:          "github-token",
+				Description: "GitHub Token",
+				Regex:       regexp.MustCompile(`\b(?:ghp|gho|ghu|ghs|ghr)_[0-9a-zA-Z]{36}\b`),
+			},
+			{
+				ID:          "github-fine-grained-pat",
+				Description: "GitHub Fine-Grained Personal Access Token",
+				Regex:       regexp.MustCompile(`\bgithub_pat_[0-9a-zA-Z_]{82}\b`),
+			},
+			{
+				ID:          "generic-high-entropy",
+				Description: "Generic High-Entropy API Key or Secret Assignment",
+				Regex:       regexp.MustCompile(`(?i)\b(?:api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token)\s*[:=]\s*["'][A-Za-z0-9+/=_-]{32,}["']`),
 			},
 			{
 				ID:          "generic-jwt-secret",

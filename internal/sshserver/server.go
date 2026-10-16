@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"exist.io/internal/audit"
 	"exist.io/internal/gitstore"
@@ -115,6 +116,31 @@ func New(addr string, db *store.DB, git *gitstore.Store, hostKeyPath string) (*S
 
 			return nil, fmt.Errorf("ssh: unauthorized key %s", fingerprint)
 		},
+		Config: ssh.Config{
+			Ciphers: []string{
+				"chacha20-poly1305@openssh.com",
+				"aes128-gcm@openssh.com",
+				"aes256-gcm@openssh.com",
+				"aes128-ctr",
+				"aes192-ctr",
+				"aes256-ctr",
+			},
+			KeyExchanges: []string{
+				"curve25519-sha256",
+				"curve25519-sha256@libssh.org",
+				"ecdh-sha2-nistp256",
+				"ecdh-sha2-nistp384",
+				"ecdh-sha2-nistp521",
+				"diffie-hellman-group14-sha256",
+			},
+			MACs: []string{
+				"hmac-sha2-256-etm@openssh.com",
+				"hmac-sha2-512-etm@openssh.com",
+				"hmac-sha2-256",
+				"hmac-sha2-512",
+			},
+		},
+		ServerVersion: "SSH-2.0-exist.io",
 	}
 	config.AddHostKey(signer)
 	s.sshConfig = config
@@ -177,10 +203,14 @@ func (s *Server) acceptLoop() {
 func (s *Server) handleConn(netConn net.Conn) {
 	defer netConn.Close()
 
+	// Enforce 30s handshake deadline to prevent unauthenticated resource exhaustion
+	_ = netConn.SetDeadline(time.Now().Add(30 * time.Second))
 	sshConn, chans, reqs, err := ssh.NewServerConn(netConn, s.sshConfig)
 	if err != nil {
 		return
 	}
+	// Reset deadline for streaming Git sessions
+	_ = netConn.SetDeadline(time.Time{})
 	defer sshConn.Close()
 
 	go ssh.DiscardRequests(reqs)
