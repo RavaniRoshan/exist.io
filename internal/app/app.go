@@ -30,6 +30,7 @@ import (
 	"exist.io/internal/origin"
 	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
+	"exist.io/internal/webui"
 	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
 	"exist.io/pkg/slug"
@@ -127,7 +128,7 @@ func Open(cfg config.Config) (*App, error) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"serverStatus":         "healthy",
 			"uptime":               fmt.Sprintf("%.0fs", metrics.DefaultRegistry.UptimeSeconds()),
-			"version":              "existd v0.4.6-enterprise",
+			"version":              "existd v0.5.0-beta",
 			"activeGitSessions":    metrics.DefaultRegistry.GitTransfersTotal(),
 			"sqliteWalSizeBytes":   walSize,
 			"databasePath":         filepath.Join(cfg.DataDir, "meta.db"),
@@ -2977,7 +2978,22 @@ func Open(cfg config.Config) (*App, error) {
 	lfsServer := gitlfs.New(db, lfsDir, cfg.PublicURL)
 
 	gitTransport := gittransport.NewServer(db, git, lfsServer)
-	mux.Handle("/", gitTransport)
+	uiHandler := webui.Handler()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Path
+		q := r.URL.Query().Get("service")
+		isGit := q == "git-upload-pack" || q == "git-receive-pack" ||
+			strings.HasSuffix(p, "/git-upload-pack") ||
+			strings.HasSuffix(p, "/git-receive-pack") ||
+			strings.HasSuffix(p, "/info/refs") ||
+			strings.HasSuffix(p, "/HEAD") ||
+			strings.Contains(p, "/info/lfs")
+		if isGit {
+			gitTransport.ServeHTTP(w, r)
+			return
+		}
+		uiHandler.ServeHTTP(w, r)
+	})
 
 	var sshSrv *sshserver.Server
 	if cfg.SSHAddr != "" && cfg.SSHAddr != "none" {

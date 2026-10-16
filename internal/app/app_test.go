@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"exist.io/internal/config"
@@ -71,6 +72,35 @@ func TestAppLifecycle(t *testing.T) {
 	application.Handler().ServeHTTP(recAudit, reqAudit)
 	if recAudit.Code != http.StatusOK {
 		t.Fatalf("GET /api/v1/admin/audit-logs status = %d, want 200", recAudit.Code)
+	}
+
+	// 6. Embedded Web UI is served on root / and SPA routes
+	reqUI := httptest.NewRequest(http.MethodGet, "/", nil)
+	recUI := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recUI, reqUI)
+	if recUI.Code != http.StatusOK {
+		t.Fatalf("GET / status = %d, want 200", recUI.Code)
+	}
+	if !strings.Contains(recUI.Body.String(), "<!doctype html>") && !strings.Contains(recUI.Body.String(), "<html") {
+		t.Fatalf("expected embedded HTML on /, got %s", recUI.Body.String())
+	}
+
+	reqSPA := httptest.NewRequest(http.MethodGet, "/acme/frontend-app", nil)
+	recSPA := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recSPA, reqSPA)
+	if recSPA.Code != http.StatusOK {
+		t.Fatalf("GET /acme/frontend-app status = %d, want 200", recSPA.Code)
+	}
+	if !strings.Contains(recSPA.Body.String(), "<!doctype html>") && !strings.Contains(recSPA.Body.String(), "<html") {
+		t.Fatalf("expected embedded HTML SPA fallback, got %s", recSPA.Body.String())
+	}
+
+	// 7. Git requests are delegated to git transport (not HTML)
+	reqGit := httptest.NewRequest(http.MethodGet, "/acme/repo.git/info/refs?service=git-upload-pack", nil)
+	recGit := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recGit, reqGit)
+	if strings.Contains(recGit.Body.String(), "<!doctype html>") {
+		t.Fatalf("expected Git transport response, got HTML")
 	}
 }
 

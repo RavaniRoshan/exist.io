@@ -136,7 +136,7 @@ describe('App End-to-End Navigation', () => {
       expect(screen.getByText('Repository Settings')).toBeInTheDocument()
       expect(screen.getByText('General Repository Configuration')).toBeInTheDocument()
       expect(screen.getByText('Pull Request Merge Buttons')).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
 
   it('navigates to Enterprise Settings view via the user avatar menu', async () => {

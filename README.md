@@ -1,205 +1,61 @@
 <div align="center">
 
-<img src="assets/exist-logo.svg" alt="exist.io - The Enterprise Git Forge for People & Coding Agents" width="100%" max-width="800" />
+<img src="assets/exist-logo.svg" alt="exist.io - Self-hosted Git forge built for coding agents" width="100%" max-width="800" />
 
 <p align="center">
-  <strong>An open-source, enterprise-ready, self-hosted Git forge built for software engineering teams and autonomous AI coding agents.</strong>
+  <strong>Self-hosted Git forge built for coding agents</strong>
 </p>
 
 <p align="center">
-  <a href="https://ravaniroshan.github.io/exist.os/"><img src="https://img.shields.io/badge/Website-exist.io-0F172A?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>
-  <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Docs-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.7--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
-  <img src="https://img.shields.io/badge/License-Apache--2.0%20%2F%20MIT-blue?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version">
+  <a href="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml"><img src="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Documentation-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.5.0--beta-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square" alt="License"></a>
+  <img src="https://img.shields.io/badge/Go-Pure--Go%20(Zero%20CGO)-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Pure-Go">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
-  <img src="https://img.shields.io/badge/LFS-v1%20Batch%20CAS-F05032?style=flat-square&logo=git-lfs&logoColor=white" alt="Git LFS">
-  <img src="https://img.shields.io/badge/Signatures-OpenSSH%20%26%20GPG-teal?style=flat-square&logo=gnupg&logoColor=white" alt="Signatures">
-  <img src="https://img.shields.io/badge/Federation-OIDC%20%2F%20SAML%20%2F%20SCIM-purple?style=flat-square&logo=openid&logoColor=white" alt="SSO SCIM">
-  <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
-  <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
-  <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-137%20Passed%20(37%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/MCP-JSON--RPC%202.0-8A2BE2?style=flat-square" alt="MCP Server">
 </p>
 
-[**Website**](https://ravaniroshan.github.io/exist.os/) &nbsp;&bull;&nbsp; [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
+[**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Claims Ledger**](CLAIMS.md) &nbsp;&bull;&nbsp; [**Contributing**](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-**exist.io** gives engineering teams and agent developers a standalone, enterprise-ready Git forge that runs entirely on infrastructure you control. It bridges human collaboration and AI automation with dual Git transports (Smart-HTTP + embedded pure-Go SSH on port 2222), Git Large File Storage (LFS) v1 with file locking, real-time OpenSSH & GPG commit signature verification, enterprise identity federation (OIDC, SAML 2.0, and RFC 7644 SCIM 2.0 user sync), official Infrastructure as Code (Terraform / OpenTofu and Kubernetes Helm), autonomous AI agent PR code reviews, ephemeral capability leases, pure-Go AST symbol search, and a native Model Context Protocol (MCP) server exposing 35 specialized tools directly to AI coding agents.
+**exist.io** is a vendor-neutral, self-hosted Git forge engineered from first principles for **autonomous AI coding agents** (Claude Code, Codex, Cline, Cursor) alongside human engineering teams.
 
-> [!NOTE]
-> exist.io provides full wire compatibility with Origin forge interfaces while remaining 100% open-source and self-hosted with zero external proprietary dependencies.
+While proprietary platforms tie agent workspaces to closed cloud accounts, exist.io runs entirely on your own server. It ships as a single pure-Go binary with an embedded web UI, pure-Go SSH server on port `2222` (zero host OpenSSH dependency), native Model Context Protocol (MCP) server at `/mcp`, and ephemeral HMAC capability leases with ref isolation.
 
-**⚡ Quickstart:** `go build -o bin/existd ./cmd/existd && ./bin/existd bootstrap --email you@corp.com --namespace acme --data-dir ./data` — then open `http://localhost:8080` (HTTP :8080 · SSH :2222). Full walkthrough in [Quickstart](#-quickstart) below.
+> *Unlike Cursor Origin, which is tied to Cursor accounts and proprietary infrastructure, exist.io is 100% vendor-neutral and self-hosted on your own hardware for any agent.*
 
+---
+
+## ⚡ 90-Second Agent Loop Demo
+
+<!-- DEMO_GIF_PLACEHOLDER: A 90-second scriptable terminal recording showing agent lease issue -> git push -> pull request -> review comment -> policy merge -> lease revocation -->
 <p align="center">
-  <a href="https://ravaniroshan.github.io/exist.os/"><img src="assets/launch/01-hero-terminal.png" alt="exist.io — the self-hosted forge for the age of coding agents" width="800" /></a>
+  <img src="assets/launch/01-hero-terminal.png" alt="exist.io — 90-second agent loop demo" width="800" />
 </p>
 
 ---
 
-## ⚡ Core Capabilities
+## 🚀 5-Minute Quickstart
 
-<table>
-  <tr>
-    <td width="50%">
-      <h3>🌐 Dual Git Transports (HTTP & SSH :2222)</h3>
-      <p>Native HTTP Smart-HTTP engine and embedded, zero-cgo pure-Go SSH server on port <code>2222</code> supporting user public keys and organization-wide SSH Certificate Authorities.</p>
-    </td>
-    <td width="50%">
-      <h3>📦 Git LFS v1 CAS & Object Locking</h3>
-      <p>RFC-compliant Git Large File Storage engine with SHA-256 Content-Addressable Storage (CAS), streaming chunked upload/download, and binary file locking protocol.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🛡️ Cryptographic Commit Verification</h3>
-      <p>Native parsing of <strong>OpenSSH SIGSPEC</strong> binary blocks and <strong>GPG (RFC 4880)</strong> signatures. Real-time audit popover with key fingerprint and committer identity validation.</p>
-    </td>
-    <td width="50%">
-      <h3>🔑 Enterprise SSO & SCIM 2.0 Sync</h3>
-      <p>Enterprise Single Sign-On via <strong>OpenID Connect (OIDC)</strong> and <strong>SAML 2.0</strong>, paired with automated employee provisioning and offboarding via <strong>RFC 7643 / RFC 7644 SCIM 2.0</strong>.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🤖 First-Class Agent Support (MCP & Leases)</h3>
-      <p>Embedded Model Context Protocol server exposing 35 JSON-RPC tools at <code>/mcp</code> (including AST symbol search), cryptographic capability lease tokens, and automated PR code reviews for Claude Code, Cursor, and Cline.</p>
-    </td>
-    <td width="50%">
-      <h3>🏗️ Infrastructure as Code (Terraform & Helm)</h3>
-      <p>Official Terraform / OpenTofu provider for automated repo & policy management, and production Kubernetes Helm chart with Prometheus ServiceMonitor and non-root security contexts.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🔀 Pull Requests & 3-Way Merge Engine</h3>
-      <p>Deterministic 3-way merge engine, squash merging, conflict detection, review approval gates, required check suites, and automated merge queues.</p>
-    </td>
-    <td width="50%">
-      <h3>💎 GitHub Primer UI & Developer Parity</h3>
-      <p>Precision-engineered GitHub Primer design system with 6px squircle radius, custom OKLCH color token architecture, 52-week contribution heatmaps, User Profile credentials (SSH keys / PATs), Issue tracker with autonomous agent triage, and cryptographically verified Releases.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🧭 Interactive Product Tour & System Manual</h3>
-      <p>Built-in interactive onboarding walkthrough for first-time administrators, detailing cluster network topology (:8080, :2222, /mcp), git client enrollment, AI agent integration, and in-app architecture documentation.</p>
-    </td>
-    <td width="50%">
-      <h3>🔒 Zero-Mock Live Production Integrity</h3>
-      <p>Clean isolation between sandbox demo mode and live production clusters. Instant repository creation via SQLite WAL backend, authentic empty states, and dynamic cluster telemetry.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>⚡ Canonical Quick Setup & In-Browser Commits</h3>
-      <p>Instant GitHub-style Quick Setup screen for newly initialized bare repositories (0 commits) with HTTPS/SSH commands, followed by in-browser file creation and direct commit directly to <code>main</code>.</p>
-    </td>
-    <td width="50%">
-      <h3>📝 Native SQLite Issues & Thread Discussions</h3>
-      <p>Monotonically sequenced issue tracking, threaded comments, and state transitions (open/closed) backed directly by the embedded SQLite WAL engine with zero external database dependencies.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>⚙️ Repository Settings & Collaborators Access</h3>
-      <p>Granular repository configuration including default branch selection, PR squash/merge commit strategies, auto-branch pruning, role-based collaborator access grants (Read/Write/Admin), and guarded Danger Zone repository deletion.</p>
-    </td>
-    <td width="50%">
-      <h3>🪝 Webhook Delivery Engine</h3>
-      <p>Outbound webhook dispatching with HMAC-SHA256 signature verification, live test pings, delivery attempt audit log, and per-event subscription routing.</p>
-    </td>
-  </tr>
-</table>
-
----
-
-## 🏗️ System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Clients["Clients, Agents & Automation"]
-        GitHTTP["Git CLI (Smart-HTTP)<br/>http://host:8080/{owner}/{repo}.git"]
-        GitSSH["Git CLI (Pure-Go SSH)<br/>ssh://git@host:2222/{owner}/{repo}.git"]
-        GitLFS["Git LFS Client<br/>Batch API & Locking"]
-        Agent["AI Coding Agents<br/>(Claude / Cursor / Cline / MCP)"]
-        WebUI["Space UI Living Dashboard<br/>(React 19 / Vite / Motion)"]
-        IdP["Corporate IdP (Entra / Okta)<br/>(OIDC, SAML, SCIM 2.0)"]
-        IaC["Terraform & Helm<br/>(Infrastructure as Code)"]
-    end
-
-    subgraph Daemon["existd Enterprise Daemon (Pure-Go, Zero CGO)"]
-        HTTPGateway["HTTP Gateway & Session Auth<br/>(:8080 • Cookies, Bearer Token, Basic Auth)"]
-        SSHServer["Pure-Go SSH Server<br/>(:2222 • Host Keys, Ed25519, SSH CA)"]
-        SmartHTTP["Git Smart-HTTP Transport Engine"]
-        LFSEngine["Git LFS v1 Batch & CAS Engine"]
-        SigEngine["Cryptographic Signature Engine<br/>(OpenSSH SIGSPEC & GPG RFC 4880)"]
-        MCPServer["MCP JSON-RPC 2.0 Server<br/>(/mcp & /mcp/readonly • 35 Tools)"]
-        RESTRouter["Forge REST API Router<br/>(/v1/origin • 119 Operations)"]
-        Federation["Identity Federation & SCIM<br/>(/scim/v2/Users & /api/v1/auth/sso/*)"]
-        PolicyEngine["3-Way Merge & Ruleset Policy Engine<br/>(Approvals, Checks, CIDR, SSH CA)"]
-    end
-
-    subgraph Storage["Hermetic Local Storage"]
-        MetaDB[("SQLite WAL Database<br/>Metadata, Grants, PRs, Rules, SSO")]
-        GitRepo[("Bare Git Repositories (go-git v6)<br/>Packfiles, Trees, Commits, Refs")]
-        LFSCAS[("LFS Content-Addressable Storage<br/>(SHA-256 Sharded Binary Objects)")]
-    end
-
-    GitHTTP --> HTTPGateway
-    GitSSH --> SSHServer
-    GitLFS --> HTTPGateway
-    Agent --> HTTPGateway
-    WebUI --> HTTPGateway
-    IdP --> HTTPGateway
-    IaC --> HTTPGateway
-
-    HTTPGateway --> SmartHTTP
-    HTTPGateway --> LFSEngine
-    HTTPGateway --> MCPServer
-    HTTPGateway --> RESTRouter
-    HTTPGateway --> Federation
-
-    SSHServer --> SigEngine
-    SmartHTTP --> SigEngine
-    SigEngine --> GitRepo
-    LFSEngine --> LFSCAS
-
-    RESTRouter --> PolicyEngine
-    MCPServer --> PolicyEngine
-
-    SmartHTTP --> GitRepo
-    SSHServer --> GitRepo
-    RESTRouter --> GitRepo
-    RESTRouter --> MetaDB
-    MCPServer --> GitRepo
-    MCPServer --> MetaDB
-    Federation --> MetaDB
-```
-
----
-
-## 🚀 Quickstart
+`existd` is a single hermetic binary with the full web UI embedded. One command to build, one command to bootstrap, and your forge is live.
 
 ### 1. Build from Source
 
-Compile the server daemon (`existd`) and CLI (`exist`):
-
 ```bash
-# Build the forge server daemon (pure Go, zero cgo)
+# Build the forge daemon (single binary with embedded Web UI, zero cgo)
 go build -o bin/existd ./cmd/existd
 
 # Build the companion CLI
 go build -o bin/exist ./cmd/exist
 ```
 
-### 2. Bootstrap Your Administrator
+### 2. Bootstrap Your Forge Administrator
 
-Initialize your local SQLite database, provision the initial organization namespace, and issue the root administrative token:
+Initialize the SQLite WAL database, create the initial organization namespace, and issue your administrator token:
 
 ```bash
 ./bin/existd bootstrap \
@@ -211,80 +67,17 @@ Initialize your local SQLite database, provision the initial organization namesp
 ### 3. Start the Server
 
 ```bash
-# Start existd on HTTP :8080 and SSH :2222
+# Start existd on HTTP :8080 (UI, API, MCP, Git) and SSH :2222
 ./bin/existd
 ```
 
-### 4. Docker Compose Enterprise Deployment
-
-Alternatively, deploy the complete enterprise stack with hot S3 replication and Prometheus monitoring in one command:
-
-```bash
-docker compose -f docker-compose.enterprise.yml up -d
-```
-
-### Service Endpoints
-
-| Endpoint | Protocol | Description |
-| :--- | :--- | :--- |
-| `http://localhost:3000` | Web UI | Space UI living developer dashboard & admin console |
-| `ssh://git@localhost:2222/{owner}/{repo}.git` | Pure-Go SSH | Embedded SSH clone, fetch, and push |
-| `http://localhost:8080/{owner}/{repo}.git` | Git Smart-HTTP | HTTP clone, fetch, and push |
-| `http://localhost:8080/{owner}/{repo}.git/info/lfs` | Git LFS | Large File Storage v1 Batch and Object API |
-| `http://localhost:8080/v1/origin` | REST / JSON | Full forge REST API (119 operations) |
-| `http://localhost:8080/scim/v2/Users` | SCIM 2.0 | RFC 7644 automated user provisioning endpoint |
-| `http://localhost:8080/api/v1/auth/sso/*` | OIDC / SAML | Enterprise SSO login and metadata endpoints |
-| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Read-write Model Context Protocol endpoint (35 tools) |
-| `http://localhost:8080/mcp/readonly` | MCP (JSON-RPC) | Sandboxed read-only Model Context Protocol endpoint |
-| `http://localhost:8080/metrics` | Prometheus | Metrics exposition for Grafana and Kubernetes |
-| `http://localhost:8080/healthz` | HTTP | Kubernetes liveness and readiness probe |
-
----
-
-## 💻 Git & Enterprise Workflows
-
-### Clone and Push via Pure-Go SSH (:2222)
-
-```bash
-# 1. Enroll your public key in the Web UI or via API
-# 2. Clone via SSH
-git clone ssh://git@localhost:2222/acme/my-service.git
-cd my-service
-
-# 3. Sign commits with SSH and push
-git config user.signingkey ~/.ssh/id_ed25519.pub
-git config gpg.format ssh
-git config commit.gpgsign true
-
-echo "Hello, exist.io" > README.md
-git add README.md
-git commit -m "feat: initial signed commit"
-git push -u origin main
-```
-
-### Track Large Files with Git LFS
-
-```bash
-# Track design files and machine learning models
-git lfs track "*.onnx" "*.tar.gz"
-git add .gitattributes
-git commit -m "chore: track models with Git LFS"
-
-# Push LFS binary objects to Content-Addressable Storage
-git add models/checkpoint.onnx
-git commit -m "feat: upload agent checkpoint"
-git push origin main
-```
+Open **`http://localhost:8080`** in your browser to view the living web dashboard.
 
 ---
 
 ## 🤖 Connecting AI Coding Agents (MCP)
 
-`exist.io` natively speaks the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), allowing AI coding agents to interact directly with the forge over JSON-RPC 2.0.
-
-### Client Configuration
-
-Add `exist.io` to your agent configuration file (e.g., Claude Desktop, Cursor, Cline):
+`exist.io` speaks the standard [Model Context Protocol (MCP)](https://modelcontextprotocol.io) over JSON-RPC 2.0. Add exist.io to your agent configuration (Claude Code, Cursor, Cline):
 
 ```json
 {
@@ -292,7 +85,7 @@ Add `exist.io` to your agent configuration file (e.g., Claude Desktop, Cursor, C
     "exist-io": {
       "url": "http://localhost:8080/mcp",
       "headers": {
-        "Authorization": "Bearer <your-token>"
+        "Authorization": "Bearer <your-admin-token>"
       }
     }
   }
@@ -300,111 +93,105 @@ Add `exist.io` to your agent configuration file (e.g., Claude Desktop, Cursor, C
 ```
 
 > [!TIP]
-> **Read-Only Sandbox:** For untrusted or experimental agents, set the URL to `http://localhost:8080/mcp/readonly`. Any mutation attempt (`pull_request_create`, `thread_comment`, `pull_request_merge`) is automatically blocked at the protocol layer.
+> **Read-Only Sandbox:** For low-privilege agent exploration, point your agent to `http://localhost:8080/mcp/readonly`. All mutation attempts (`create_pull_request`, `merge_pull_request`, review comments) are rejected at the protocol layer.
 
-### Key MCP Tools (35 Total)
+### Core MCP Tool Set
 
 | Tool Name | Type | Description |
 | :--- | :--- | :--- |
-| `repo_tree` | Read | Recursively inspect file trees at any commit SHA or branch ref |
-| `file_read` | Read | Read blob contents, encoding, and metadata |
-| `diff_compare` | Read | Calculate two-way and three-way diffs between branches or commits |
-| `pull_request_create` | Write | Open a pull request with base and head branches |
-| `pull_request_merge` | Write | Execute a 3-way or squash merge through policy gates |
-| `thread_comment` | Write | Post inline code review comments or reply to review threads |
-| `status_check_report` | Write | Report check run results (success, failure, in-progress) |
-| `list_rulesets` | Read | Inspect active branch merge policies and CIDR allowlists |
+| `get_git_tree` | Read | Recursively inspect file trees at any commit SHA or branch ref |
+| `get_file_contents` | Read | Read blob contents, encoding, and metadata |
+| `compare_commits` | Read | Calculate two-way and three-way diffs between branches or commits |
+| `search_symbols` | Read | AST symbol search across Go, TypeScript/JavaScript, and Python |
+| `create_pull_request` | Write | Open a pull request with base and head branch specifications |
+| `create_pull_request_comment` | Write | Post review comments on pull request threads |
+| `checks_read` | Read | Inspect check run conclusions and required policy gates |
+| `merge_pull_request` | Write | Execute a 3-way or squash merge through branch protection checks |
 
 ---
 
-## 🏗️ Infrastructure as Code (Terraform & Helm)
+## 📊 Verified Comparison Matrix
 
-### Terraform / OpenTofu Provider
+Only verifiable technical facts are reported below:
 
-Manage your enterprise forge declaratively with the official provider in `deploy/terraform-provider-exist`:
+| Feature / Dimension | **exist.io** | **Cursor Origin** | **GitHub (Enterprise)** | **Forgejo / Gitea** |
+| :--- | :--- | :--- | :--- | :--- |
+| **Self-Hosted** | **Yes** (single binary) | No (cloud only) | Server edition only | **Yes** |
+| **Vendor Neutrality** | **Any agent** (Claude, Codex, Cline, Cursor) | Cursor-only accounts | Any | Any |
+| **MCP Native Server** | **Built-in** (`/mcp` + `/mcp/readonly`) | Proprietary API | Via external wrappers | Via community plugins |
+| **Agent Leases (`refs/heads/agent/*`)** | **Built-in HMAC leases** | Proprietary | Fine-grained PATs | Branch protection only |
+| **Pure-Go SSH Server** | **Yes** (:2222, zero OpenSSH dependency) | N/A | Host OpenSSH daemon | Host OpenSSH / Go SSH |
+| **Zero CGO Compilation** | **Yes** (`modernc.org/sqlite`) | N/A | Closed-source | Requires CGO or SQLite build tags |
+| **Database Architecture** | **SQLite WAL** (zero external DB) | Proprietary cloud DB | MySQL / Cloud SQL | SQLite / Postgres / MySQL |
+| **Commit Signatures** | **OpenSSH SIGSPEC & GPG** | Proprietary | GPG, SSH, S/MIME | GPG, SSH |
 
-```hcl
-provider "exist" {
-  endpoint = "https://git.corp.exist.io"
-  token    = var.exist_token
-}
+---
 
-resource "exist_namespace" "core" {
-  slug         = "core-eng"
-  display_name = "Core Engineering"
-  type         = "organization"
-}
+## ⚙️ Honest Architectural Limits & Scope
 
-resource "exist_repository" "api" {
-  namespace_slug = exist_namespace.core.slug
-  name           = "api-gateway"
-  default_branch = "main"
-  private        = true
-}
+To ensure realistic expectations, exist.io documents its design constraints explicitly:
 
-resource "exist_ruleset" "mainline" {
-  namespace_slug = exist_namespace.core.slug
-  repo_name      = exist_repository.api.name
-  name           = "Production Policy"
-  enforcement    = "active"
-  kind           = "branch"
-  included_refs  = ["refs/heads/main"]
+1. **SQLite WAL Concurrency (Single-Writer)**:
+   exist.io uses pure-Go SQLite in Write-Ahead Logging (WAL) mode. Reads scale concurrently across goroutines, but write transactions (`git push`, PR creation, comments) are executed with a serialized database lock. exist.io is optimized for small to medium teams (1–25 concurrent agents and engineers), not hyper-scale thousands-of-pushes-per-second workloads.
+2. **go-git Performance Profile**:
+   Bare repository operations use `go-git/v6` directly in Go memory. While completely hermetic and CGO-free, `go-git` exhibits higher memory consumption and slower packfile generation on massive monorepos (> 2 GB) compared to native C git.
+3. **No Automated Merge Queue in v0.5.0-beta**:
+   PR merges are executed synchronously with deterministic 3-way and squash merge engines. Asynchronous merge queues with speculative batching are deferred to the post-launch roadmap.
 
-  rules = [
-    { type = "pull_request", parameters = { required_approving_review_count = 1 } },
-    { type = "required_status_checks", parameters = { checks = ["CI Build"] } },
-    { type = "required_signatures", parameters = {} },
-    { type = "non_fast_forward", parameters = {} }
-  ]
-}
-```
+---
 
-### Kubernetes Helm Chart
+## 🌐 Service Endpoints
 
-Deploy to production Kubernetes clusters with the official chart in `deploy/helm/exist-enterprise`:
+`existd` serves all forge transports and APIs on documented, isolated endpoints:
+
+| Endpoint | Protocol | Description |
+| :--- | :--- | :--- |
+| `http://localhost:8080/` | Web UI | Embedded living developer dashboard & administration |
+| `http://localhost:8080/{owner}/{repo}.git` | Git Smart-HTTP | Pure-Go authenticated clone, fetch, and push |
+| `ssh://git@localhost:2222/{owner}/{repo}.git` | Pure-Go SSH | Embedded SSH clone, fetch, and push (:2222) |
+| `http://localhost:8080/mcp` | MCP JSON-RPC | Read-write Model Context Protocol endpoint |
+| `http://localhost:8080/mcp/readonly` | MCP JSON-RPC | Sandboxed read-only Model Context Protocol endpoint |
+| `http://localhost:8080/api/v1/*` | REST API | Core forge REST operations |
+| `http://localhost:8080/healthz` | HTTP | Liveness probe endpoint |
+| `http://localhost:8080/metrics` | Prometheus | Prometheus cluster metrics exposition |
+
+---
+
+## 🧪 Experimental Modules (Scope Freeze)
+
+The following modules build cleanly and pass automated unit tests, but are frozen for the v0.5.0-beta release while focus is locked on the core agent loop:
+
+- **Git LFS File Locking (`/info/lfs/locks`)**: Implemented in `internal/gitlfs`, frozen.
+- **Enterprise Federation (SCIM 2.0 & OIDC/SAML)**: Implemented in `internal/auth`, frozen for external security review.
+- **Infrastructure as Code**: Terraform provider (`deploy/terraform-provider-exist`) and Helm chart (`deploy/helm/exist-enterprise`), frozen.
+- **Enterprise Multi-Service Compose**: `docker-compose.enterprise.yml` with MinIO and Litestream, frozen.
+
+---
+
+## 🧪 Verification & Automated Testing
+
+Every pull request and release is validated by automated CI:
 
 ```bash
-helm upgrade --install exist-enterprise ./deploy/helm/exist-enterprise \
-  --namespace forge \
-  --create-namespace \
-  -f values.yaml
+# Run all Go tests with race detection
+go test -v -race ./...
+
+# Run frontend Vitest automated test suite (37 suites, 137 tests)
+cd web && npm test
+
+# Verify production frontend build
+cd web && npm run build
+
+# Validate documentation site
+cd site && npm run validate && npm run build
 ```
 
 ---
 
-## ⚙️ Configuration Reference
+## 📄 License & Governance
 
-| Environment Variable | CLI Flag | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `EXIST_LISTEN_ADDR` | `--addr` | `127.0.0.1:8080` | TCP network address to bind the HTTP daemon |
-| `EXIST_SSH_ADDR` | `--ssh-addr` | `0.0.0.0:2222` | TCP network address to bind the pure-Go SSH server |
-| `EXIST_DATA_DIR` | `--data-dir` | `./data` | Directory for SQLite database, Git repos, and LFS objects |
-| `EXIST_PUBLIC_URL` | `--public-url` | `http://127.0.0.1:8080` | Canonical public URL used in webhooks and SSO redirects |
-| `EXIST_GIT_URL` | `--git-url` | `127.0.0.1:8080` | Public host used in clone URLs |
-| `EXIST_LFS_ENABLED` | `--lfs` | `true` | Enable or disable the Git LFS v1 Batch engine |
-| `EXIST_LFS_STORAGE_DIR` | `--lfs-dir` | `<data-dir>/lfs` | Content-Addressable Storage directory for LFS objects |
-| `EXIST_LOG_LEVEL` | `--log-level` | `info` | Minimum log verbosity level (`debug`, `info`, `warn`, `error`) |
-
----
-
-## 🧪 Verification & Testing
-
-Every package is covered by automated unit, contract, and integration tests:
-
-```bash
-# Run all Go tests
-go test -count=1 ./...
-
-# Run frontend typecheck and Vite build
-npm --prefix web run build
-
-# Validate and build documentation site (Blume / MDX)
-npm --prefix site run validate
-npm --prefix site run build
-```
-
----
-
-## 📄 License
-
-Licensed under the [Apache License, Version 2.0](LICENSE) or [MIT License](LICENSE-MIT).
+- **Code License**: Licensed under the [Apache License, Version 2.0](LICENSE).
+- **Trademarks**: Name and branding guidelines are governed by [TRADEMARK.md](TRADEMARK.md).
+- **Security**: Vulnerability reporting policy is available at [SECURITY.md](SECURITY.md).
+- **Contributing**: Development runbook and guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Code of Conduct**: Community pledge is located at [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
