@@ -1,0 +1,96 @@
+---
+title: "Agent Setup: Claude Code"
+description: "Step-by-step guide to pair programming with Anthropic's Claude Code against your self-hosted exist.io forge."
+---
+
+Claude Code is Anthropic's command-line agentic tool for software development. This guide explains how to connect Claude Code to your self-hosted exist.io instance.
+
+## 1. Configure the MCP Endpoint
+
+Add the exist.io MCP server to Claude Code using the CLI or direct configuration.
+
+### Option A: Command-Line One-Liner
+
+```bash
+claude mcp add exist http://localhost:8080/mcp --header "Authorization: Bearer <YOUR_API_KEY>"
+```
+
+### Option B: Direct Configuration
+
+Add the server definition to your `~/.claude/settings.json` file:
+
+```json
+{
+  "mcpServers": {
+    "exist": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 2. Capability Lease Issuance
+
+Claude Code agents operate under cryptographically scoped capability leases. When Claude connects, it requests a lease with isolated ref permissions:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "lease_request",
+    "arguments": {
+      "agentId": "claude-code",
+      "repoId": "acme/demo",
+      "allowedRefPrefixes": ["refs/heads/agent/"],
+      "ttlSeconds": 3600
+    }
+  }
+}
+```
+
+The response includes the signed token:
+- Git clone password: Use the lease token as password with username `lease`.
+- Smart-HTTP pushes are automatically constrained to `refs/heads/agent/*`.
+
+---
+
+## 3. Example Prompt That Works
+
+Run Claude Code in your project directory:
+
+```bash
+claude
+```
+
+**Prompt:**
+> "Connect to exist.io repository `acme/demo`. Create a new branch `agent/add-healthcheck`, implement an HTTP `/healthz` endpoint with unit tests, commit the changes, push to origin, and open a pull request."
+
+Claude Code will:
+1. Issue a capability lease via `lease_request`.
+2. Inspect the repository tree using `repo_tree`.
+3. Branch to `agent/add-healthcheck`.
+4. Commit and push changes over HTTP or SSH.
+5. Open a pull request using `pull_request_create`.
+
+---
+
+## 4. Common Errors & Troubleshooting
+
+### `GH007: Agent capability lease ref violation`
+- **Cause:** Claude attempted to push to a branch outside `refs/heads/agent/*` (e.g., directly to `main`).
+- **Fix:** Instruct Claude to use branches starting with `agent/` (e.g., `git checkout -b agent/my-fix`).
+
+### `401 Unauthorized: Invalid lease signature`
+- **Cause:** The lease token expired or the server's `EXIST_JWT_SECRET` changed.
+- **Fix:** Request a fresh lease using `lease_request`.
+
+### `Secret scan violation: Push rejected`
+- **Cause:** A hardcoded token, private key, or AWS credential was detected in the commit.
+- **Fix:** Remove the secret from Git history and re-commit before pushing.

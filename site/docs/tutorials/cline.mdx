@@ -1,0 +1,80 @@
+---
+title: "Agent Setup: Cline"
+description: "How to configure autonomous coding with Cline (VS Code extension) on your self-hosted exist.io instance."
+---
+
+Cline is an open-source autonomous coding agent that runs inside VS Code. It uses MCP to communicate with development tools and Git forges.
+
+## 1. Configure the MCP Server in Cline
+
+Open Cline's settings in VS Code, click the **MCP Servers** tab, and edit `cline_mcp_settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "exist": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_API_KEY>"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "repo_tree",
+        "file_read",
+        "diff_compare",
+        "symbol_search"
+      ]
+    }
+  }
+}
+```
+
+---
+
+## 2. Issue a Capability Lease
+
+Cline uses capability leases to ensure safe ref isolation when pushing code autonomously:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "lease_request",
+    "arguments": {
+      "agentId": "cline-coder",
+      "repoId": "acme/demo",
+      "allowedRefPrefixes": ["refs/heads/agent/"],
+      "ttlSeconds": 3600
+    }
+  }
+}
+```
+
+---
+
+## 3. Example Prompt That Works
+
+In Cline's chat panel:
+
+> "Inspect `acme/demo` on exist.io. Read `README.md` and `main.go`. Create branch `agent/cline-docs-update`, improve the quickstart documentation, push the branch, and open a pull request."
+
+Cline executes the sequence:
+1. Calls `file_read` to review `README.md`.
+2. Edits the file locally.
+3. Checks out branch `agent/cline-docs-update`.
+4. Commits and pushes.
+5. Calls `pull_request_create` to publish the PR.
+
+---
+
+## 4. Common Errors & Troubleshooting
+
+### `autoApprove permissions error`
+- **Cause:** Cline requires manual confirmation for mutating tools (`pull_request_create`, `pull_request_merge`).
+- **Fix:** Either confirm the action in the VS Code popup or add the tool name to `autoApprove` array in `cline_mcp_settings.json`.
+
+### `Branch deletion blocked`
+- **Cause:** Cline attempted to run `git push origin --delete <branch>`.
+- **Fix:** Capability leases prohibit agents from deleting refs to preserve history. Delete branches from the web UI if needed.

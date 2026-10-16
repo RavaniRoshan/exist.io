@@ -1,0 +1,91 @@
+---
+title: "Agent Setup: Codex / Generic MCP Client"
+description: "How to connect OpenAI Codex or generic Model Context Protocol clients to exist.io."
+---
+
+exist.io implements the standard JSON-RPC 2.0 Model Context Protocol (MCP) specification over HTTP. Any compliant agent client or script can interact with the forge.
+
+## 1. TOML Configuration (Generic MCP / Codex)
+
+For agents that parse TOML configuration files:
+
+```toml
+[mcp.servers.exist]
+url = "http://localhost:8080/mcp"
+headers = { Authorization = "Bearer <YOUR_API_KEY>" }
+```
+
+For JSON-based clients:
+
+```json
+{
+  "mcpServers": {
+    "exist": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 2. Direct HTTP JSON-RPC Protocol
+
+You can issue commands directly to `/mcp` using standard `curl` or HTTP libraries:
+
+### List Available Tools
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Authorization: Bearer <YOUR_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }'
+```
+
+### Call a Tool (`symbol_search`)
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Authorization: Bearer <YOUR_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "symbol_search",
+      "arguments": {
+        "ownerSlug": "acme",
+        "repoName": "demo",
+        "query": "Bootstrap"
+      }
+    }
+  }'
+```
+
+---
+
+## 3. Example Prompt That Works
+
+For an agent loop orchestrator:
+
+> "Query exist.io MCP for repository `acme/demo`. Search for symbol `ServeHTTP`. Create a PR that adds a metrics counter to `ServeHTTP`."
+
+---
+
+## 4. Common Errors & Troubleshooting
+
+### `Invalid JSON-RPC version`
+- **Cause:** Request omitted `"jsonrpc": "2.0"`.
+- **Fix:** Ensure all payloads declare `"jsonrpc": "2.0"`.
+
+### `Missing Authorization Header`
+- **Cause:** Endpoint returned `401 Unauthorized`.
+- **Fix:** Provide a valid API key (`key_...`) or capability lease in the `Authorization: Bearer <token>` header.

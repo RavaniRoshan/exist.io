@@ -1,0 +1,70 @@
+---
+title: "Agent Setup: Cursor"
+description: "How to configure Cursor's Agent Mode to pair program directly against a self-hosted exist.io forge."
+---
+
+Cursor supports native MCP servers in both Agent Mode and Composer.
+
+## 1. Configure the MCP Server in Cursor
+
+Create or edit `.cursor/mcp.json` in your repository root, or open **Cursor Settings > Features > MCP** and add the exist.io server:
+
+```json
+{
+  "mcpServers": {
+    "exist": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+Verify that the green dot appears next to `exist` in Cursor's MCP dashboard.
+
+---
+
+## 2. Issue a Capability Lease
+
+Cursor Agent Mode can query your repository tree, compare diffs, and create pull requests. When writing code, Cursor requests an ephemeral lease:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/agent/leases \
+  -H "Authorization: Bearer <YOUR_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "cursor-agent",
+    "repoId": "acme/demo",
+    "allowedRefPrefixes": ["refs/heads/agent/"],
+    "ttlSeconds": 7200
+  }'
+```
+
+---
+
+## 3. Example Prompt That Works
+
+In Cursor Composer (Agent Mode):
+
+> "Use the exist MCP server to read `acme/demo` repository structure. Create branch `agent/refactor-auth`, extract auth helpers into a separate package, push the branch, and open a pull request titled 'Refactor auth helpers'."
+
+Cursor will automatically:
+1. Call `repo_tree` to index the files.
+2. Read target files with `file_read`.
+3. Apply edits in your workspace.
+4. Push to `refs/heads/agent/refactor-auth`.
+5. Call `pull_request_create` to publish the PR on exist.io.
+
+---
+
+## 4. Common Errors & Troubleshooting
+
+### `Connection Refused on :8080`
+- **Cause:** `existd` is not running or is bound to a different interface.
+- **Fix:** Ensure `existd` is running and `curl http://localhost:8080/healthz` returns `ok`.
+
+### `Tool call failed on /mcp/readonly`
+- **Cause:** Cursor is configured with the sandboxed read-only endpoint `/mcp/readonly` and attempted a write operation (e.g. creating a PR).
+- **Fix:** Point full-capability agents to `/mcp` with an authenticated API key. Use `/mcp/readonly` only for low-privilege inspection.
