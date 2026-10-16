@@ -7,8 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://ravaniroshan.github.io/exist.os/"><img src="https://img.shields.io/badge/Website-exist.io-0F172A?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>
   <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Docs-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.6--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Version-v0.4.7--enterprise-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <img src="https://img.shields.io/badge/License-Apache--2.0%20%2F%20MIT-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
   <img src="https://img.shields.io/badge/LFS-v1%20Batch%20CAS-F05032?style=flat-square&logo=git-lfs&logoColor=white" alt="Git LFS">
@@ -17,10 +19,10 @@
   <img src="https://img.shields.io/badge/IaC-Terraform%20%26%20Helm-blue?style=flat-square&logo=terraform&logoColor=white" alt="IaC">
   <img src="https://img.shields.io/badge/Agents-MCP%2035%20Tools%20%2B%20Leases-8A2BE2?style=flat-square" alt="MCP Server">
   <img src="https://img.shields.io/badge/UI-GitHub%20Primer%20%2B%20OKLCH-10B981?style=flat-square" alt="GitHub Primer UI">
-  <img src="https://img.shields.io/badge/Tests-114%20Passed%20(32%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
+  <img src="https://img.shields.io/badge/Tests-137%20Passed%20(37%20Suites)-2D6A57?style=flat-square" alt="Vitest Unit Tests">
 </p>
 
-[**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
+[**Website**](https://ravaniroshan.github.io/exist.os/) &nbsp;&bull;&nbsp; [**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Terraform Provider**](deploy/terraform-provider-exist) &nbsp;&bull;&nbsp; [**Helm Chart**](deploy/helm/exist-enterprise)
 
 </div>
 
@@ -30,6 +32,12 @@
 
 > [!NOTE]
 > exist.io provides full wire compatibility with Origin forge interfaces while remaining 100% open-source and self-hosted with zero external proprietary dependencies.
+
+**⚡ Quickstart:** `go build -o bin/existd ./cmd/existd && ./bin/existd bootstrap --email you@corp.com --namespace acme --data-dir ./data` — then open `http://localhost:8080` (HTTP :8080 · SSH :2222). Full walkthrough in [Quickstart](#-quickstart) below.
+
+<p align="center">
+  <a href="https://ravaniroshan.github.io/exist.os/"><img src="assets/launch/01-hero-terminal.png" alt="exist.io — the self-hosted forge for the age of coding agents" width="800" /></a>
+</p>
 
 ---
 
@@ -130,7 +138,7 @@ flowchart TD
         SmartHTTP["Git Smart-HTTP Transport Engine"]
         LFSEngine["Git LFS v1 Batch & CAS Engine"]
         SigEngine["Cryptographic Signature Engine<br/>(OpenSSH SIGSPEC & GPG RFC 4880)"]
-        MCPServer["MCP JSON-RPC 2.0 Server<br/>(/mcp & /mcp/readonly • 34 Tools)"]
+        MCPServer["MCP JSON-RPC 2.0 Server<br/>(/mcp & /mcp/readonly • 35 Tools)"]
         RESTRouter["Forge REST API Router<br/>(/v1/origin • 119 Operations)"]
         Federation["Identity Federation & SCIM<br/>(/scim/v2/Users & /api/v1/auth/sso/*)"]
         PolicyEngine["3-Way Merge & Ruleset Policy Engine<br/>(Approvals, Checks, CIDR, SSH CA)"]
@@ -226,7 +234,7 @@ docker compose -f docker-compose.enterprise.yml up -d
 | `http://localhost:8080/v1/origin` | REST / JSON | Full forge REST API (119 operations) |
 | `http://localhost:8080/scim/v2/Users` | SCIM 2.0 | RFC 7644 automated user provisioning endpoint |
 | `http://localhost:8080/api/v1/auth/sso/*` | OIDC / SAML | Enterprise SSO login and metadata endpoints |
-| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Read-write Model Context Protocol endpoint (34 tools) |
+| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Read-write Model Context Protocol endpoint (35 tools) |
 | `http://localhost:8080/mcp/readonly` | MCP (JSON-RPC) | Sandboxed read-only Model Context Protocol endpoint |
 | `http://localhost:8080/metrics` | Prometheus | Metrics exposition for Grafana and Kubernetes |
 | `http://localhost:8080/healthz` | HTTP | Kubernetes liveness and readiness probe |
@@ -294,7 +302,7 @@ Add `exist.io` to your agent configuration file (e.g., Claude Desktop, Cursor, C
 > [!TIP]
 > **Read-Only Sandbox:** For untrusted or experimental agents, set the URL to `http://localhost:8080/mcp/readonly`. Any mutation attempt (`pull_request_create`, `thread_comment`, `pull_request_merge`) is automatically blocked at the protocol layer.
 
-### Key MCP Tools (34 Total)
+### Key MCP Tools (35 Total)
 
 | Tool Name | Type | Description |
 | :--- | :--- | :--- |
