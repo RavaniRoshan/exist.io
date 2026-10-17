@@ -28,6 +28,7 @@ import { Box, BoxHeader, BoxTitle, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog'
 import { UnderlineNav, type NavTabItem } from '@/components/ui/UnderlineNav'
 import { CreateRepoModal } from '@/components/modals/CreateRepoModal'
+import { MigrateRepoModal } from '@/components/modals/MigrateRepoModal'
 import { DeleteRepoModal } from '@/components/modals/DeleteRepoModal'
 import {
   fetchUserSSHKeys,
@@ -163,6 +164,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
   const [repoTypeFilter, setRepoTypeFilter] = useState<'all' | 'public' | 'private'>('all')
   const [userRepos, setUserRepos] = useState<PinnedRepo[]>(() => (isDemoModeActive() ? pinnedReposData : []))
   const [isCreateRepoModalOpen, setIsCreateRepoModalOpen] = useState(false)
+  const [isMigrateRepoModalOpen, setIsMigrateRepoModalOpen] = useState(false)
   const [deleteRepoTarget, setDeleteRepoTarget] = useState<{ owner: string; name: string } | null>(null)
   const [liveCommitCount, setLiveCommitCount] = useState(0)
 
@@ -687,6 +689,16 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
                     <option value="public">Public</option>
                     <option value="private">Private</option>
                   </select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => setIsMigrateRepoModalOpen(true)}
+                    title="Import repository from GitHub or Git"
+                  >
+                    <GitFork className="w-3.5 h-3.5" />
+                    <span>Import</span>
+                  </Button>
                   <Button size="sm" className="gap-1.5" onClick={() => setIsCreateRepoModalOpen(true)}>
                     <Plus className="w-3.5 h-3.5" />
                     <span>New</span>
@@ -1138,6 +1150,29 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onSelectRepo }
             ...prev,
           ])
           onSelectRepo?.(newRepo.name)
+        }}
+      />
+
+      {/* Migrate Repo Modal */}
+      <MigrateRepoModal
+        isOpen={isMigrateRepoModalOpen}
+        onClose={() => setIsMigrateRepoModalOpen(false)}
+        defaultOwner={user.login}
+        onSuccess={(migratedRepo) => {
+          setUserRepos((prev) => [
+            {
+              name: migratedRepo.name,
+              owner: user.login,
+              description: 'Migrated repository from external forge',
+              language: 'Go',
+              languageColor: '#00ADD8',
+              stars: 0,
+              forks: 0,
+              isPrivate: false,
+            },
+            ...prev,
+          ])
+          onSelectRepo?.(migratedRepo.name)
         }}
       />
 

@@ -14,11 +14,13 @@ import {
   Check,
   Compass,
   Terminal,
+  GitFork,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Box, BoxHeader, BoxTitle, BoxBody } from '@/components/ui/Card'
 import { CreateRepoModal } from '@/components/modals/CreateRepoModal'
+import { MigrateRepoModal } from '@/components/modals/MigrateRepoModal'
 import {
   getRepositories,
   getAgentActivities,
@@ -172,6 +174,7 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
   const [repoSortOrder, setRepoSortOrder] = useState<'updated' | 'name' | 'stars'>('updated')
   const [copiedClone, setCopiedClone] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isMigrateModalOpen, setIsMigrateModalOpen] = useState(false)
 
   // Real or sandbox repositories
   const [repos, setRepos] = useState<RepositoryRecord[]>(() => (isDemoModeActive() ? defaultDemoRepos : []))
@@ -325,15 +328,27 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
             <h2 className="text-xs font-semibold text-foreground tracking-tight uppercase">
               Top Repositories
             </h2>
-            <Button
-              size="xs"
-              variant="primary"
-              className="gap-1 text-xs"
-              onClick={() => setIsCreateModalOpen(true)}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>New</span>
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="xs"
+                variant="outline"
+                className="gap-1 text-xs"
+                onClick={() => setIsMigrateModalOpen(true)}
+                title="Import repository from GitHub or Git"
+              >
+                <GitFork className="w-3.5 h-3.5" />
+                <span>Import</span>
+              </Button>
+              <Button
+                size="xs"
+                variant="primary"
+                className="gap-1 text-xs"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New</span>
+              </Button>
+            </div>
           </div>
 
           {/* Search */}
@@ -766,6 +781,15 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleRepoCreated}
+      />
+
+      {/* Migrate Repo Modal */}
+      <MigrateRepoModal
+        isOpen={isMigrateModalOpen}
+        onClose={() => setIsMigrateModalOpen(false)}
+        onSuccess={(migratedRepo) => {
+          onSelectRepo(migratedRepo.name)
+        }}
       />
     </>
   )
