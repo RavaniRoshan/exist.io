@@ -33,7 +33,12 @@ While proprietary platforms tie agent workspaces to closed cloud accounts, exist
 ## ⚡ 90-Second Agent Loop Demo
 
 <p align="center">
-  <img src="assets/demo.gif" alt="exist.io — 90-second agent loop demo" width="800" />
+  <img src="assets/demo.gif" alt="exist.io — 90-second agent loop demo" width="100%" max-width="800" />
+</p>
+
+<p align="center">
+  <em>From cold bootstrap to autonomous agent capability lease, branch push, MCP PR, and merge in 90 seconds.</em><br />
+  <a href="https://github.com/RavaniRoshan/exist.io/raw/main/assets/demo.mp4"><strong>▶ Watch High-Definition MP4 Video (1.3 MB)</strong></a> &nbsp;&bull;&nbsp; <a href="assets/demo.tape"><strong>View VHS Recording Tape</strong></a>
 </p>
 
 ---
