@@ -2,7 +2,10 @@
 // reading environment variables and providing self-hosted defaults.
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 const (
 	defaultListen    = "127.0.0.1:8080"
@@ -30,6 +33,13 @@ type Config struct {
 	ClusterRole string
 	ReplicaDir  string
 	NodeID      string
+
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUsername string
+	SMTPPassword string
+	SMTPFrom     string
+	SMTPTLS      bool
 }
 
 // Load reads configuration from environment variables, falling back to safe self-hosted defaults.
@@ -47,6 +57,18 @@ func Load() Config {
 	replicaDir := getEnv("EXIST_REPLICA_DIR", "")
 	nodeID := getEnv("EXIST_NODE_ID", "")
 
+	smtpHost := getEnv("EXIST_SMTP_HOST", "")
+	smtpPort := 587
+	if pStr := getEnv("EXIST_SMTP_PORT", ""); pStr != "" {
+		if p, err := strconv.Atoi(pStr); err == nil && p > 0 {
+			smtpPort = p
+		}
+	}
+	smtpUsername := getEnv("EXIST_SMTP_USERNAME", "")
+	smtpPassword := getEnv("EXIST_SMTP_PASSWORD", "")
+	smtpFrom := getEnv("EXIST_SMTP_FROM", "noreply@exist.io")
+	smtpTLS := getEnv("EXIST_SMTP_TLS", "true") != "false"
+
 	return Config{
 		ListenAddr:     listenAddr,
 		DataDir:        dataDir,
@@ -60,6 +82,12 @@ func Load() Config {
 		ClusterRole:    clusterRole,
 		ReplicaDir:     replicaDir,
 		NodeID:         nodeID,
+		SMTPHost:       smtpHost,
+		SMTPPort:       smtpPort,
+		SMTPUsername:   smtpUsername,
+		SMTPPassword:   smtpPassword,
+		SMTPFrom:       smtpFrom,
+		SMTPTLS:        smtpTLS,
 	}
 }
 

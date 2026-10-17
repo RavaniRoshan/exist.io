@@ -25,6 +25,7 @@ import {
   Tag,
   Compass,
   Archive,
+  Bell,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -39,10 +40,12 @@ import {
   getIssues,
   getPullRequests,
   getReleases,
+  getUnreadNotificationCount,
   type RepoInfo,
   type UserProfile,
 } from '@/lib/api'
 import { AuthModal } from '@/components/views/AuthModal'
+import { NotificationsDropdown } from '@/components/views/NotificationsDropdown'
 import { cn } from '@/lib/utils'
 
 export interface HeaderProps {
@@ -79,6 +82,16 @@ export const Header: React.FC<HeaderProps> = ({
   const [liveReleaseCount, setLiveReleaseCount] = useState<number | undefined>(() => isDemoModeActive() ? 2 : undefined)
 
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
+
+  useEffect(() => {
+    getUnreadNotificationCount().then(setUnreadNotificationCount).catch(() => {})
+    const interval = setInterval(() => {
+      getUnreadNotificationCount().then(setUnreadNotificationCount).catch(() => {})
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     setStarCount(repo?.starsCount ?? (isDemoModeActive() ? 14 : 0))
@@ -269,6 +282,30 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
+
+              {/* In-App Notifications Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary/60 transition-colors relative cursor-pointer"
+                  title="Notifications"
+                  aria-label="Open notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadNotificationCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
+                  )}
+                </button>
+                <NotificationsDropdown
+                  isOpen={notificationsOpen}
+                  onClose={() => setNotificationsOpen(false)}
+                  onCountChange={setUnreadNotificationCount}
+                  onNavigate={(url) => {
+                    if (url.includes('/pull/')) onTabChange('pulls')
+                    else if (url.includes('/issues/')) onTabChange('issues')
+                  }}
+                />
+              </div>
 
               {/* User Authentication Menu & Profile Dropdown */}
               {currentUser ? (
