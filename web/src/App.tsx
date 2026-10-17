@@ -50,7 +50,16 @@ const ViewFallback = () => (
 )
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin' | 'settings'>('code')
+  const [activeTab, setActiveTab] = useState<'home' | 'profile' | 'code' | 'issues' | 'prs' | 'commits' | 'releases' | 'agents' | 'rulesets' | 'webhooks' | 'admin' | 'settings'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      const t = p.get('tab')
+      if (t && ['home', 'profile', 'code', 'issues', 'prs', 'commits', 'releases', 'agents', 'rulesets', 'webhooks', 'admin', 'settings'].includes(t)) {
+        return t as any
+      }
+    }
+    return 'code'
+  })
   const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
   const [tourOpen, setTourOpen] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
@@ -75,10 +84,13 @@ export default function App() {
   }
 
   useEffect(() => {
-    // If first-time user hasn't completed tour yet, auto-open tour
-    const completed = localStorage.getItem('exist_onboarding_tour_completed')
-    if (completed !== 'true') {
-      setTourOpen(true)
+    // If first-time user hasn't completed tour yet, auto-open tour (unless ?notour=1)
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('notour') !== '1') {
+      const completed = localStorage.getItem('exist_onboarding_tour_completed')
+      if (completed !== 'true') {
+        setTourOpen(true)
+      }
     }
 
     // In live mode, dynamically resolve the active primary repository from cluster

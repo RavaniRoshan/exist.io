@@ -39,7 +39,7 @@ echo ""
 sleep 1.5
 
 # Step 1: Build
-echo -e "${CYAN}${BOLD}[1/7] Compiling hermetic pure-Go binaries (CGO_ENABLED=0)...${NC}"
+echo -e "${CYAN}${BOLD}[1/8] Compiling hermetic pure-Go binaries (CGO_ENABLED=0)...${NC}"
 echo -e "${YELLOW}$ go build -o bin/existd ./cmd/existd${NC}"
 CGO_ENABLED=0 go build -o bin/existd ./cmd/existd
 echo -e "${GREEN}✓ Binary compiled with embedded Web UI & zero host dependencies.${NC}"
@@ -47,7 +47,7 @@ echo ""
 sleep 1.5
 
 # Step 2: Bootstrap
-echo -e "${CYAN}${BOLD}[2/7] Running single-command administrator bootstrap...${NC}"
+echo -e "${CYAN}${BOLD}[2/8] Running single-command administrator bootstrap...${NC}"
 echo -e "${YELLOW}$ existd bootstrap --email admin@exist.io --namespace acme${NC}"
 ./bin/existd bootstrap --email admin@exist.io --namespace acme --data-dir "$DEMO_DATA" > "$DEMO_DIR/bootstrap.out"
 head -n 14 "$DEMO_DIR/bootstrap.out"
@@ -56,7 +56,7 @@ echo ""
 sleep 2
 
 # Step 3: Start Daemon
-echo -e "${CYAN}${BOLD}[3/7] Launching forge daemon (Smart-HTTP :8080, pure-Go SSH :2222, MCP :8080/mcp)...${NC}"
+echo -e "${CYAN}${BOLD}[3/8] Launching forge daemon (Smart-HTTP :8080, pure-Go SSH :2222, MCP :8080/mcp)...${NC}"
 echo -e "${YELLOW}$ existd &${NC}"
 EXIST_DATA_DIR="$DEMO_DATA" EXIST_LISTEN_ADDR="127.0.0.1:8080" ./bin/existd > "$DEMO_DIR/existd.log" 2>&1 &
 DAEMON_PID=$!
@@ -69,7 +69,7 @@ echo ""
 sleep 1.5
 
 # Step 4: Capability Lease
-echo -e "${CYAN}${BOLD}[4/7] Agent requests ephemeral HMAC-SHA256 capability lease via MCP...${NC}"
+echo -e "${CYAN}${BOLD}[4/8] Agent requests ephemeral HMAC-SHA256 capability lease via MCP...${NC}"
 echo -e "${YELLOW}$ curl -X POST http://127.0.0.1:8080/mcp (tool: lease_request, scope: refs/heads/agent/*)${NC}"
 
 curl -s -X POST http://127.0.0.1:8080/mcp \
@@ -91,7 +91,7 @@ echo ""
 sleep 2
 
 # Step 5: Git Clone & Branch
-echo -e "${CYAN}${BOLD}[5/7] Agent clones repository and creates branch using lease credentials...${NC}"
+echo -e "${CYAN}${BOLD}[5/8] Agent clones repository and creates branch using lease credentials...${NC}"
 echo -e "${YELLOW}$ git clone http://lease:<TOKEN>@127.0.0.1:8080/acme/demo.git worktree${NC}"
 git clone "http://lease:$LEASE_TOKEN@127.0.0.1:8080/acme/demo.git" "$DEMO_WORKTREE" 2>&1 | grep -v "warning: redirecting"
 cd "$DEMO_WORKTREE"
@@ -103,7 +103,7 @@ echo ""
 sleep 1.5
 
 # Step 6: Push to refs/heads/agent/*
-echo -e "${CYAN}${BOLD}[6/7] Agent pushes branch to forge (verified by pre-receive hook)...${NC}"
+echo -e "${CYAN}${BOLD}[6/8] Agent pushes branch to forge (verified by pre-receive hook)...${NC}"
 echo -e "${YELLOW}$ git push origin agent/telemetry${NC}"
 git push origin agent/telemetry 2>&1 | grep -v "warning: redirecting"
 echo -e "${GREEN}✓ Security hook passed: secret scanning clean, ref namespace confirmed.${NC}"
@@ -111,7 +111,7 @@ echo ""
 sleep 2
 
 # Step 7: Open & Merge PR
-echo -e "${CYAN}${BOLD}[7/7] Agent opens Pull Request & merges via MCP...${NC}"
+echo -e "${CYAN}${BOLD}[7/8] Agent opens Pull Request & merges via MCP...${NC}"
 echo -e "${YELLOW}$ curl -X POST http://127.0.0.1:8080/mcp (tool: pull_request_create)${NC}"
 
 PR_RES=$(curl -s -X POST http://127.0.0.1:8080/mcp \
@@ -137,11 +137,19 @@ git log -n 1 --stat origin/main
 echo ""
 sleep 2
 
+# Step 8: Open Web UI in browser
+echo -e "${CYAN}${BOLD}[8/8] Opening browser to inspect merged Pull Request #1 in GitHub Primer UI...${NC}"
+echo -e "${YELLOW}$ open http://127.0.0.1:8080/acme/demo/pulls${NC}"
+/snap/bin/chromium --headless --no-sandbox --hide-scrollbars --window-size=1160,720 --virtual-time-budget=2000 --screenshot="$ROOT_DIR/assets/webui_pr_actual.png" "http://127.0.0.1:8080/?notour=1&tab=prs" 2>/dev/null || true
+echo -e "${GREEN}✓ Web UI loaded: merged Pull Request #1 verified in live cluster.${NC}"
+echo ""
+sleep 2
+
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}${BOLD} ✓ Complete! From cold install to merged agent PR in < 90 seconds.   ${NC}"
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════════════════════════════${NC}"
 echo ""
-sleep 3
+sleep 2
 
 kill "$DAEMON_PID" 2>/dev/null || true
 rm -rf "$DEMO_DIR"

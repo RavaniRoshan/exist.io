@@ -62,7 +62,14 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
 
   const [prs, setPrs] = useState<PullRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeFilter, setActiveFilter] = useState<'open' | 'merged' | 'all'>('open')
+  const [activeFilter, setActiveFilter] = useState<'open' | 'merged' | 'all'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      const f = p.get('filter')
+      if (f === 'merged' || f === 'all' || f === 'open') return f as any
+    }
+    return 'open'
+  })
   const [selectedPr, setSelectedPr] = useState<PullRequest | null>(null)
   const [activeSubTab, setActiveSubTab] = useState<'conversation' | 'diff' | 'checks'>('conversation')
   const [newCommentText, setNewCommentText] = useState('')
@@ -80,6 +87,22 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
     try {
       const data = await getPullRequests(owner, repoName)
       setPrs(data)
+      if (typeof window !== 'undefined') {
+        const p = new URLSearchParams(window.location.search)
+        const prParam = p.get('pr')
+        if (prParam) {
+          const match = data.find((item) => String(item.number) === prParam)
+          if (match) {
+            setSelectedPr(match)
+          }
+        } else if (!p.get('filter')) {
+          const hasOpen = data.some((p) => p.state === 'open')
+          const hasMerged = data.some((p) => p.state === 'merged')
+          if (!hasOpen && hasMerged) {
+            setActiveFilter('merged')
+          }
+        }
+      }
     } catch {
       if (isDemoModeActive()) {
         setPrs(samplePullRequests)
@@ -261,7 +284,7 @@ git push origin feature/agent-capabilities`
              ========================================================================= */
           <motion.div
             key="pr-detail"
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="space-y-4"
@@ -724,7 +747,7 @@ git push origin feature/agent-capabilities`
              ========================================================================= */
           <motion.div
             key="pr-list"
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="space-y-4"

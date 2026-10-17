@@ -11,6 +11,10 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  build: {
+    outDir: path.resolve(import.meta.dirname, '../internal/webui/dist'),
+    emptyOutDir: true,
+  },
   server: {
     host: true,
     port: 3000,
