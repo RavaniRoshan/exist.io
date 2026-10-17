@@ -1,0 +1,80 @@
+name: Beta User Feedback
+description: Provide feedback on your 5-minute install and agent lease-to-merge experience.
+title: "[Beta Feedback]: "
+labels: ["beta", "feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing the **exist.io** beta! Your feedback helps us harden the forge for autonomous coding agents.
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Operating System / Architecture
+      description: What system did you install exist.io on?
+      options:
+        - Linux x86_64 / amd64
+        - Linux aarch64 / arm64
+        - macOS Apple Silicon (arm64)
+        - macOS Intel (amd64)
+        - Windows x86_64 (amd64)
+        - Docker / Container
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Coding Agent Used
+      description: Which coding agent did you test with exist.io?
+      options:
+        - Claude Code
+        - Cursor
+        - Cline (VS Code)
+        - OpenAI Codex / CLI
+        - Custom Agent / Script
+        - Human Developer Only (CLI/Web)
+    validations:
+      required: true
+  - type: dropdown
+    id: install_duration
+    attributes:
+      label: Did installation take under 5 minutes?
+      description: From running the curl command or binary download to running existd.
+      options:
+        - "Yes (< 2 minutes)"
+        - "Yes (2 - 5 minutes)"
+        - "No (5 - 10 minutes)"
+        - "No (> 10 minutes / failed)"
+    validations:
+      required: true
+  - type: dropdown
+    id: lease_to_merge
+    attributes:
+      label: Did the agent successfully complete the lease-to-merge loop?
+      description: Agent acquired lease, pushed to refs/heads/agent/*, opened PR, and PR was merged.
+      options:
+        - "Yes, worked seamlessly on the first attempt"
+        - "Yes, with minor prompt adjustments"
+        - "Partial (agent pushed branch, but PR or merge failed)"
+        - "No (blocked by permission or connection error)"
+        - "Did not test agent loop (tested forge UI/CLI only)"
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: Where did you experience the most friction or confusion?
+      description: Tell us what felt non-obvious, difficult, or rough around the edges.
+      placeholder: E.g., configuring MCP in Cursor settings, SSH key permission, error messages...
+    validations:
+      required: true
+  - type: textarea
+    id: what_worked
+    attributes:
+      label: What worked well?
+      description: What was your favorite part of the experience?
+  - type: textarea
+    id: suggested_improvements
+    attributes:
+      label: Top 1-2 features or fixes you'd like to see next
+      placeholder: E.g., specific agent MCP tool additions, UI navigation, webhook integrations...

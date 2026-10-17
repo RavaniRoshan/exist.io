@@ -32,18 +32,23 @@ While proprietary platforms tie agent workspaces to closed cloud accounts, exist
 
 ## ⚡ 90-Second Agent Loop Demo
 
-<!-- DEMO_GIF_PLACEHOLDER: A 90-second scriptable terminal recording showing agent lease issue -> git push -> pull request -> review comment -> policy merge -> lease revocation -->
 <p align="center">
-  <img src="assets/launch/01-hero-terminal.png" alt="exist.io — 90-second agent loop demo" width="800" />
+  <img src="assets/demo.gif" alt="exist.io — 90-second agent loop demo" width="800" />
 </p>
 
 ---
 
 ## 🚀 5-Minute Quickstart
 
-`existd` is a single hermetic binary with the full web UI embedded. One command to build, one command to bootstrap, and your forge is live.
+`existd` is a single hermetic binary with the full web UI embedded. One command to install, one command to bootstrap, and your forge is live.
 
-### 1. Build from Source
+### Option A: One-Line Installer (Linux, macOS, Windows)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RavaniRoshan/exist.io/main/scripts/install.sh | bash
+```
+
+### Option B: Build from Source (Go 1.22+)
 
 ```bash
 # Build the forge daemon (single binary with embedded Web UI, zero cgo)

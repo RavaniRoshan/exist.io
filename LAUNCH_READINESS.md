@@ -82,11 +82,15 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 
 ### Gate 6: External Beta User Validation
 - **Requirement:** At least one external developer downloads `existd`, connects an agent (Claude Code, Cursor, or Cline), and opens a merged PR.
-- **Status:** **BLOCKED (User Action Required)**.
-- **Action Plan:**
-  - Deploy release binary or invite beta tester using `scripts/build_releases.sh`.
-  - Window: October 20 – November 10, 2026.
-  - **Launch Decision Rule:** If an external user has not successfully run the agent loop by November 10, 2026, postpone launch to the fallback date: **Tuesday, December 1, 2026**.
+- **Status:** **READY FOR EXTERNAL INTAKE (All Tooling Live)**.
+- **Artifacts Delivered:**
+  - Automated 1-Line Installer: [`scripts/install.sh`](file:///home/shiva/projects/exist.io/scripts/install.sh)
+  - 5-Minute Beta Tester Runbook: [`docs/launch/BETA_TESTING.md`](file:///home/shiva/projects/exist.io/docs/launch/BETA_TESTING.md)
+  - 1-Click Beta Feedback Template: [`.github/ISSUE_TEMPLATE/beta_feedback.yml`](file:///home/shiva/projects/exist.io/.github/ISSUE_TEMPLATE/beta_feedback.yml)
+  - Cross-Compiled Release Packages: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64) in `dist/releases/`
+  - Automated Loop Timing: 4 seconds (`scripts/test_first_run.sh`)
+- **Founder Next Action:** Recruit 5 beta testers using the invite copy in `docs/launch/PRODUCT_HUNT.md` and share `docs/launch/BETA_TESTING.md`.
+- **Launch Decision Rule:** If an external user has not successfully run the agent loop by November 10, 2026, postpone launch to the fallback date: **Tuesday, December 1, 2026**.
 
 ---
 
