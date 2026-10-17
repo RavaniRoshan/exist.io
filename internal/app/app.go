@@ -3113,7 +3113,7 @@ func Open(cfg config.Config) (*App, error) {
 		}
 	}
 
-	return &App{
+	app := &App{
 		Config:       cfg,
 		Store:        db,
 		Git:          git,
@@ -3124,7 +3124,9 @@ func Open(cfg config.Config) (*App, error) {
 		Raft:         raftNode,
 		Shards:       shardMgr,
 		handler:      mux,
-	}, nil
+	}
+	app.registerMigrateRoutes(mux, db, git)
+	return app, nil
 }
 
 // StartSSH starts the embedded SSH server if configured.

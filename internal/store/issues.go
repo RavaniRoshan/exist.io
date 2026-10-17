@@ -57,8 +57,12 @@ func (db *DB) CreateIssue(ctx context.Context, issue *Issue) error {
 		issue.ID = idgen.NewIssue()
 	}
 	t := now()
-	issue.CreatedAt = t
-	issue.UpdatedAt = t
+	if issue.CreatedAt == "" {
+		issue.CreatedAt = t
+	}
+	if issue.UpdatedAt == "" {
+		issue.UpdatedAt = t
+	}
 	if issue.State == "" {
 		issue.State = "open"
 	}
@@ -152,8 +156,12 @@ func (db *DB) CreateIssueComment(ctx context.Context, comment *IssueComment) err
 		comment.ID = idgen.NewIssueComment()
 	}
 	t := now()
-	comment.CreatedAt = t
-	comment.UpdatedAt = t
+	if comment.CreatedAt == "" {
+		comment.CreatedAt = t
+	}
+	if comment.UpdatedAt == "" {
+		comment.UpdatedAt = t
+	}
 
 	_, err := db.sql.ExecContext(ctx, `INSERT INTO issue_comments
 		(id, repo_id, issue_id, author_user_id, body, created_at, updated_at)

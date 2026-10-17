@@ -69,18 +69,24 @@ func (db *DB) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	}
 	defer tx.Rollback()
 
-	var maxNum sql.NullInt64
-	if err := tx.QueryRowContext(ctx, `SELECT MAX(number) FROM pull_requests WHERE repo_id = ?`, pr.RepoID).Scan(&maxNum); err != nil {
-		return err
-	}
-	pr.Number = 1
-	if maxNum.Valid {
-		pr.Number = int(maxNum.Int64) + 1
+	if pr.Number <= 0 {
+		var maxNum sql.NullInt64
+		if err := tx.QueryRowContext(ctx, `SELECT MAX(number) FROM pull_requests WHERE repo_id = ?`, pr.RepoID).Scan(&maxNum); err != nil {
+			return err
+		}
+		pr.Number = 1
+		if maxNum.Valid {
+			pr.Number = int(maxNum.Int64) + 1
+		}
 	}
 
 	t := now()
-	pr.CreatedAt = t
-	pr.UpdatedAt = t
+	if pr.CreatedAt == "" {
+		pr.CreatedAt = t
+	}
+	if pr.UpdatedAt == "" {
+		pr.UpdatedAt = t
+	}
 
 	_, err = tx.ExecContext(ctx, `INSERT INTO pull_requests
 		(id, repo_id, number, state, draft, merged, title, body,
