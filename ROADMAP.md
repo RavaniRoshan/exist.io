@@ -25,7 +25,7 @@ flowchart LR
     P3["Phase 3 (v0.2)<br/>Space UI Dashboard<br/><b>COMPLETED</b>"]
     P4["Phase 4 (v0.3)<br/>Autonomous Agent Review & Leases<br/><b>COMPLETED</b>"]
     P5["Phase 5 (v0.4)<br/>GitHub Primer UI & Developer Parity<br/><b>COMPLETED</b>"]
-    P6["Phase 6 (v0.5)<br/>Active-Active Raft Replication<br/><b>NEXT UP</b>"]
+    P6["Phase 6 (v0.5)<br/>Active-Active Raft Replication<br/><b>COMPLETED</b>"]
 
     P1 --> P2
     P2 --> P3
@@ -107,11 +107,11 @@ Achieving pixel-accurate developer ergonomics and end-user workflow parity with 
 
 ---
 
-## Phase 6: High Availability & Active-Active Consensus (v0.5.0+)
+## Phase 6: High Availability & Active-Active Consensus (v0.5.0+) — COMPLETED
 
 Scaling exist.io for massive enterprise footprints:
 
 - [x] **Disaster Recovery Failover Controller (`internal/replication`):** Zero-downtime automated failover controller, automated SQLite WAL truncate checkpointing, immutable point-in-time snapshot engine with SHA-256 validation, cross-region replica synchronization, standby-to-primary promotion, and cluster telemetry API at `GET /api/v1/cluster/replication`.
-- [ ] **Multi-Region Active-Active Raft Replication:** Raft-coordinated metadata consensus across geographically distributed nodes.
-- [ ] **Distributed Git Object Sharding:** Automated packfile sharding across MinIO / S3 buckets with local read caches.
+- [x] **Multi-Region Active-Active Raft Replication (`internal/raftcluster`):** Pure-Go Raft consensus state machine, leader election, log replication, deterministic FSM, and cluster APIs at `GET /api/v1/cluster/raft/status` and `POST /api/v1/cluster/raft/propose`.
+- [x] **Distributed Git Object Sharding (`internal/objectshard`):** Consistent hash ring topology, virtual nodes, automated packfile routing across S3/MinIO compatible shards, bounded LRU read cache with automatic eviction, and metrics at `GET /api/v1/cluster/shards`.
 

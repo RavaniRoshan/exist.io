@@ -32,14 +32,19 @@ type ConcurrencyStats struct {
 	Iterations  int
 	LeaseP50    time.Duration
 	LeaseP95    time.Duration
+	LeaseP99    time.Duration
 	CloneP50    time.Duration
 	CloneP95    time.Duration
+	CloneP99    time.Duration
 	PushP50     time.Duration
 	PushP95     time.Duration
+	PushP99     time.Duration
 	PRP50       time.Duration
 	PRP95       time.Duration
+	PRP99       time.Duration
 	TotalP50    time.Duration
 	TotalP95    time.Duration
+	TotalP99    time.Duration
 }
 
 func main() {
@@ -82,13 +87,16 @@ func main() {
 	existdPath, _ := os.Executable()
 	os.Setenv("EXISTD_PATH", existdPath)
 
-	tiers := []int{1, 5, 20}
+	tiers := []int{1, 5, 20, 50}
 	var allStats []ConcurrencyStats
 
 	for _, c := range tiers {
 		iterations := c * 2
 		if c == 1 {
 			iterations = 5
+		}
+		if c == 50 {
+			iterations = 50
 		}
 		fmt.Printf("\n--> Running benchmark tier: %d concurrent agents (%d iterations total)...\n", c, iterations)
 		stats := runTier(srv.URL, bRes.RawKey, "benchteam", "demo", c, iterations, tmpDir)
@@ -143,14 +151,19 @@ func runTier(serverURL, apiKey, ownerSlug, repoName string, concurrency, iterati
 		Iterations:  iterations,
 		LeaseP50:    p(leases, 0.50),
 		LeaseP95:    p(leases, 0.95),
+		LeaseP99:    p(leases, 0.99),
 		CloneP50:    p(clones, 0.50),
 		CloneP95:    p(clones, 0.95),
+		CloneP99:    p(clones, 0.99),
 		PushP50:     p(pushes, 0.50),
 		PushP95:     p(pushes, 0.95),
+		PushP99:     p(pushes, 0.99),
 		PRP50:       p(prs, 0.50),
 		PRP95:       p(prs, 0.95),
+		PRP99:       p(prs, 0.99),
 		TotalP50:    p(totals, 0.50),
 		TotalP95:    p(totals, 0.95),
+		TotalP99:    p(totals, 0.99),
 	}
 }
 
@@ -282,16 +295,16 @@ func printMarkdownSummary(stats []ConcurrencyStats) {
 	fmt.Println("\n================================================================================")
 	fmt.Println("BENCHMARK RESULTS (Markdown Conformance Table)")
 	fmt.Println("================================================================================")
-	fmt.Println("| Concurrency | Lease p50 / p95 | Clone p50 / p95 | Push p50 / p95 | PR Open p50 / p95 | Total Loop p50 / p95 |")
+	fmt.Println("| Concurrency | Lease p50 / p95 / p99 | Clone p50 / p95 / p99 | Push p50 / p95 / p99 | PR Open p50 / p95 / p99 | Total Loop p50 / p95 / p99 |")
 	fmt.Println("| :--- | :--- | :--- | :--- | :--- | :--- |")
 	for _, s := range stats {
-		fmt.Printf("| **%d Agents** | %v / %v | %v / %v | %v / %v | %v / %v | **%v / %v** |\n",
+		fmt.Printf("| **%d Agents** | %v / %v / %v | %v / %v / %v | %v / %v / %v | %v / %v / %v | **%v / %v / %v** |\n",
 			s.Concurrency,
-			s.LeaseP50.Round(time.Millisecond), s.LeaseP95.Round(time.Millisecond),
-			s.CloneP50.Round(time.Millisecond), s.CloneP95.Round(time.Millisecond),
-			s.PushP50.Round(time.Millisecond), s.PushP95.Round(time.Millisecond),
-			s.PRP50.Round(time.Millisecond), s.PRP95.Round(time.Millisecond),
-			s.TotalP50.Round(time.Millisecond), s.TotalP95.Round(time.Millisecond),
+			s.LeaseP50.Round(time.Millisecond), s.LeaseP95.Round(time.Millisecond), s.LeaseP99.Round(time.Millisecond),
+			s.CloneP50.Round(time.Millisecond), s.CloneP95.Round(time.Millisecond), s.CloneP99.Round(time.Millisecond),
+			s.PushP50.Round(time.Millisecond), s.PushP95.Round(time.Millisecond), s.PushP99.Round(time.Millisecond),
+			s.PRP50.Round(time.Millisecond), s.PRP95.Round(time.Millisecond), s.PRP99.Round(time.Millisecond),
+			s.TotalP50.Round(time.Millisecond), s.TotalP95.Round(time.Millisecond), s.TotalP99.Round(time.Millisecond),
 		)
 	}
 	fmt.Println("================================================================================")

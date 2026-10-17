@@ -26,8 +26,10 @@ import (
 	"exist.io/internal/gittransport"
 	"exist.io/internal/mcp"
 	"exist.io/internal/metrics"
+	"exist.io/internal/objectshard"
 	"exist.io/internal/openapi"
 	"exist.io/internal/origin"
+	"exist.io/internal/raftcluster"
 	"exist.io/internal/replication"
 	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
@@ -49,6 +51,8 @@ type App struct {
 	GitTransport *gittransport.Server
 	SSHServer    *sshserver.Server
 	Replication  *replication.Controller
+	Raft         *raftcluster.Node
+	Shards       *objectshard.Manager
 
 	handler http.Handler
 }
@@ -111,6 +115,20 @@ func Open(cfg config.Config) (*App, error) {
 		_ = replCtrl.Start(context.Background())
 	}
 
+	raftNode := raftcluster.NewNode(raftcluster.Config{
+		NodeID: cfg.NodeID,
+	}, raftcluster.NewFSM())
+	if cfg.DataDir != ":memory:" {
+		_ = raftNode.Start()
+	}
+
+	shardMgr := objectshard.NewManager(objectshard.Config{
+		Shards: []objectshard.ShardInfo{
+			{ID: "shard-local-01", Endpoint: "local://objects", Active: true},
+		},
+		CacheCapacity: 5000,
+	})
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -149,6 +167,38 @@ func Open(cfg config.Config) (*App, error) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status": "noop",
 		})
+	})
+
+	// Raft Consensus & Cluster State API
+	mux.HandleFunc("GET /api/v1/cluster/raft/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		_ = json.NewEncoder(w).Encode(raftNode.Status())
+	})
+
+	mux.HandleFunc("POST /api/v1/cluster/raft/propose", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		var cmd raftcluster.Command
+		if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := raftNode.Propose(r.Context(), cmd); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status": "committed",
+			"key":    cmd.Key,
+		})
+	})
+
+	// Distributed Object Shards Telemetry API
+	mux.HandleFunc("GET /api/v1/cluster/shards", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		_ = json.NewEncoder(w).Encode(shardMgr.Stats())
 	})
 
 	// Prometheus Metrics exposition
@@ -3071,6 +3121,8 @@ func Open(cfg config.Config) (*App, error) {
 		GitTransport: gitTransport,
 		SSHServer:    sshSrv,
 		Replication:  replCtrl,
+		Raft:         raftNode,
+		Shards:       shardMgr,
 		handler:      mux,
 	}, nil
 }
@@ -3086,6 +3138,9 @@ func (a *App) StartSSH() error {
 // Close shuts down all held resources.
 func (a *App) Close() error {
 	var errs []error
+	if a.Raft != nil {
+		a.Raft.Stop()
+	}
 	if a.Replication != nil {
 		a.Replication.Stop()
 	}

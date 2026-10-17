@@ -90,6 +90,22 @@ func TestAppLifecycle(t *testing.T) {
 		t.Fatalf("POST /api/v1/cluster/failover/promote status = %d, want 200", recPromote.Code)
 	}
 
+	// 5d. Raft consensus status and proposal endpoints
+	reqRaft := httptest.NewRequest(http.MethodGet, "/api/v1/cluster/raft/status", nil)
+	recRaft := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recRaft, reqRaft)
+	if recRaft.Code != http.StatusOK {
+		t.Fatalf("GET /api/v1/cluster/raft/status status = %d, want 200", recRaft.Code)
+	}
+
+	// 5e. Distributed object shards telemetry endpoint
+	reqShards := httptest.NewRequest(http.MethodGet, "/api/v1/cluster/shards", nil)
+	recShards := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recShards, reqShards)
+	if recShards.Code != http.StatusOK {
+		t.Fatalf("GET /api/v1/cluster/shards status = %d, want 200", recShards.Code)
+	}
+
 	// 6. Embedded Web UI is served on root / and SPA routes
 	reqUI := httptest.NewRequest(http.MethodGet, "/", nil)
 	recUI := httptest.NewRecorder()
