@@ -5,21 +5,32 @@ description: Install, bootstrap, and run your self-hosted exist.io Git forge and
 
 This guide walks you through compiling the exist.io server daemon, initializing your first administrator account, creating a Git repository, and connecting an AI coding agent via MCP.
 
-## Prerequisites
+## 1. Installation
 
-- **Go:** Version 1.22 or higher
-- **Git:** Version 2.30 or higher
+### Option A: One-Line Installer (Recommended)
 
-## 1. Build the server and CLI
-
-Compile the forge daemon (`existd`) and the companion CLI (`exist`):
+Install the pre-compiled binary release in under 60 seconds across Linux, macOS, and Windows:
 
 ```bash
-# Clone the repository (if you haven't already)
+curl -fsSL https://raw.githubusercontent.com/RavaniRoshan/exist.io/main/scripts/install.sh | bash
+```
+
+The installer script automatically:
+1. Detects your operating system (`linux`, `darwin`, `windows`) and architecture (`amd64`, `arm64`).
+2. Downloads the official release package with the embedded React 19 Web UI.
+3. Verifies the cryptographic SHA-256 checksum against `SHA256SUMS`.
+4. Installs `existd` (forge daemon) and `exist` (CLI) to `/usr/local/bin` (or `~/.local/bin`).
+
+### Option B: Build from Source
+
+If you prefer building from source, ensure you have **Go 1.22+** and **Git 2.30+**:
+
+```bash
+# Clone the repository
 git clone https://github.com/RavaniRoshan/exist.io.git
 cd exist.io
 
-# Build the forge daemon
+# Build the forge daemon (single binary with embedded Web UI, zero CGO)
 go build -o bin/existd ./cmd/existd
 
 # Build the companion CLI
@@ -31,10 +42,14 @@ go build -o bin/exist ./cmd/exist
 Before launching the server, run the one-time offline bootstrap command to set up the SQLite database and create your root administrative credentials:
 
 ```bash
-./bin/existd bootstrap \
+# If installed via 1-line script:
+existd bootstrap \
   --email admin@example.com \
   --namespace acme \
   --data-dir ./data
+
+# Or if built from source:
+# ./bin/existd bootstrap --email admin@example.com --namespace acme --data-dir ./data
 ```
 
 This command:
@@ -47,7 +62,11 @@ This command:
 Launch `existd`:
 
 ```bash
-./bin/existd --addr :8080 --data-dir ./data
+# If installed via 1-line script:
+existd
+
+# Or if built from source:
+# ./bin/existd
 ```
 
 The server binds to port `8080` and is immediately ready to accept Git Smart-HTTP connections, REST requests, and MCP sessions.

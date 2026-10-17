@@ -63,17 +63,24 @@ go build -o bin/exist ./cmd/exist
 Initialize the SQLite WAL database, create the initial organization namespace, and issue your administrator token:
 
 ```bash
-./bin/existd bootstrap \
+# If installed via 1-line script (binary in PATH):
+existd bootstrap \
   --email admin@corp.exist.io \
   --namespace acme \
   --data-dir ./data
+
+# Or if built from source:
+# ./bin/existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
 ```
 
 ### 3. Start the Server
 
 ```bash
-# Start existd on HTTP :8080 (UI, API, MCP, Git) and SSH :2222
-./bin/existd
+# If installed via 1-line script:
+existd
+
+# Or if built from source:
+# ./bin/existd
 ```
 
 Open **`http://localhost:8080`** in your browser to view the living web dashboard.

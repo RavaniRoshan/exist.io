@@ -48,16 +48,27 @@ exist.io is wire-compatible with Origin forge interfaces while running 100% self
 
 ## Getting started quickly
 
-exist.io compiles to a single self-contained binary without cgo. You can initialize a new forge, create an administrative workspace, and start serving Git repositories and agent workflows in minutes:
+Install `existd` and the `exist` CLI in seconds (Linux, macOS, Windows):
 
 ```bash
-# Build the server daemon
-go build -o bin/existd ./cmd/existd
+curl -fsSL https://raw.githubusercontent.com/RavaniRoshan/exist.io/main/scripts/install.sh | bash
+```
 
+Then initialize storage and launch your forge daemon:
+
+```bash
 # Initialize storage and primary administrator
-./bin/existd bootstrap --email admin@example.com --namespace acme --data-dir ./data
+existd bootstrap --email admin@example.com --namespace acme --data-dir ./data
 
-# Start the forge daemon
+# Start the forge daemon (Smart-HTTP :8080, SSH :2222, MCP :8080/mcp, Web UI)
+existd
+```
+
+Or build from source with zero CGO dependencies:
+
+```bash
+go build -o bin/existd ./cmd/existd
+./bin/existd bootstrap --email admin@example.com --namespace acme --data-dir ./data
 ./bin/existd
 ```
 
