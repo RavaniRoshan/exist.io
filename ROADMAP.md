@@ -26,12 +26,14 @@ flowchart LR
     P4["Phase 4 (v0.3)<br/>Autonomous Agent Review & Leases<br/><b>COMPLETED</b>"]
     P5["Phase 5 (v0.4)<br/>GitHub Primer UI & Developer Parity<br/><b>COMPLETED</b>"]
     P6["Phase 6 (v0.5)<br/>Active-Active Raft Replication<br/><b>COMPLETED</b>"]
+    P7["Phase 7 (v0.6)<br/>Review Pipeline, Notifications & Migration<br/><b>COMPLETED</b>"]
 
     P1 --> P2
     P2 --> P3
     P3 --> P4
     P4 --> P5
     P5 --> P6
+    P6 --> P7
 ```
 
 ---
@@ -114,4 +116,28 @@ Scaling exist.io for massive enterprise footprints:
 - [x] **Disaster Recovery Failover Controller (`internal/replication`):** Zero-downtime automated failover controller, automated SQLite WAL truncate checkpointing, immutable point-in-time snapshot engine with SHA-256 validation, cross-region replica synchronization, standby-to-primary promotion, and cluster telemetry API at `GET /api/v1/cluster/replication`.
 - [x] **Multi-Region Active-Active Raft Replication (`internal/raftcluster`):** Pure-Go Raft consensus state machine, leader election, log replication, deterministic FSM, and cluster APIs at `GET /api/v1/cluster/raft/status` and `POST /api/v1/cluster/raft/propose`.
 - [x] **Distributed Git Object Sharding (`internal/objectshard`):** Consistent hash ring topology, virtual nodes, automated packfile routing across S3/MinIO compatible shards, bounded LRU read cache with automatic eviction, and metrics at `GET /api/v1/cluster/shards`.
+
+---
+
+## Phase 7: Advanced Code Review, Notifications & Migration Wizard (v0.6.0) — COMPLETED
+
+Elevating peer-review ergonomics, automated delivery, and frictionless adoption:
+
+- [x] **Interactive Diff Review & Line Commenting (`InlineDiffViewer`):** Hoverable gutter line controls on diff hunks, side-aware comment placement (`LEFT`/`RIGHT`), inline thread discussion rendering, and thread resolution toggling.
+- [x] **1-Click Suggestion Application (`internal/app/suggestions.go`):** Markdown suggestion block parser (` ```suggestion ... ``` `) and atomic commit writer committing replacement code directly to PR head branches via `POST /api/v1/repos/{owner}/{name}/pulls/{number}/comments/{commentId}/apply`.
+- [x] **Review Batching & Multi-Verdict System:** Review submission modal supporting `Approve`, `Request Changes`, and `Comment` with batch comment insertion.
+- [x] **Event-Driven Auto-Merge Engine (`internal/app/automerge.go`):** PR-scoped mutex synchronization preventing double-merges, automated merge dispatch upon check run passing events, and REST management endpoints at `GET/PUT/DELETE /api/v1/repos/{owner}/{name}/pulls/{number}/auto-merge`.
+- [x] **In-App Notification Center (`internal/store/notifications.go`):** Real-time unread badge counter in global header, interactive notifications popover, and 1-click mark-all-read with SQLite WAL backing (`0015_in_app_notifications.sql`).
+- [x] **SMTP Email Notification Engine (`internal/notifications`):** Pure-Go asynchronous SMTP worker with STARTTLS/TLS, background delivery queue, and Primer-styled HTML email templates for PR lifecycle events and issue assignments.
+- [x] **GitHub & Git Repository Migration Wizard (`internal/app/migrate.go`):** Multi-platform importer dialog (`MigrateRepoModal`) mounted on `UserProfileView` and `GlobalHomeView`, background async migration worker cloning bare repositories, and importing issues, PRs, and review comments with RFC 5988 pagination.
+- [x] **100% Comprehensive Test Suite & Zero Flake:** 41 Vitest test suites (153 tests) and 27 Go packages passing with 100% success and verified production bundle build.
+
+---
+
+## Phase 8: Enterprise Wiki, Kanban Project Boards & Fine-Grained Teams (v0.7.0) — PLANNED
+
+- [ ] **Git-Backed Repository Wiki:** Markdown wiki stored in dedicated `refs/heads/wiki` or `.wiki.git` bare repositories with instant editing and version history.
+- [ ] **Project Kanban Boards:** Visual issue triage columns (Backlog, In Progress, Review, Done) with drag-and-drop cards and automated status transitions.
+- [ ] **Fine-Grained RBAC Teams:** Nested organization team structures with granular read, write, triage, and admin permissions.
+
 

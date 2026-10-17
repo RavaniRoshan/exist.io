@@ -45,13 +45,42 @@ All components below are backed by automated unit, contract, and integration tes
 - Subcommands: `auth`, `repo`, `pr`, `app`, and `api`.
 - Supports positional argument reordering and agent-friendly output modes.
 
-### 7. Terraform provider compatibility
-- Verified compatibility with Terraform provider client workflows for managing repositories, grants, rulesets, SSH CAs, and IP allowlists as code.
+### 7. Official Infrastructure as Code (IaC)
+- Production-ready Terraform/OpenTofu provider (`deploy/terraform-provider-exist`) and Helm chart (`deploy/helm/exist-enterprise`).
+
+### 8. Embedded Pure-Go SSH Server (:2222) & Git LFS CAS Engine
+- Standalone zero-cgo SSH server listening on port 2222 with deploy key isolation and repository UUID verification.
+- Content-Addressable Storage (CAS) with SHA-256 validation and streaming chunked uploads for large binary assets.
+
+### 9. Cryptographic Commit Signature Verification
+- Real-time OpenSSH SIGSPEC and GPG (RFC 4880) commit signature parsing and public key fingerprint matching.
+
+### 10. SCIM 2.0 User Lifecycle & Enterprise SSO
+- RFC 7644 SCIM user sync at `/scim/v2/Users` with automated provisioning and immediate deprovisioning.
+- OpenID Connect (OIDC) and SAML 2.0 Single Sign-On federation.
+
+### 11. Pixel-Accurate GitHub Primer Web UI
+- Built on Vite, React 19, and Tailwind CSS with 6px squircle radius and OKLCH color token architecture.
+- User profile with contribution heatmaps, global activity feeds, issues, and releases.
+
+### 12. Ephemeral Capability Leases & Autonomous Reviewer
+- Short-lived HMAC-SHA256 capability tokens (`pkg/agentlease`) with ref-prefix isolation (`refs/heads/agent/*`).
+- Automated PR review agent (`internal/agentreviewer`) with AST symbol search (`internal/symbolsearch`).
+
+### 13. High Availability Consensus & Object Sharding
+- Pure-Go Raft consensus state machine (`internal/raftcluster`), automated snapshot replication (`internal/replication`), and distributed object sharding (`internal/objectshard`).
+
+### 14. Code Review Pipeline, Notifications & Migration Wizard (v0.6.0)
+- Interactive diff viewer with line commenting, side-aware comment placement, and conversation thread resolution.
+- 1-click suggestion application committing code changes directly to PR branches.
+- Event-driven auto-merge engine (`AutoMergeEngine`) with PR mutex locking.
+- In-app notification center and pure-Go SMTP delivery queue with Primer HTML email templates.
+- Multi-platform repository migration wizard cloning Git repositories and importing issues, PRs, and comments.
 
 ---
 
-## What is next on the roadmap
+## What is next on the roadmap (v0.7.0)
 
-- **Web Dashboard / Browser UI:** A visual web frontend for browsing repositories, visual diffs, and managing organization settings in a browser.
-- **SSH Protocol Transport:** Native SSH daemon for `git@host:repo.git` operations in addition to Smart-HTTP.
-- **High-Availability Clustering:** Multi-node synchronization and distributed queue workers for large enterprise scale.
+- **Git-Backed Wiki:** Markdown wiki stored in dedicated `refs/heads/wiki` bare repositories.
+- **Kanban Project Boards:** Visual issue triage columns with drag-and-drop cards and automated status transitions.
+- **Fine-Grained RBAC Teams:** Nested organization team structures with granular read, write, triage, and admin permissions.

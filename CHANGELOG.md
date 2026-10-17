@@ -5,6 +5,29 @@ All notable changes to exist.io will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-beta] - 2026-10-17
+
+### Added
+- **Interactive Code Review & Suggestion Blocks**:
+  - Gutter hover `+` controls to add inline comments to specific diff lines and sides (`LEFT`/`RIGHT`).
+  - Markdown suggestion block parser (` ```suggestion ... ``` `) and 1-click "Apply suggestion" commit button calling `POST /api/v1/repos/{owner}/{name}/pulls/{number}/comments/{commentId}/apply`.
+  - Batch review submission bar with modal supporting Comment, Approve, and Request Changes verdicts.
+  - Inline conversation thread resolution (`PATCH .../threads/{threadId}`) with resolved indicators and reply composer.
+- **Event-Driven Auto-Merge Engine**:
+  - Dedicated background worker (`AutoMergeEngine`) with PR mutex locking to prevent race conditions and double-merges.
+  - Automatically squashes/merges pull requests once all required check suites pass.
+  - REST endpoints at `GET/PUT/DELETE /api/v1/repos/{owner}/{name}/pulls/{number}/auto-merge`.
+  - Integrated auto-merge controls inside `MergeBox`.
+- **In-App Notification Center & SMTP Email Engine**:
+  - SQLite WAL-backed notification delivery log and unread counter (`0014_notifications.sql`, `0015_in_app_notifications.sql`).
+  - In-app notification center dropdown in global header with unread count badge, real-time polling, and 1-click mark-all-read.
+  - Pure-Go SMTP client (`internal/notifications`) supporting STARTTLS/TLS and authentic GitHub Primer HTML email templates for PR opened, merged, reviewed, and issue assignments.
+- **Repository Migration Wizard**:
+  - Multi-platform importer (`MigrateRepoModal`) supporting GitHub and generic Git providers.
+  - Background async migration worker cloning bare repositories, importing issues, PRs, and comments with Link-header pagination (`RFC 5988`).
+  - Real-time job polling at `GET /api/v1/repos/migrate/{jobId}/status`.
+  - Mounted on both `UserProfileView` and `GlobalHomeView`.
+
 ## [0.5.0-beta] - 2026-10-17
 
 ### Added

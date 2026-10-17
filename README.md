@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml"><img src="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
   <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Documentation-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.5.0--beta-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.6.0--beta-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Go-Pure--Go%20(Zero%20CGO)-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Pure-Go">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
@@ -152,8 +152,8 @@ To ensure realistic expectations, exist.io documents its design constraints expl
    exist.io uses pure-Go SQLite in Write-Ahead Logging (WAL) mode. Reads scale concurrently across goroutines, but write transactions (`git push`, PR creation, comments) are executed with a serialized database lock. exist.io is optimized for small to medium teams (1–25 concurrent agents and engineers), not hyper-scale thousands-of-pushes-per-second workloads.
 2. **go-git Performance Profile**:
    Bare repository operations use `go-git/v6` directly in Go memory. While completely hermetic and CGO-free, `go-git` exhibits higher memory consumption and slower packfile generation on massive monorepos (> 2 GB) compared to native C git.
-3. **No Automated Merge Queue in v0.5.0-beta**:
-   PR merges are executed synchronously with deterministic 3-way and squash merge engines. Asynchronous merge queues with speculative batching are deferred to the post-launch roadmap.
+3. **Event-Driven Auto-Merge in v0.6.0-beta**:
+   exist.io provides an event-driven auto-merge engine (`AutoMergeEngine`) that monitors PR requirements and automatically executes squash/merge operations once required status check suites pass. Speculative batch-queue merges across interdependent PRs are planned for v0.7.0+.
 
 ---
 

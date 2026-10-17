@@ -61,9 +61,23 @@ exist.io has progressed from an early design concept to a launch-ready, enterpri
 
 ---
 
+### 12. Multi-Region Active-Active Raft Replication & Object Sharding (Complete)
+- Raft-coordinated metadata consensus across geographically distributed nodes (`internal/raftcluster`).
+- Distributed packfile sharding across MinIO / S3 buckets with consistent hash ring and local read caching (`internal/objectshard`).
+- Disaster recovery failover controller with automated SQLite WAL checkpointing and snapshot promotion (`internal/replication`).
+
+### 13. Interactive Code Review, Notifications & Migration Wizard (Complete)
+- Inline diff commenting with hoverable line gutter controls, side-aware thread tracking (`LEFT`/`RIGHT`), and conversation resolution.
+- Markdown code suggestion parser with 1-click "Apply suggestion" commit writer directly to PR head branches.
+- Event-driven auto-merge engine (`internal/app/automerge.go`) with PR mutex serialization.
+- In-app notification center with unread badge counter and pure-Go SMTP delivery queue (`internal/notifications`).
+- Multi-platform repository migration wizard (`internal/app/migrate.go`) with background Git cloning and RFC 5988 paginated issue/PR imports.
+
+---
+
 ## Future horizons
 
-### 12. Multi-Region Active-Active Raft Replication
-- Raft-coordinated metadata consensus across geographically distributed nodes.
-- Distributed packfile sharding across MinIO / S3 buckets with local read caching.
-- Disaster recovery failover controller with continuous Litestream S3 sync.
+### 14. Git-Backed Wiki & Kanban Project Boards (v0.7.0)
+- Markdown wiki stored in dedicated `refs/heads/wiki` bare repositories with instant version history.
+- Visual issue triage Kanban columns with drag-and-drop cards and automated status transitions.
+- Granular organization RBAC teams and fine-grained repository permissions.
