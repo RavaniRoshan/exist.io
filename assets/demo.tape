@@ -1,13 +1,18 @@
 # exist.io 90-Second Demo Walkthrough
-# Neutral, self-hosted Git forge built for coding agents
+# macOS Desktop Screen Recording Style
 Output "assets/demo.gif"
 Output "assets/demo.mp4"
 
 Set Shell "bash"
 Set FontSize 14
-Set Width 1200
-Set Height 720
-Set Padding 20
+Set Width 1380
+Set Height 820
+Set Margin 55
+Set MarginFill "assets/macos_wallpaper.png"
+Set BorderRadius 14
+Set WindowBar "Colorful"
+Set WindowBarSize 38
+Set Padding 18
 Set Theme "Catppuccin Macchiato"
 
 Hide
