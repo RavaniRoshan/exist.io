@@ -111,6 +111,7 @@ Achieving pixel-accurate developer ergonomics and end-user workflow parity with 
 
 Scaling exist.io for massive enterprise footprints:
 
+- [x] **Disaster Recovery Failover Controller (`internal/replication`):** Zero-downtime automated failover controller, automated SQLite WAL truncate checkpointing, immutable point-in-time snapshot engine with SHA-256 validation, cross-region replica synchronization, standby-to-primary promotion, and cluster telemetry API at `GET /api/v1/cluster/replication`.
 - [ ] **Multi-Region Active-Active Raft Replication:** Raft-coordinated metadata consensus across geographically distributed nodes.
 - [ ] **Distributed Git Object Sharding:** Automated packfile sharding across MinIO / S3 buckets with local read caches.
-- [ ] **Disaster Recovery Failover Controller:** Zero-downtime automated failover with continuous Litestream S3 sync.
+

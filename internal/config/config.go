@@ -26,6 +26,10 @@ type Config struct {
 	SSHAddr        string
 	SSHHostKeyPath string
 	JWTSecret      string
+
+	ClusterRole string
+	ReplicaDir  string
+	NodeID      string
 }
 
 // Load reads configuration from environment variables, falling back to safe self-hosted defaults.
@@ -39,6 +43,10 @@ func Load() Config {
 	sshHostKeyPath := getEnv("EXIST_SSH_HOST_KEY", dataDir+"/ssh_host_key")
 	jwtSecret := getEnv("EXIST_JWT_SECRET", "exist-ephemeral-agent-lease-signing-key")
 
+	clusterRole := getEnv("EXIST_CLUSTER_ROLE", "primary")
+	replicaDir := getEnv("EXIST_REPLICA_DIR", "")
+	nodeID := getEnv("EXIST_NODE_ID", "")
+
 	return Config{
 		ListenAddr:     listenAddr,
 		DataDir:        dataDir,
@@ -49,6 +57,9 @@ func Load() Config {
 		SSHAddr:        sshAddr,
 		SSHHostKeyPath: sshHostKeyPath,
 		JWTSecret:      jwtSecret,
+		ClusterRole:    clusterRole,
+		ReplicaDir:     replicaDir,
+		NodeID:         nodeID,
 	}
 }
 

@@ -28,6 +28,7 @@ import (
 	"exist.io/internal/metrics"
 	"exist.io/internal/openapi"
 	"exist.io/internal/origin"
+	"exist.io/internal/replication"
 	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
 	"exist.io/internal/webui"
@@ -47,6 +48,7 @@ type App struct {
 	Origin       *origin.Server
 	GitTransport *gittransport.Server
 	SSHServer    *sshserver.Server
+	Replication  *replication.Controller
 
 	handler http.Handler
 }
@@ -96,11 +98,57 @@ func Open(cfg config.Config) (*App, error) {
 	originServer := origin.New(db, git, registry, cfg.PublicURL, cfg.GitURL)
 	originServer.SetResolver(auth.NewDatabaseResolver(db))
 
+	replCtrl, _ := replication.NewController(replication.Config{
+		NodeID:          cfg.NodeID,
+		Role:            replication.Role(cfg.ClusterRole),
+		DataDir:         cfg.DataDir,
+		ReplicaDir:      cfg.ReplicaDir,
+		PrimaryEndpoint: cfg.PublicURL,
+		SyncInterval:    30 * time.Second,
+		DB:              db,
+	})
+	if replCtrl != nil && cfg.DataDir != ":memory:" {
+		_ = replCtrl.Start(context.Background())
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "ok")
+	})
+
+	// Cluster Disaster Recovery & Replication API
+	mux.HandleFunc("GET /api/v1/cluster/replication", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if replCtrl != nil {
+			_ = json.NewEncoder(w).Encode(replCtrl.Status())
+		} else {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"health": "healthy",
+				"role":   "primary",
+			})
+		}
+	})
+
+	mux.HandleFunc("POST /api/v1/cluster/failover/promote", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if replCtrl != nil {
+			if err := replCtrl.PromoteToPrimary(r.Context()); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status": "promoted",
+				"role":   "primary",
+			})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status": "noop",
+		})
 	})
 
 	// Prometheus Metrics exposition
@@ -3022,6 +3070,7 @@ func Open(cfg config.Config) (*App, error) {
 		Origin:       originServer,
 		GitTransport: gitTransport,
 		SSHServer:    sshSrv,
+		Replication:  replCtrl,
 		handler:      mux,
 	}, nil
 }
@@ -3037,6 +3086,9 @@ func (a *App) StartSSH() error {
 // Close shuts down all held resources.
 func (a *App) Close() error {
 	var errs []error
+	if a.Replication != nil {
+		a.Replication.Stop()
+	}
 	if a.SSHServer != nil {
 		if err := a.SSHServer.Close(); err != nil {
 			errs = append(errs, err)

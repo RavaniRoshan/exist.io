@@ -53,8 +53,9 @@ if [ "$OS" = "windows" ]; then
 fi
 
 ARCHIVE_NAME="exist_${VERSION}_${OS}_${ARCH}.${EXT}"
-DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE_NAME}"
-CHECKSUMS_URL="https://github.com/${REPO}/releases/download/${VERSION}/SHA256SUMS"
+RELEASE_BASE_URL="${RELEASE_BASE_URL:-https://github.com/${REPO}/releases/download/${VERSION}}"
+DOWNLOAD_URL="${RELEASE_BASE_URL}/${ARCHIVE_NAME}"
+CHECKSUMS_URL="${RELEASE_BASE_URL}/SHA256SUMS"
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT

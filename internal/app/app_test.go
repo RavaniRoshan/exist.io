@@ -74,6 +74,22 @@ func TestAppLifecycle(t *testing.T) {
 		t.Fatalf("GET /api/v1/admin/audit-logs status = %d, want 200", recAudit.Code)
 	}
 
+	// 5b. Cluster replication status endpoint returns valid JSON
+	reqRepl := httptest.NewRequest(http.MethodGet, "/api/v1/cluster/replication", nil)
+	recRepl := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recRepl, reqRepl)
+	if recRepl.Code != http.StatusOK {
+		t.Fatalf("GET /api/v1/cluster/replication status = %d, want 200", recRepl.Code)
+	}
+
+	// 5c. Failover promotion endpoint succeeds
+	reqPromote := httptest.NewRequest(http.MethodPost, "/api/v1/cluster/failover/promote", nil)
+	recPromote := httptest.NewRecorder()
+	application.Handler().ServeHTTP(recPromote, reqPromote)
+	if recPromote.Code != http.StatusOK {
+		t.Fatalf("POST /api/v1/cluster/failover/promote status = %d, want 200", recPromote.Code)
+	}
+
 	// 6. Embedded Web UI is served on root / and SPA routes
 	reqUI := httptest.NewRequest(http.MethodGet, "/", nil)
 	recUI := httptest.NewRecorder()
