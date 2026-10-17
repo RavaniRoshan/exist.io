@@ -1,0 +1,5 @@
+# HyperFrames temporary artifacts and caches
+.hyperframes/artifacts/
+.hyperframes/*-lock/
+.hyperframes/history-id
+node_modules/

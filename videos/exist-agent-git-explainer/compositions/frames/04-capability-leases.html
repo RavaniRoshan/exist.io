@@ -1,0 +1,238 @@
+<template>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    #root {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      color: #141413;
+    }
+
+    .f04-bg {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      background: #FAF9F5;
+      background-image: 
+        radial-gradient(circle at 25% 30%, rgba(46, 160, 67, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 75% 70%, rgba(0, 173, 216, 0.08) 0%, transparent 50%);
+    }
+
+    .f04-content {
+      position: absolute;
+      top: 80px;
+      left: 120px;
+      right: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .f04-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #2EA043;
+    }
+
+    .f04-headline {
+      font-family: 'EB Garamond', serif;
+      font-size: 72px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.022em;
+      color: #141413;
+      max-width: 1400px;
+    }
+
+    .f04-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 10px;
+    }
+
+    .f04-panel {
+      background: #181715;
+      border: 1px solid rgba(250, 249, 245, 0.14);
+      border-radius: 12px;
+      padding: 28px;
+      color: #FAF9F5;
+      box-shadow: 0 12px 32px rgba(24, 23, 21, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .f04-panel-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: #00ADD8;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .f04-json-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      line-height: 1.6;
+      background: #1F1E1B;
+      padding: 18px 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(250, 249, 245, 0.08);
+    }
+
+    .f04-json-key { color: #CC785C; }
+    .f04-json-str { color: #A5D6FF; }
+    .f04-json-scope { color: #7EE787; font-weight: 600; }
+
+    .f04-ref-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #1F1E1B;
+      border-radius: 8px;
+      border: 1px solid rgba(250, 249, 245, 0.08);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+    }
+
+    .f04-badge-allowed {
+      color: #2EA043;
+      background: rgba(46, 160, 67, 0.15);
+      border: 1px solid rgba(46, 160, 67, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .f04-badge-blocked {
+      color: #F85149;
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .f04-seal {
+      margin-top: 10px;
+      padding: 14px 20px;
+      background: rgba(46, 160, 67, 0.1);
+      border: 1px solid rgba(46, 160, 67, 0.35);
+      border-radius: 8px;
+      color: #2EA043;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-align: center;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-capability-leases" data-width="1920" data-height="1080" data-duration="15.364">
+    <div class="clip f04-bg" data-start="0" data-duration="15.364" data-track-index="0"></div>
+
+    <div class="clip f04-content" data-start="0" data-duration="15.364" data-track-index="1">
+      <div id="f04-kicker" class="f04-kicker">
+        <span>✱</span> CRYPTOGRAPHIC BOUNDARY
+      </div>
+
+      <h1 id="f04-title" class="f04-headline">
+        Ephemeral capability leases replace static credentials.
+      </h1>
+
+      <div class="f04-split">
+        <div id="f04-panel-left" class="f04-panel">
+          <div class="f04-panel-title">
+            <span>pkg/agentlease · HMAC-SHA256</span>
+            <span style="color: #2EA043;">TTL: 15m</span>
+          </div>
+          <div class="f04-json-box">
+            <span class="f04-json-key">"agent_id"</span>: <span class="f04-json-str">"claude-code"</span>,<br/>
+            <span class="f04-json-key">"repo_id"</span>: <span class="f04-json-str">"acme/demo"</span>,<br/>
+            <span class="f04-json-key">"allowed_prefixes"</span>: [<br/>
+            &nbsp;&nbsp;<span class="f04-json-scope">"refs/heads/agent/*"</span><br/>
+            ],<br/>
+            <span class="f04-json-key">"token"</span>: <span class="f04-json-str">"lease_01M53YC52W..."</span>
+          </div>
+        </div>
+
+        <div id="f04-panel-right" class="f04-panel">
+          <div class="f04-panel-title">
+            <span>Ref Namespace Isolation</span>
+            <span style="color: #00ADD8;">Enforced at Pre-Receive</span>
+          </div>
+          <div class="f04-ref-row">
+            <span>refs/heads/agent/telemetry</span>
+            <span class="f04-badge-allowed">✓ WRITE PERMITTED</span>
+          </div>
+          <div class="f04-ref-row">
+            <span>refs/heads/main</span>
+            <span class="f04-badge-blocked">⛔ 403 FORBIDDEN</span>
+          </div>
+          <div class="f04-ref-row">
+            <span>refs/tags/v1.0.0</span>
+            <span class="f04-badge-blocked">⛔ 403 FORBIDDEN</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="f04-seal" class="f04-seal">
+        ✓ ZERO PRIVILEGE ESCALATION — ALL ATTEMPTS OUTSIDE REFS/HEADS/AGENT/* ABORTED INSTANTLY
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0-4.0s): Kicker and title
+    tl.fromTo("#f04-kicker", 
+      { opacity: 0, y: -15 }, 
+      { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 
+      0.2
+    );
+
+    tl.fromTo("#f04-title", 
+      { opacity: 0, y: 25 }, 
+      { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 
+      0.6
+    );
+
+    // Scene 2 (4.0-9.5s): Left lease token card reveals, then right ref isolation
+    tl.fromTo("#f04-panel-left", 
+      { opacity: 0, x: -30 }, 
+      { opacity: 1, x: 0, duration: 0.9, ease: "power3.out" }, 
+      3.8
+    );
+
+    tl.fromTo("#f04-panel-right", 
+      { opacity: 0, x: 30 }, 
+      { opacity: 1, x: 0, duration: 0.9, ease: "power3.out" }, 
+      5.8
+    );
+
+    // Scene 3 (9.5-14.864s): Green verification seal stamps on "Zero privilege escalation"
+    tl.fromTo("#f04-seal", 
+      { opacity: 0, scale: 0.95 }, 
+      { opacity: 1, scale: 1.0, duration: 0.7, ease: "back.out(1.5)" }, 
+      9.6
+    );
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["04-capability-leases"] = tl;
+  </script>
+</template>

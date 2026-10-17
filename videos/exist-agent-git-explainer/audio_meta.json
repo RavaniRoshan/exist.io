@@ -1,0 +1,895 @@
+{
+  "bgm": null,
+  "bgm_pending": false,
+  "voices": [
+    {
+      "frame": 1,
+      "path": "assets/voice/01.wav",
+      "duration_s": 11.912,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Autonomous",
+          "start": 0.299,
+          "end": 0.981
+        },
+        {
+          "id": "w1",
+          "text": "coding",
+          "start": 1.109,
+          "end": 1.408
+        },
+        {
+          "id": "w2",
+          "text": "agents",
+          "start": 1.493,
+          "end": 1.877
+        },
+        {
+          "id": "w3",
+          "text": "are",
+          "start": 2.005,
+          "end": 2.133
+        },
+        {
+          "id": "w4",
+          "text": "rewriting",
+          "start": 2.176,
+          "end": 2.773
+        },
+        {
+          "id": "w5",
+          "text": "software",
+          "start": 2.987,
+          "end": 3.456
+        },
+        {
+          "id": "w6",
+          "text": "engineering.",
+          "start": 3.499,
+          "end": 4.203
+        },
+        {
+          "id": "w7",
+          "text": "But",
+          "start": 4.565,
+          "end": 4.736
+        },
+        {
+          "id": "w8",
+          "text": "give",
+          "start": 4.821,
+          "end": 5.0347
+        },
+        {
+          "id": "w9",
+          "text": "an",
+          "start": 5.077,
+          "end": 5.1627
+        },
+        {
+          "id": "w10",
+          "text": "agent",
+          "start": 5.248,
+          "end": 5.589
+        },
+        {
+          "id": "w11",
+          "text": "your",
+          "start": 5.675,
+          "end": 5.845
+        },
+        {
+          "id": "w12",
+          "text": "personal",
+          "start": 5.888,
+          "end": 6.1867
+        },
+        {
+          "id": "w13",
+          "text": "Git",
+          "start": 6.528,
+          "end": 6.741
+        },
+        {
+          "id": "w14",
+          "text": "token,",
+          "start": 6.827,
+          "end": 7.317
+        },
+        {
+          "id": "w15",
+          "text": "and",
+          "start": 7.595,
+          "end": 7.8507
+        },
+        {
+          "id": "w16",
+          "text": "one",
+          "start": 7.936,
+          "end": 8.2347
+        },
+        {
+          "id": "w17",
+          "text": "hallucinated",
+          "start": 8.405,
+          "end": 9.173
+        },
+        {
+          "id": "w18",
+          "text": "push",
+          "start": 9.344,
+          "end": 9.6
+        },
+        {
+          "id": "w19",
+          "text": "can",
+          "start": 9.899,
+          "end": 10.197
+        },
+        {
+          "id": "w20",
+          "text": "wipe",
+          "start": 10.24,
+          "end": 10.5387
+        },
+        {
+          "id": "w21",
+          "text": "out",
+          "start": 10.709,
+          "end": 10.88
+        },
+        {
+          "id": "w22",
+          "text": "production.",
+          "start": 11.093,
+          "end": 11.676
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "path": "assets/voice/02.wav",
+      "duration_s": 12.121,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Traditional",
+          "start": 0.299,
+          "end": 0.5547
+        },
+        {
+          "id": "w1",
+          "text": "Git",
+          "start": 0.853,
+          "end": 0.981
+        },
+        {
+          "id": "w2",
+          "text": "platforms",
+          "start": 1.067,
+          "end": 1.536
+        },
+        {
+          "id": "w3",
+          "text": "were",
+          "start": 1.664,
+          "end": 1.792
+        },
+        {
+          "id": "w4",
+          "text": "built",
+          "start": 1.835,
+          "end": 1.9627
+        },
+        {
+          "id": "w5",
+          "text": "fifteen",
+          "start": 2.048,
+          "end": 2.389
+        },
+        {
+          "id": "w6",
+          "text": "years",
+          "start": 2.475,
+          "end": 2.645
+        },
+        {
+          "id": "w7",
+          "text": "ago",
+          "start": 2.773,
+          "end": 2.8587
+        },
+        {
+          "id": "w8",
+          "text": "for",
+          "start": 3.029,
+          "end": 3.157
+        },
+        {
+          "id": "w9",
+          "text": "humans",
+          "start": 3.2,
+          "end": 3.541
+        },
+        {
+          "id": "w10",
+          "text": "in",
+          "start": 3.627,
+          "end": 3.797
+        },
+        {
+          "id": "w11",
+          "text": "web",
+          "start": 3.883,
+          "end": 4.053
+        },
+        {
+          "id": "w12",
+          "text": "browsers.",
+          "start": 4.181,
+          "end": 4.907
+        },
+        {
+          "id": "w13",
+          "text": "They",
+          "start": 5.205,
+          "end": 5.376
+        },
+        {
+          "id": "w14",
+          "text": "have",
+          "start": 5.419,
+          "end": 5.504
+        },
+        {
+          "id": "w15",
+          "text": "no",
+          "start": 5.589,
+          "end": 5.76
+        },
+        {
+          "id": "w16",
+          "text": "ref",
+          "start": 5.845,
+          "end": 6.016
+        },
+        {
+          "id": "w17",
+          "text": "isolation,",
+          "start": 6.144,
+          "end": 6.933
+        },
+        {
+          "id": "w18",
+          "text": "bottleneck",
+          "start": 7.168,
+          "end": 7.68
+        },
+        {
+          "id": "w19",
+          "text": "parallel",
+          "start": 7.765,
+          "end": 8.192
+        },
+        {
+          "id": "w20",
+          "text": "swarms,",
+          "start": 8.235,
+          "end": 8.747
+        },
+        {
+          "id": "w21",
+          "text": "and",
+          "start": 8.875,
+          "end": 9.1307
+        },
+        {
+          "id": "w22",
+          "text": "treat",
+          "start": 9.173,
+          "end": 9.344
+        },
+        {
+          "id": "w23",
+          "text": "agents",
+          "start": 9.429,
+          "end": 9.7707
+        },
+        {
+          "id": "w24",
+          "text": "like",
+          "start": 9.984,
+          "end": 10.325
+        },
+        {
+          "id": "w25",
+          "text": "untrusted",
+          "start": 10.411,
+          "end": 11.093
+        },
+        {
+          "id": "w26",
+          "text": "intruders.",
+          "start": 11.179,
+          "end": 12.04984126984127
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "path": "assets/voice/03.wav",
+      "duration_s": 10.919,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Meet",
+          "start": 0.299,
+          "end": 0.597
+        },
+        {
+          "id": "w1",
+          "text": "exist.io:",
+          "start": 1.024,
+          "end": 3.328
+        },
+        {
+          "id": "w2",
+          "text": "the",
+          "start": 3.584,
+          "end": 3.7547
+        },
+        {
+          "id": "w3",
+          "text": "sovereign,",
+          "start": 3.797,
+          "end": 4.501
+        },
+        {
+          "id": "w4",
+          "text": "self-hosted",
+          "start": 4.693,
+          "end": 5.461
+        },
+        {
+          "id": "w5",
+          "text": "Git",
+          "start": 5.547,
+          "end": 5.6747
+        },
+        {
+          "id": "w6",
+          "text": "forge",
+          "start": 5.717,
+          "end": 6.016
+        },
+        {
+          "id": "w7",
+          "text": "engineered",
+          "start": 6.272,
+          "end": 6.997
+        },
+        {
+          "id": "w8",
+          "text": "from",
+          "start": 7.125,
+          "end": 7.296
+        },
+        {
+          "id": "w9",
+          "text": "first",
+          "start": 7.339,
+          "end": 7.637
+        },
+        {
+          "id": "w10",
+          "text": "principles",
+          "start": 7.808,
+          "end": 8.1067
+        },
+        {
+          "id": "w11",
+          "text": "for",
+          "start": 8.363,
+          "end": 8.4907
+        },
+        {
+          "id": "w12",
+          "text": "autonomous",
+          "start": 8.533,
+          "end": 9.045
+        },
+        {
+          "id": "w13",
+          "text": "coding",
+          "start": 9.131,
+          "end": 9.344
+        },
+        {
+          "id": "w14",
+          "text": "agents",
+          "start": 9.429,
+          "end": 9.728
+        },
+        {
+          "id": "w15",
+          "text": "and",
+          "start": 9.813,
+          "end": 9.8987
+        },
+        {
+          "id": "w16",
+          "text": "human",
+          "start": 9.941,
+          "end": 10.1547
+        },
+        {
+          "id": "w17",
+          "text": "teams.",
+          "start": 10.283,
+          "end": 10.863990929705215
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "path": "assets/voice/04.wav",
+      "duration_s": 14.864,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Instead",
+          "start": 0.256,
+          "end": 0.64
+        },
+        {
+          "id": "w1",
+          "text": "of",
+          "start": 0.683,
+          "end": 0.725
+        },
+        {
+          "id": "w2",
+          "text": "static",
+          "start": 0.811,
+          "end": 1.1947
+        },
+        {
+          "id": "w3",
+          "text": "credentials,",
+          "start": 1.28,
+          "end": 1.899
+        },
+        {
+          "id": "w4",
+          "text": "agents",
+          "start": 2.005,
+          "end": 2.56
+        },
+        {
+          "id": "w5",
+          "text": "request",
+          "start": 2.731,
+          "end": 3.072
+        },
+        {
+          "id": "w6",
+          "text": "ephemeral",
+          "start": 3.243,
+          "end": 3.8827
+        },
+        {
+          "id": "w7",
+          "text": "HMAC-SHA256",
+          "start": 4.011,
+          "end": 7.0827
+        },
+        {
+          "id": "w8",
+          "text": "capability",
+          "start": 7.253,
+          "end": 7.7227
+        },
+        {
+          "id": "w9",
+          "text": "leases.",
+          "start": 7.936,
+          "end": 8.427
+        },
+        {
+          "id": "w10",
+          "text": "Every",
+          "start": 8.619,
+          "end": 9.0027
+        },
+        {
+          "id": "w11",
+          "text": "write",
+          "start": 9.173,
+          "end": 9.344
+        },
+        {
+          "id": "w12",
+          "text": "is",
+          "start": 9.472,
+          "end": 9.6
+        },
+        {
+          "id": "w13",
+          "text": "strictly",
+          "start": 9.685,
+          "end": 10.069
+        },
+        {
+          "id": "w14",
+          "text": "isolated",
+          "start": 10.197,
+          "end": 10.709
+        },
+        {
+          "id": "w15",
+          "text": "to",
+          "start": 10.837,
+          "end": 11.008
+        },
+        {
+          "id": "w16",
+          "text": "agent",
+          "start": 11.051,
+          "end": 11.392
+        },
+        {
+          "id": "w17",
+          "text": "branch",
+          "start": 11.477,
+          "end": 11.6907
+        },
+        {
+          "id": "w18",
+          "text": "namespaces.",
+          "start": 11.904,
+          "end": 12.736
+        },
+        {
+          "id": "w19",
+          "text": "Zero",
+          "start": 12.971,
+          "end": 13.3547
+        },
+        {
+          "id": "w20",
+          "text": "privilege",
+          "start": 13.525,
+          "end": 13.8667
+        },
+        {
+          "id": "w21",
+          "text": "escalation.",
+          "start": 13.952,
+          "end": 14.633
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "path": "assets/voice/05.wav",
+      "duration_s": 13.949,
+      "words": [
+        {
+          "id": "w0",
+          "text": "With",
+          "start": 0.256,
+          "end": 0.4267
+        },
+        {
+          "id": "w1",
+          "text": "a",
+          "start": 0.469,
+          "end": 0.5547
+        },
+        {
+          "id": "w2",
+          "text": "native",
+          "start": 0.597,
+          "end": 0.8107
+        },
+        {
+          "id": "w3",
+          "text": "Model",
+          "start": 1.024,
+          "end": 1.28
+        },
+        {
+          "id": "w4",
+          "text": "Context",
+          "start": 1.408,
+          "end": 1.792
+        },
+        {
+          "id": "w5",
+          "text": "Protocol",
+          "start": 1.963,
+          "end": 2.432
+        },
+        {
+          "id": "w6",
+          "text": "server",
+          "start": 2.475,
+          "end": 2.8587
+        },
+        {
+          "id": "w7",
+          "text": "mounting",
+          "start": 2.944,
+          "end": 3.2427
+        },
+        {
+          "id": "w8",
+          "text": "thirty-five",
+          "start": 3.371,
+          "end": 3.968
+        },
+        {
+          "id": "w9",
+          "text": "tools,",
+          "start": 4.139,
+          "end": 4.587
+        },
+        {
+          "id": "w10",
+          "text": "agents",
+          "start": 4.821,
+          "end": 5.2907
+        },
+        {
+          "id": "w11",
+          "text": "search",
+          "start": 5.419,
+          "end": 5.589
+        },
+        {
+          "id": "w12",
+          "text": "AST",
+          "start": 5.803,
+          "end": 6.4
+        },
+        {
+          "id": "w13",
+          "text": "symbols",
+          "start": 6.443,
+          "end": 6.8267
+        },
+        {
+          "id": "w14",
+          "text": "and",
+          "start": 6.955,
+          "end": 7.296
+        },
+        {
+          "id": "w15",
+          "text": "open",
+          "start": 7.339,
+          "end": 7.5947
+        },
+        {
+          "id": "w16",
+          "text": "PRs",
+          "start": 7.765,
+          "end": 8.2347
+        },
+        {
+          "id": "w17",
+          "text": "effortlessly,",
+          "start": 8.32,
+          "end": 9.173
+        },
+        {
+          "id": "w18",
+          "text": "while",
+          "start": 9.429,
+          "end": 9.728
+        },
+        {
+          "id": "w19",
+          "text": "pre-receive",
+          "start": 9.771,
+          "end": 10.2827
+        },
+        {
+          "id": "w20",
+          "text": "hooks",
+          "start": 10.496,
+          "end": 10.752
+        },
+        {
+          "id": "w21",
+          "text": "kill",
+          "start": 10.88,
+          "end": 11.221
+        },
+        {
+          "id": "w22",
+          "text": "secret",
+          "start": 11.307,
+          "end": 11.5627
+        },
+        {
+          "id": "w23",
+          "text": "leaks",
+          "start": 11.733,
+          "end": 12.032
+        },
+        {
+          "id": "w24",
+          "text": "before",
+          "start": 12.16,
+          "end": 12.288
+        },
+        {
+          "id": "w25",
+          "text": "commits",
+          "start": 12.672,
+          "end": 12.9707
+        },
+        {
+          "id": "w26",
+          "text": "hit",
+          "start": 13.141,
+          "end": 13.312
+        },
+        {
+          "id": "w27",
+          "text": "disk.",
+          "start": 13.397,
+          "end": 13.894
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "path": "assets/voice/06.wav",
+      "duration_s": 10.266,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Pure",
+          "start": 0.256,
+          "end": 0.512
+        },
+        {
+          "id": "w1",
+          "text": "Go.",
+          "start": 0.597,
+          "end": 1.109
+        },
+        {
+          "id": "w2",
+          "text": "Zero",
+          "start": 1.493,
+          "end": 1.8347
+        },
+        {
+          "id": "w3",
+          "text": "host",
+          "start": 1.963,
+          "end": 2.133
+        },
+        {
+          "id": "w4",
+          "text": "dependencies.",
+          "start": 2.304,
+          "end": 3.072
+        },
+        {
+          "id": "w5",
+          "text": "Deploy",
+          "start": 3.328,
+          "end": 3.7547
+        },
+        {
+          "id": "w6",
+          "text": "in",
+          "start": 3.883,
+          "end": 4.0107
+        },
+        {
+          "id": "w7",
+          "text": "under",
+          "start": 4.053,
+          "end": 4.2667
+        },
+        {
+          "id": "w8",
+          "text": "five",
+          "start": 4.395,
+          "end": 4.608
+        },
+        {
+          "id": "w9",
+          "text": "minutes",
+          "start": 4.693,
+          "end": 4.864
+        },
+        {
+          "id": "w10",
+          "text": "with",
+          "start": 5.12,
+          "end": 5.461
+        },
+        {
+          "id": "w11",
+          "text": "existd",
+          "start": 5.589,
+          "end": 6.016
+        },
+        {
+          "id": "w12",
+          "text": "bootstrap,",
+          "start": 6.144,
+          "end": 6.72
+        },
+        {
+          "id": "w13",
+          "text": "and",
+          "start": 6.827,
+          "end": 7.296
+        },
+        {
+          "id": "w14",
+          "text": "give",
+          "start": 7.381,
+          "end": 7.5947
+        },
+        {
+          "id": "w15",
+          "text": "your",
+          "start": 7.637,
+          "end": 7.765
+        },
+        {
+          "id": "w16",
+          "text": "coding",
+          "start": 7.851,
+          "end": 8.1067
+        },
+        {
+          "id": "w17",
+          "text": "agents",
+          "start": 8.192,
+          "end": 8.4907
+        },
+        {
+          "id": "w18",
+          "text": "a",
+          "start": 8.619,
+          "end": 8.832
+        },
+        {
+          "id": "w19",
+          "text": "forge",
+          "start": 8.875,
+          "end": 9.2587
+        },
+        {
+          "id": "w20",
+          "text": "of",
+          "start": 9.387,
+          "end": 9.472
+        },
+        {
+          "id": "w21",
+          "text": "their",
+          "start": 9.515,
+          "end": 9.6427
+        },
+        {
+          "id": "w22",
+          "text": "own.",
+          "start": 9.685,
+          "end": 10.025986394557822
+        }
+      ]
+    }
+  ],
+  "sfx": []
+}

@@ -1,0 +1,22 @@
+exist.io: The Neutral Git Forge Built for Autonomous Coding Agents
+
+Problem: Traditional Git platforms were built 15 years ago for human developers clicking through web browsers. When autonomous coding agents—such as Claude Code, Codex, Cline, and Cursor—enter the loop, traditional forges break down:
+- Static Personal Access Tokens (PATs) give agents all-or-nothing power with no ref isolation.
+- Concurrent agents race against one another, clobbering mainline branches.
+- Secrets leaked by hallucinating agents are committed before human reviewers can react.
+- Complex browser-based PR workflows create severe bottlenecks for autonomous agent swarms.
+
+Solution: exist.io is the next-generation, self-hosted Git forge engineered from first principles for both human engineering teams and autonomous AI coding agents.
+
+Core Architectural Innovations:
+1. Ephemeral Agent Capability Leases (HMAC-SHA256):
+Agents request short-lived, cryptographically signed capability leases via MCP. Leases enforce strict ref-prefix isolation (refs/heads/agent/*). An agent cannot push to main, delete protected branches, or escalate privileges.
+
+2. Model Context Protocol (MCP) Native Engine:
+Provides standard JSON-RPC 2.0 tool execution directly mounted at /mcp (35 tools) and a sandboxed /mcp/readonly exploration tier. Agents perform AST semantic symbol search, file inspection, PR creation, and status check reporting through structured protocols without scraping HTML.
+
+3. Hermetic Pure-Go Forge Daemon:
+A single binary (existd) compiled with CGO_ENABLED=0 serves Git Smart-HTTP on :8080, an embedded standalone pure-Go SSH daemon on :2222 (zero OpenSSH host dependencies), transactional SQLite WAL storage, and an embedded GitHub Primer UI.
+
+4. Policy-Gated Security Pipeline:
+In-memory pre-receive security hooks scan every push for secrets and enforce ref boundaries before commits touch the repository. Autonomous agent PR reviews and ruleset policies execute deterministically in sub-second time.

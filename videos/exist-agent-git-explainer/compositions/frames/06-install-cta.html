@@ -1,0 +1,215 @@
+<template>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    #root {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      color: #141413;
+    }
+
+    .f06-bg {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      background: #FAF9F5;
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(204, 120, 92, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(0, 173, 216, 0.08) 0%, transparent 50%);
+    }
+
+    .f06-content {
+      position: absolute;
+      top: 80px;
+      left: 140px;
+      right: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 22px;
+    }
+
+    .f06-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #CC785C;
+      background: rgba(204, 120, 92, 0.12);
+      border: 1px solid rgba(204, 120, 92, 0.3);
+      padding: 6px 18px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .f06-headline {
+      font-family: 'EB Garamond', serif;
+      font-size: 84px;
+      font-weight: 400;
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+      color: #141413;
+      max-width: 1200px;
+    }
+
+    .f06-headline em {
+      font-style: italic;
+      color: #CC785C;
+    }
+
+    .f06-terminal {
+      width: 100%;
+      max-width: 1100px;
+      background: #181715;
+      border: 1px solid rgba(20, 20, 19, 0.18);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(24, 23, 21, 0.12);
+      text-align: left;
+    }
+
+    .f06-term-header {
+      background: #1F1E1B;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(250, 249, 245, 0.1);
+    }
+
+    .f06-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .f06-dot-red { background: #FF5F56; }
+    .f06-dot-yellow { background: #FFBD2E; }
+    .f06-dot-green { background: #27C93F; }
+
+    .f06-term-body {
+      padding: 24px 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 21px;
+      line-height: 1.6;
+      color: #FAF9F5;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .f06-cmd { color: #FAF9F5; }
+    .f06-prompt { color: #CC785C; font-weight: 600; }
+    .f06-success { color: #2EA043; }
+
+    .f06-cta-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 8px;
+    }
+
+    .f06-btn-coral {
+      background: #CC785C;
+      color: #FAF9F5;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(204, 120, 92, 0.25);
+    }
+
+    .f06-btn-outline {
+      background: #EFE9DE;
+      color: #141413;
+      border: 1px solid rgba(20, 20, 19, 0.15);
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 500;
+    }
+  </style>
+
+  <div id="root" data-composition-id="06-install-cta" data-width="1920" data-height="1080">
+    <div class="clip f06-bg" data-start="0" data-duration="10.266" data-track-index="0"></div>
+
+    <div class="clip f06-content" data-start="0" data-duration="10.266" data-track-index="1">
+      <div id="f06-pill" class="f06-pill">
+        <span>✱</span> 5-MINUTE SINGLE-COMMAND DEPLOY
+      </div>
+
+      <h1 id="f06-title" class="f06-headline">
+        Give your coding agents a <em>forge of their own</em>.
+      </h1>
+
+      <div id="f06-terminal" class="f06-terminal">
+        <div class="f06-term-header">
+          <span class="f06-dot f06-dot-red"></span>
+          <span class="f06-dot f06-dot-yellow"></span>
+          <span class="f06-dot f06-dot-green"></span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #FAF9F5; opacity: 0.6; margin-left: 10px;">install — exist.io</span>
+        </div>
+        <div class="f06-term-body">
+          <div>
+            <span class="f06-prompt">$</span> <span class="f06-cmd">curl -sSL https://exist.io/install.sh | bash</span>
+          </div>
+          <div>
+            <span class="f06-prompt">$</span> <span class="f06-cmd">existd bootstrap --namespace acme</span>
+          </div>
+          <div class="f06-success">
+            ✓ Ready in 4.2s · HTTP :8080 · SSH :2222 · MCP /mcp (35 tools)
+          </div>
+        </div>
+      </div>
+
+      <div id="f06-cta" class="f06-cta-row">
+        <div class="f06-btn-coral">Product Hunt Launch · Nov 17, 2026</div>
+        <div class="f06-btn-outline">github.com/RavaniRoshan/exist.io</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0-3.0s): Kicker and headline
+    tl.fromTo("#f06-pill", 
+      { opacity: 0, y: -15 }, 
+      { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 
+      0.2
+    );
+
+    tl.fromTo("#f06-title", 
+      { opacity: 0, y: 25 }, 
+      { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 
+      0.6
+    );
+
+    // Scene 2 (3.0-6.5s): Terminal commands reveal
+    tl.fromTo("#f06-terminal", 
+      { opacity: 0, y: 35, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 1.0, ease: "power3.out" }, 
+      3.2
+    );
+
+    // Scene 3 (6.5-10.266s): CTA row illuminates and holds
+    tl.fromTo("#f06-cta", 
+      { opacity: 0, y: 20 }, 
+      { opacity: 1, y: 0, duration: 0.8, ease: "back.out(1.3)" }, 
+      6.8
+    );
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["06-install-cta"] = tl;
+  </script>
+</template>

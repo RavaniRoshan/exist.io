@@ -1,0 +1,469 @@
+{
+  "version": 1,
+  "historyId": "ea3eebdd-9704-4671-855e-c00aa90b85ff",
+  "currentRevision": null,
+  "pendingChanges": false,
+  "files": {
+    ".media/manifest.jsonl": {
+      "hash": "8ba4929fcd122063ebd26522b23fa074deeb4765a5cb7ff38714433d217473be",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/8b/8ba4929fcd122063ebd26522b23fa074deeb4765a5cb7ff38714433d217473be"
+    },
+    "AGENTS.md": {
+      "hash": "1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/1d/1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5"
+    },
+    "BRIEF.md": {
+      "hash": "162e4108c507507f9a4239e6296480efcc0e772ac4241167ecc14fab5a870830",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/16/162e4108c507507f9a4239e6296480efcc0e772ac4241167ecc14fab5a870830"
+    },
+    "CLAUDE.md": {
+      "hash": "1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/1d/1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5"
+    },
+    "SCRIPT.md": {
+      "hash": "cb461ea8dc946cbc9c60d2b1ae98de947b7bf56b7f8b4029de1c348ef24cb1f5",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/cb/cb461ea8dc946cbc9c60d2b1ae98de947b7bf56b7f8b4029de1c348ef24cb1f5"
+    },
+    "STORYBOARD.md": {
+      "hash": "a690393fbbf1b6ffd88b46313ec96961e54a9d96250ac1789e2e8da86d7121de",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/a6/a690393fbbf1b6ffd88b46313ec96961e54a9d96250ac1789e2e8da86d7121de"
+    },
+    "assets/voice/03.wav": {
+      "hash": "d358f34863ab2dba524a7ad05582c94d6a718785153a875e7141c87b169e000b",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/d3/d358f34863ab2dba524a7ad05582c94d6a718785153a875e7141c87b169e000b"
+    },
+    "assets/voice/06.wav": {
+      "hash": "ab624b3be6a3204e90a536327b7d3bd596fc9ed2e36c66094944921b347cb4f1",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/ab/ab624b3be6a3204e90a536327b7d3bd596fc9ed2e36c66094944921b347cb4f1"
+    },
+    "audio_engine_meta.json": {
+      "hash": "997b070fe825998d3d7d79c50b3aa73423b711daffa6c96fbec3b27e7f45552c",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/99/997b070fe825998d3d7d79c50b3aa73423b711daffa6c96fbec3b27e7f45552c"
+    },
+    "audio_meta.json": {
+      "hash": "fa7dab447de9e6887b7ce4a55cd5f6bddc0a68235541ec592baf6f4ed6dff58a",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/fa/fa7dab447de9e6887b7ce4a55cd5f6bddc0a68235541ec592baf6f4ed6dff58a"
+    },
+    "audio_request.json": {
+      "hash": "9b0c89ed940bff19aa384c0ca4936e5942c0077366b76b0321dd53e4df18207b",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/9b/9b0c89ed940bff19aa384c0ca4936e5942c0077366b76b0321dd53e4df18207b"
+    },
+    "caption-overrides.json": {
+      "hash": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/37/37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "caption_groups.json": {
+      "hash": "44a87202023ccac16498129f2a453306c8232ff477b43c35fdd81561eca3b5d3",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/44/44a87202023ccac16498129f2a453306c8232ff477b43c35fdd81561eca3b5d3"
+    },
+    "capture/extracted/tokens.json": {
+      "hash": "c0180020077f485393457556f7112a04c922987b999590dfe598351176875566",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/c0/c0180020077f485393457556f7112a04c922987b999590dfe598351176875566"
+    },
+    "capture/extracted/visible-text.txt": {
+      "hash": "9b80c3e30c91c60fc5e920a4bb6d2bc759e54a42fae4f0126109924f869605a4",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/9b/9b80c3e30c91c60fc5e920a4bb6d2bc759e54a42fae4f0126109924f869605a4"
+    },
+    "compositions/captions.html": {
+      "hash": "39e7c2182d13d523ba28e6aaa9ab98cc2e69cbf0046dc7625acaaa5c957de147",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/39/39e7c2182d13d523ba28e6aaa9ab98cc2e69cbf0046dc7625acaaa5c957de147"
+    },
+    "compositions/frames/01-agent-dilemma.html": {
+      "hash": "852f062f22612b9e6ceff33e1167cfefd16317e4ff33e280b237e0f6325884f3",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/85/852f062f22612b9e6ceff33e1167cfefd16317e4ff33e280b237e0f6325884f3"
+    },
+    "compositions/frames/02-legacy-bottleneck.html": {
+      "hash": "9957762ae88fbcb83f7cfed98ccf3b26d16fe2d0aee27e09084d49038a448d0d",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/99/9957762ae88fbcb83f7cfed98ccf3b26d16fe2d0aee27e09084d49038a448d0d"
+    },
+    "compositions/frames/03-solution-exist.html": {
+      "hash": "872a25e1599f9a72740c531399773bc837e47e0f37fd3ddb8d9cec1f729850e1",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/87/872a25e1599f9a72740c531399773bc837e47e0f37fd3ddb8d9cec1f729850e1"
+    },
+    "compositions/frames/04-capability-leases.html": {
+      "hash": "f2e2722180bd10a58cdfe42715eb1edf275ed2d57748bfabfd66a522ba3276d0",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/f2/f2e2722180bd10a58cdfe42715eb1edf275ed2d57748bfabfd66a522ba3276d0"
+    },
+    "compositions/frames/05-native-mcp.html": {
+      "hash": "c6bc5f3d732ca6bd5db81fb4a4c269480f7d019d8735ff275bf188dbcad5df9f",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/c6/c6bc5f3d732ca6bd5db81fb4a4c269480f7d019d8735ff275bf188dbcad5df9f"
+    },
+    "compositions/frames/06-install-cta.html": {
+      "hash": "aff8f8ec22c122d2b2c126816b33e0d67cf35cd3754fcbe96b0d0666138d0ab6",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/af/aff8f8ec22c122d2b2c126816b33e0d67cf35cd3754fcbe96b0d0666138d0ab6"
+    },
+    "frame.md": {
+      "hash": "b1c123526634e31a3e36cff9856e3b4322f2f778d2c7f573aa35a9ee1e90deb7",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/b1/b1c123526634e31a3e36cff9856e3b4322f2f778d2c7f573aa35a9ee1e90deb7"
+    },
+    "hyperframes.json": {
+      "hash": "9313260261b6e431830877ee35083331270bc6b9a32d50650abe2bd58bdf558d",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/93/9313260261b6e431830877ee35083331270bc6b9a32d50650abe2bd58bdf558d"
+    },
+    "index.html": {
+      "hash": "c82fa9ebcf3ec307fe46e39d6e6895d5e59b559fda0de8546a4d310c7184a96d",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/c8/c82fa9ebcf3ec307fe46e39d6e6895d5e59b559fda0de8546a4d310c7184a96d"
+    },
+    "meta.json": {
+      "hash": "ed7bcd7678243fb57c38ab9455222b0ec679bab9524f0cbe71d43d09d2d170a9",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/ed/ed7bcd7678243fb57c38ab9455222b0ec679bab9524f0cbe71d43d09d2d170a9"
+    },
+    "package.json": {
+      "hash": "dda46096179691c9f4738e0308a77a391c36ee334113311016f6167eb5a2948c",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/dd/dda46096179691c9f4738e0308a77a391c36ee334113311016f6167eb5a2948c"
+    },
+    "assets/voice/01.wav": {
+      "hash": "97c4f482cd0029b2dc5e289b1cddf9a8b57fc69c78e19c3240f90f95de523806",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/97/97c4f482cd0029b2dc5e289b1cddf9a8b57fc69c78e19c3240f90f95de523806"
+    },
+    "assets/voice/02.wav": {
+      "hash": "82689bd42c5b65a60dd2e07a49c2654ea2cf37cf0dcca2072289bb37bb54d5bf",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/82/82689bd42c5b65a60dd2e07a49c2654ea2cf37cf0dcca2072289bb37bb54d5bf"
+    },
+    "assets/voice/04.wav": {
+      "hash": "58a57c66a25a7c875d6128214dc894388720b51b98c9ce4e9f6384b27f831ed6",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/58/58a57c66a25a7c875d6128214dc894388720b51b98c9ce4e9f6384b27f831ed6"
+    },
+    "assets/voice/05.wav": {
+      "hash": "98d21531e3039477bf0491516f74856276b26d8d8947a718fccf54a90232180f",
+      "content": "/home/shiva/.cache/hyperframes/history/ea3eebdd-9704-4671-855e-c00aa90b85ff/blobs/98/98d21531e3039477bf0491516f74856276b26d8d8947a718fccf54a90232180f"
+    }
+  },
+  "revisions": {},
+  "checks": {
+    "latest": {
+      "revision": null,
+      "id": "80570dfa-34df-4a16-8d9d-af9545cdd5a6"
+    },
+    "revisions": {},
+    "unversioned": [
+      {
+        "id": "80570dfa-34df-4a16-8d9d-af9545cdd5a6",
+        "scope": "project",
+        "report": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/checks/80570dfa-34df-4a16-8d9d-af9545cdd5a6.json",
+        "metadata": {
+          "ok": true,
+          "browserSkipped": false,
+          "options": {
+            "samples": 9,
+            "atTransitions": false,
+            "maxIssues": 80,
+            "collapseStatic": true,
+            "tolerance": 2,
+            "timeout": 3000,
+            "contrast": true,
+            "strict": false,
+            "snapshots": false,
+            "browserGpuMode": "auto"
+          }
+        },
+        "createdAt": 1792210188721,
+        "contentHash": "192ac7f610e00d5bce21422382bc4dbe3cf42f7e5214da5d8987252a20519b3f",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "snapshots": {
+    "latest": {
+      "revision": null,
+      "id": "61607aef-72fc-4171-99ef-7f737f36302d-6"
+    },
+    "revisions": {},
+    "unversioned": [
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-0",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-00-at-6s.png",
+        "time": 6,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204840,
+        "contentHash": "139966fbfb80e3011a8666de925dbbd910d335b20341f7f42d97f01e4bfd0877",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-1",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-01-at-18s.png",
+        "time": 18,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204840,
+        "contentHash": "b459203fefdcff2dc928a903ad7255ca54b4976153f0ffb259a1e09528c24f01",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-2",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-02-at-30s.png",
+        "time": 30,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204840,
+        "contentHash": "4b96159d4cdb2c299b9f7ad7a102eb6677c06ce880917c19f8a06fbcfb74766b",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-3",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-03-at-42s.png",
+        "time": 42,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204840,
+        "contentHash": "a18f1d01b4aac24d11eacdc0d1385ede3e7a991e4a3ed71afe2f2af33cbb5ebe",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-4",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-04-at-57s.png",
+        "time": 57,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204841,
+        "contentHash": "9960fcd78617f29331ec309af6a44c751e32bb21b658fd3d18e17ea040f72b18",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-5",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-05-at-69s.png",
+        "time": 69,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204841,
+        "contentHash": "bbfd35780d1e9fc2516e92c8a984546db0a21e5eafafd0d326eb6ddd117c608b",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "501b5801-4e11-4c78-8d49-3a7c65d20d24-6",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/6e97a079-9634-42dd-bd85-eb38c2a3434b/frame-06-at-71.81s.png",
+        "time": 71.81,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210204841,
+        "contentHash": "ba20c24b6d8959db0966728769c0ed3af4888806fa9a16328725e85a753abac4",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-0",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-00-at-10s.png",
+        "time": 10,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245300,
+        "contentHash": "d90d4ffe914175da6eb10870a847b56d1ce1563d4254e7c02111647e39b4487c",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-1",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-01-at-22s.png",
+        "time": 22,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245301,
+        "contentHash": "3760a0bcb5b272e954be7519eb0717afebc2e6d58858850efe8cef21b84db803",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-2",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-02-at-33s.png",
+        "time": 33,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245301,
+        "contentHash": "ac22863ad00ee31e5bb1a76262bd342b5510629fddf590fa3294d3b6fc181723",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-3",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-03-at-46s.png",
+        "time": 46,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245301,
+        "contentHash": "5573a1d573071fda9129b426c8af12f7565b1a4263a89c50e57e963c23951117",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-4",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-04-at-60s.png",
+        "time": 60,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245301,
+        "contentHash": "3d11577dc02b31a0bdc07c70bbee946d4ff0c1ca95ece6f0708f2852d0059866",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-5",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-05-at-70s.png",
+        "time": 70,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245301,
+        "contentHash": "cb6ec1d16d5f27e6e25c7c4776c0017de2d2561de9f0803283c7a5992f13f986",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      },
+      {
+        "scope": "full",
+        "id": "61607aef-72fc-4171-99ef-7f737f36302d-6",
+        "image": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/.hyperframes/artifacts/snapshots/23f1f0ac-f2c7-4c6a-8bf4-4b76c850f70c/frame-06-at-71.81s.png",
+        "time": 71.81,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1792210245301,
+        "contentHash": "ba20c24b6d8959db0966728769c0ed3af4888806fa9a16328725e85a753abac4",
+        "revision": null,
+        "inputFingerprint": "9094efa971502b9ffc21317e6002b82ac1722bd70ff50a5c4d7584970225907d",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "renders": {
+    "latest": {
+      "id": "7672245a-693a-42db-b12e-7ee8066d0b3c",
+      "completedAt": 1792210510054,
+      "output": "/home/shiva/projects/exist.io/videos/exist-agent-git-explainer/renders/video.mp4",
+      "status": "completed",
+      "revision": null
+    },
+    "retainedRevisions": []
+  },
+  "pendingArtifactCleanup": []
+}

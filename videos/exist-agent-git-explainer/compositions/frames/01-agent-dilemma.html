@@ -1,0 +1,220 @@
+<template>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    #root {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      color: #141413;
+    }
+
+    .f01-bg {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      background: #FAF9F5;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(204, 120, 92, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(24, 23, 21, 0.05) 0%, transparent 50%);
+    }
+
+    .f01-content {
+      position: absolute;
+      top: 100px;
+      left: 140px;
+      right: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 28px;
+    }
+
+    .f01-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #CC785C;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .f01-headline {
+      font-family: 'EB Garamond', serif;
+      font-size: 78px;
+      font-weight: 400;
+      line-height: 1.08;
+      letter-spacing: -0.022em;
+      color: #141413;
+      max-width: 1400px;
+    }
+
+    .f01-headline em {
+      font-style: italic;
+      color: #CC785C;
+    }
+
+    .f01-terminal {
+      width: 100%;
+      max-width: 1300px;
+      background: #181715;
+      border: 1px solid rgba(20, 20, 19, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(20, 20, 19, 0.12);
+      margin-top: 10px;
+    }
+
+    .f01-term-header {
+      background: #1F1E1B;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(250, 249, 245, 0.1);
+    }
+
+    .f01-term-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .f01-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .f01-dot-red { background: #FF5F56; }
+    .f01-dot-yellow { background: #FFBD2E; }
+    .f01-dot-green { background: #27C93F; }
+
+    .f01-term-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #FAF9F5;
+      opacity: 0.7;
+    }
+
+    .f01-term-body {
+      padding: 28px 32px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      line-height: 1.6;
+      color: #FAF9F5;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .f01-prompt {
+      color: #CC785C;
+      font-weight: 600;
+    }
+
+    .f01-cmd {
+      color: #FAF9F5;
+    }
+
+    .f01-alert-box {
+      margin-top: 8px;
+      padding: 16px 20px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 8px;
+      color: #F87171;
+      font-size: 19px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .f01-agent-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: #EFE9DE;
+      border: 1px solid rgba(20, 20, 19, 0.12);
+      border-radius: 9999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #141413;
+    }
+  </style>
+
+  <div id="root" data-composition-id="01-agent-dilemma" data-width="1920" data-height="1080" data-duration="12.412">
+    <div class="clip f01-bg" data-start="0" data-duration="12.412" data-track-index="0"></div>
+
+    <div class="clip f01-content" data-start="0" data-duration="12.412" data-track-index="1">
+      <div id="f01-kicker" class="f01-kicker">
+        <span>✱</span> THE AGENT DILEMMA
+        <div class="f01-agent-pill">Claude Code · Cursor · Codex · Cline</div>
+      </div>
+
+      <h1 id="f01-title" class="f01-headline">
+        Autonomous coding agents are <em>rewriting engineering</em>.
+      </h1>
+
+      <div id="f01-terminal" class="f01-terminal">
+        <div class="f01-term-header">
+          <div class="f01-term-dots">
+            <span class="f01-dot f01-dot-red"></span>
+            <span class="f01-dot f01-dot-yellow"></span>
+            <span class="f01-dot f01-dot-green"></span>
+          </div>
+          <span class="f01-term-title">agent-runner — zsh</span>
+          <span></span>
+        </div>
+        <div class="f01-term-body">
+          <div>
+            <span class="f01-prompt">agent@runner:~$</span> <span class="f01-cmd">git push origin main --force</span>
+          </div>
+          <div id="f01-alert" class="f01-alert-box">
+            <span>⚠ FATAL:</span> Overwritten 48 production commits via static Personal Access Token (PAT).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0-3.5s): Kicker and headline entrance
+    tl.fromTo("#f01-kicker", 
+      { opacity: 0, y: -20 }, 
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 
+      0.2
+    );
+
+    tl.fromTo("#f01-title", 
+      { opacity: 0, y: 30 }, 
+      { opacity: 1, y: 0, duration: 1.0, ease: "power3.out" }, 
+      0.6
+    );
+
+    // Scene 2 (3.5-7.5s): Terminal reveals on voice cue "personal Git token"
+    tl.fromTo("#f01-terminal", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 1.1, ease: "power3.out" }, 
+      3.6
+    );
+
+    // Scene 3 (7.5-11.912s): Red destructive push alert reveals on "wipe out production"
+    tl.fromTo("#f01-alert", 
+      { opacity: 0, scale: 0.94 }, 
+      { opacity: 1, scale: 1.0, duration: 0.6, ease: "back.out(1.5)" }, 
+      7.4
+    );
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["01-agent-dilemma"] = tl;
+  </script>
+</template>

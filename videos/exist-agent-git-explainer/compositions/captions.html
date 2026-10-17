@@ -1,0 +1,221 @@
+<template id="captions-template" data-composition-id="captions" data-width="1920" data-height="1080">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+
+<style data-brand-tokens>
+      :root {
+      --ink: #141413;
+      --cream: #FAF9F5;
+      --tile: #EFE9DE;
+      --tile-strong: #ECE3D4;
+      --coral: #CC785C;
+      --navy: #181715;
+      --navy-soft: #1F1E1B;
+      --navy-elev: #252320;
+      --cap-ink: #141413;
+      --cap-canvas: #FAF9F5;
+      --cap-accent: #CC785C;
+      --cap-accent-2: #ECE3D4;
+      --font-display: "EB Garamond", system-ui, serif;
+      --font-body: "Inter", system-ui, sans-serif;
+      --cap-band-top: 900px;
+      --cap-band-height: 180px;
+      }
+    </style>
+
+<style>
+  #captions-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .caption-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+  }
+  /* the keep-out band, from captionBand(H) — frame content stays above it */
+  .caption-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--cap-band-top, 900px);
+    height: var(--cap-band-height, 180px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .caption-group {
+    /* every group is absolutely stacked over the SAME band — exactly one shown at a
+       time via opacity. Must be absolute: in-flow groups would lay out side-by-side. */
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+  }
+
+  /* THE lifted cream card — warm cream fill, 1px hairline ink border, one soft warm
+     shadow (code-editorial's only elevation language), 12px radius, no tilt */
+  .caption-pill {
+    max-width: 78%;
+    padding: 22px 44px 26px;
+    background: var(--cap-canvas, #faf9f5);
+    border: 1px solid color-mix(in srgb, var(--cap-ink, #141413) 12%, transparent);
+    border-radius: 12px;
+    box-shadow:
+      0 1px 3px color-mix(in srgb, var(--cap-ink, #141413) 8%, transparent),
+      0 4px 16px color-mix(in srgb, var(--cap-ink, #141413) 4%, transparent);
+  }
+  .caption-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.12em 0.3em;
+    font-family: "EB Garamond", Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(40px, 4.4vw, 56px);
+    line-height: 1.24;
+    letter-spacing: -0.02em;
+  }
+
+  /* upcoming — faint warm ink, no underline */
+  .caption-word {
+    display: inline-block;
+    padding: 0 0.02em 0.06em;
+    color: color-mix(in srgb, var(--cap-ink, #141413) 40%, var(--cap-canvas, #faf9f5));
+    border-bottom: 3px solid transparent;
+  }
+  /* current word — full ink under the coral voltage underline (the brand's signature
+     inline-link gesture; border-bottom = underline without layout shift) */
+  .caption-word.is-active {
+    color: var(--cap-ink, #141413);
+    border-bottom: 3px solid var(--cap-accent, #cc785c);
+  }
+  /* already spoken — solid warm ink, underline cleared */
+  .caption-word.is-spoken {
+    color: var(--cap-ink, #141413);
+    border-bottom: 3px solid transparent;
+  }
+
+  /* optional per-word accents (dormant until a word-classer tags them) */
+  /* brand / key term — the expressive EB Garamond italic */
+  .caption-word.cap-brand {
+    font-style: italic;
+    color: var(--cap-ink, #141413);
+  }
+  .caption-word.cap-brand.is-active {
+    border-bottom: 3px solid var(--cap-accent, #cc785c);
+  }
+  /* numerals / data — slightly recessed warm ink */
+  .caption-word.cap-num {
+    color: color-mix(in srgb, var(--cap-ink, #141413) 72%, var(--cap-canvas, #faf9f5));
+  }
+  /* emphasis — a persistent coral voltage underline */
+  .caption-word.cap-cta {
+    border-bottom: 3px solid var(--cap-accent-2, #b5654a);
+    color: var(--cap-ink, #141413);
+  }
+
+  @media (max-aspect-ratio: 9/16) {
+    .caption-pill {
+      max-width: 92%;
+    }
+    .caption-line {
+      font-size: clamp(34px, 5.4vw, 46px);
+    }
+  }
+</style>
+
+<div
+  id="captions-root"
+  data-composition-id="captions"
+  data-timeline-locked
+  data-start="0"
+  data-duration="74.031"
+  data-fps="30"
+  data-width="1920"
+  data-height="1080"
+>
+  <div class="caption-layer" aria-hidden="true">
+    <div id="caption-stage" class="caption-stage"></div>
+  </div>
+</div>
+
+<script>
+  // captions.mjs injects the engine's scene-aware groups + real duration here.
+  var GROUPS = [{"id":"caption-group-0","frame":1,"start":0.299,"end":2.176,"text":"Autonomous coding agents are","words":[{"id":"caption-word-0-0","text":"Autonomous","start":0.299,"end":0.981},{"id":"caption-word-0-1","text":"coding","start":1.109,"end":1.408},{"id":"caption-word-0-2","text":"agents","start":1.493,"end":1.877},{"id":"caption-word-0-3","text":"are","start":2.005,"end":2.133}]},{"id":"caption-group-1","frame":1,"start":2.176,"end":2.893,"text":"rewriting","words":[{"id":"caption-word-1-0","text":"rewriting","start":2.176,"end":2.773}]},{"id":"caption-group-2","frame":1,"start":2.987,"end":4.323,"text":"software engineering.","words":[{"id":"caption-word-2-0","text":"software","start":2.987,"end":3.456},{"id":"caption-word-2-1","text":"engineering.","start":3.499,"end":4.203}]},{"id":"caption-group-3","frame":1,"start":4.565,"end":5.077,"text":"But give","words":[{"id":"caption-word-3-0","text":"But","start":4.565,"end":4.736},{"id":"caption-word-3-1","text":"give","start":4.821,"end":5.035}]},{"id":"caption-group-4","frame":1,"start":5.077,"end":5.675,"text":"an agent","words":[{"id":"caption-word-4-0","text":"an","start":5.077,"end":5.163},{"id":"caption-word-4-1","text":"agent","start":5.248,"end":5.589}]},{"id":"caption-group-5","frame":1,"start":5.675,"end":6.307,"text":"your personal","words":[{"id":"caption-word-5-0","text":"your","start":5.675,"end":5.845},{"id":"caption-word-5-1","text":"personal","start":5.888,"end":6.187}]},{"id":"caption-group-6","frame":1,"start":6.528,"end":7.437,"text":"Git token,","words":[{"id":"caption-word-6-0","text":"Git","start":6.528,"end":6.741},{"id":"caption-word-6-1","text":"token,","start":6.827,"end":7.317}]},{"id":"caption-group-7","frame":1,"start":7.595,"end":9.293,"text":"and one hallucinated","words":[{"id":"caption-word-7-0","text":"and","start":7.595,"end":7.851},{"id":"caption-word-7-1","text":"one","start":7.936,"end":8.235},{"id":"caption-word-7-2","text":"hallucinated","start":8.405,"end":9.173}]},{"id":"caption-group-8","frame":1,"start":9.344,"end":9.72,"text":"push","words":[{"id":"caption-word-8-0","text":"push","start":9.344,"end":9.6}]},{"id":"caption-group-9","frame":1,"start":9.899,"end":11,"text":"can wipe out","words":[{"id":"caption-word-9-0","text":"can","start":9.899,"end":10.197},{"id":"caption-word-9-1","text":"wipe","start":10.24,"end":10.539},{"id":"caption-word-9-2","text":"out","start":10.709,"end":10.88}]},{"id":"caption-group-10","frame":1,"start":11.093,"end":11.796,"text":"production.","words":[{"id":"caption-word-10-0","text":"production.","start":11.093,"end":11.676}]},{"id":"caption-group-11","frame":2,"start":12.211,"end":12.587,"text":"Traditional","words":[{"id":"caption-word-11-0","text":"Traditional","start":12.211,"end":12.467}]},{"id":"caption-group-12","frame":2,"start":12.765,"end":13.568,"text":"Git platforms","words":[{"id":"caption-word-12-0","text":"Git","start":12.765,"end":12.893},{"id":"caption-word-12-1","text":"platforms","start":12.979,"end":13.448}]},{"id":"caption-group-13","frame":2,"start":13.576,"end":13.96,"text":"were built","words":[{"id":"caption-word-13-0","text":"were","start":13.576,"end":13.704},{"id":"caption-word-13-1","text":"built","start":13.747,"end":13.875}]},{"id":"caption-group-14","frame":2,"start":13.96,"end":14.677,"text":"fifteen years","words":[{"id":"caption-word-14-0","text":"fifteen","start":13.96,"end":14.301},{"id":"caption-word-14-1","text":"years","start":14.387,"end":14.557}]},{"id":"caption-group-15","frame":2,"start":14.685,"end":15.112,"text":"ago for","words":[{"id":"caption-word-15-0","text":"ago","start":14.685,"end":14.771},{"id":"caption-word-15-1","text":"for","start":14.941,"end":15.069}]},{"id":"caption-group-16","frame":2,"start":15.112,"end":15.795,"text":"humans in","words":[{"id":"caption-word-16-0","text":"humans","start":15.112,"end":15.453},{"id":"caption-word-16-1","text":"in","start":15.539,"end":15.709}]},{"id":"caption-group-17","frame":2,"start":15.795,"end":16.939,"text":"web browsers.","words":[{"id":"caption-word-17-0","text":"web","start":15.795,"end":15.965},{"id":"caption-word-17-1","text":"browsers.","start":16.093,"end":16.819}]},{"id":"caption-group-18","frame":2,"start":17.117,"end":17.501,"text":"They have","words":[{"id":"caption-word-18-0","text":"They","start":17.117,"end":17.288},{"id":"caption-word-18-1","text":"have","start":17.331,"end":17.416}]},{"id":"caption-group-19","frame":2,"start":17.501,"end":18.965,"text":"no ref isolation,","words":[{"id":"caption-word-19-0","text":"no","start":17.501,"end":17.672},{"id":"caption-word-19-1","text":"ref","start":17.757,"end":17.928},{"id":"caption-word-19-2","text":"isolation,","start":18.056,"end":18.845}]},{"id":"caption-group-20","frame":2,"start":19.08,"end":20.779,"text":"bottleneck parallel swarms,","words":[{"id":"caption-word-20-0","text":"bottleneck","start":19.08,"end":19.592},{"id":"caption-word-20-1","text":"parallel","start":19.677,"end":20.104},{"id":"caption-word-20-2","text":"swarms,","start":20.147,"end":20.659}]},{"id":"caption-group-21","frame":2,"start":20.787,"end":21.803,"text":"and treat agents","words":[{"id":"caption-word-21-0","text":"and","start":20.787,"end":21.043},{"id":"caption-word-21-1","text":"treat","start":21.085,"end":21.256},{"id":"caption-word-21-2","text":"agents","start":21.341,"end":21.683}]},{"id":"caption-group-22","frame":2,"start":21.896,"end":24.082,"text":"like untrusted intruders.","words":[{"id":"caption-word-22-0","text":"like","start":21.896,"end":22.237},{"id":"caption-word-22-1","text":"untrusted","start":22.323,"end":23.005},{"id":"caption-word-22-2","text":"intruders.","start":23.091,"end":23.962}]},{"id":"caption-group-23","frame":3,"start":24.332,"end":24.75,"text":"Meet","words":[{"id":"caption-word-23-0","text":"Meet","start":24.332,"end":24.63}]},{"id":"caption-group-24","frame":3,"start":25.057,"end":27.481,"text":"exist.io:","words":[{"id":"caption-word-24-0","text":"exist.io:","start":25.057,"end":27.361}]},{"id":"caption-group-25","frame":3,"start":27.617,"end":28.654,"text":"the sovereign,","words":[{"id":"caption-word-25-0","text":"the","start":27.617,"end":27.788},{"id":"caption-word-25-1","text":"sovereign,","start":27.83,"end":28.534}]},{"id":"caption-group-26","frame":3,"start":28.726,"end":30.169,"text":"self-hosted Git forge","words":[{"id":"caption-word-26-0","text":"self-hosted","start":28.726,"end":29.494},{"id":"caption-word-26-1","text":"Git","start":29.58,"end":29.708},{"id":"caption-word-26-2","text":"forge","start":29.75,"end":30.049}]},{"id":"caption-group-27","frame":3,"start":30.305,"end":32.26,"text":"engineered from first principles","words":[{"id":"caption-word-27-0","text":"engineered","start":30.305,"end":31.03},{"id":"caption-word-27-1","text":"from","start":31.158,"end":31.329},{"id":"caption-word-27-2","text":"first","start":31.372,"end":31.67},{"id":"caption-word-27-3","text":"principles","start":31.841,"end":32.14}]},{"id":"caption-group-28","frame":3,"start":32.396,"end":33.462,"text":"for autonomous coding","words":[{"id":"caption-word-28-0","text":"for","start":32.396,"end":32.524},{"id":"caption-word-28-1","text":"autonomous","start":32.566,"end":33.078},{"id":"caption-word-28-2","text":"coding","start":33.164,"end":33.377}]},{"id":"caption-group-29","frame":3,"start":33.462,"end":33.974,"text":"agents and","words":[{"id":"caption-word-29-0","text":"agents","start":33.462,"end":33.761},{"id":"caption-word-29-1","text":"and","start":33.846,"end":33.932}]},{"id":"caption-group-30","frame":3,"start":33.974,"end":35.017,"text":"human teams.","words":[{"id":"caption-word-30-0","text":"human","start":33.974,"end":34.188},{"id":"caption-word-30-1","text":"teams.","start":34.316,"end":34.897}]},{"id":"caption-group-31","frame":4,"start":35.208,"end":36.232,"text":"Instead of static","words":[{"id":"caption-word-31-0","text":"Instead","start":35.208,"end":35.592},{"id":"caption-word-31-1","text":"of","start":35.635,"end":35.677},{"id":"caption-word-31-2","text":"static","start":35.763,"end":36.147}]},{"id":"caption-group-32","frame":4,"start":36.232,"end":36.957,"text":"credentials,","words":[{"id":"caption-word-32-0","text":"credentials,","start":36.232,"end":36.851}]},{"id":"caption-group-33","frame":4,"start":36.957,"end":42.155,"text":"agents request ephemeral HMAC-SHA256","words":[{"id":"caption-word-33-0","text":"agents","start":36.957,"end":37.512},{"id":"caption-word-33-1","text":"request","start":37.683,"end":38.024},{"id":"caption-word-33-2","text":"ephemeral","start":38.195,"end":38.835},{"id":"caption-word-33-3","text":"HMAC-SHA256","start":38.963,"end":42.035}]},{"id":"caption-group-34","frame":4,"start":42.205,"end":42.795,"text":"capability","words":[{"id":"caption-word-34-0","text":"capability","start":42.205,"end":42.675}]},{"id":"caption-group-35","frame":4,"start":42.888,"end":43.499,"text":"leases.","words":[{"id":"caption-word-35-0","text":"leases.","start":42.888,"end":43.379}]},{"id":"caption-group-36","frame":4,"start":43.571,"end":44.637,"text":"Every write is","words":[{"id":"caption-word-36-0","text":"Every","start":43.571,"end":43.955},{"id":"caption-word-36-1","text":"write","start":44.125,"end":44.296},{"id":"caption-word-36-2","text":"is","start":44.424,"end":44.552}]},{"id":"caption-group-37","frame":4,"start":44.637,"end":46.429,"text":"strictly isolated to agent","words":[{"id":"caption-word-37-0","text":"strictly","start":44.637,"end":45.021},{"id":"caption-word-37-1","text":"isolated","start":45.149,"end":45.661},{"id":"caption-word-37-2","text":"to","start":45.789,"end":45.96},{"id":"caption-word-37-3","text":"agent","start":46.003,"end":46.344}]},{"id":"caption-group-38","frame":4,"start":46.429,"end":46.763,"text":"branch","words":[{"id":"caption-word-38-0","text":"branch","start":46.429,"end":46.643}]},{"id":"caption-group-39","frame":4,"start":46.856,"end":47.808,"text":"namespaces.","words":[{"id":"caption-word-39-0","text":"namespaces.","start":46.856,"end":47.688}]},{"id":"caption-group-40","frame":4,"start":47.923,"end":49.705,"text":"Zero privilege escalation.","words":[{"id":"caption-word-40-0","text":"Zero","start":47.923,"end":48.307},{"id":"caption-word-40-1","text":"privilege","start":48.477,"end":48.819},{"id":"caption-word-40-2","text":"escalation.","start":48.904,"end":49.585}]},{"id":"caption-group-41","frame":5,"start":50.072,"end":50.413,"text":"With a","words":[{"id":"caption-word-41-0","text":"With","start":50.072,"end":50.243},{"id":"caption-word-41-1","text":"a","start":50.285,"end":50.371}]},{"id":"caption-group-42","frame":5,"start":50.413,"end":50.747,"text":"native","words":[{"id":"caption-word-42-0","text":"native","start":50.413,"end":50.627}]},{"id":"caption-group-43","frame":5,"start":50.84,"end":52.291,"text":"Model Context Protocol","words":[{"id":"caption-word-43-0","text":"Model","start":50.84,"end":51.096},{"id":"caption-word-43-1","text":"Context","start":51.224,"end":51.608},{"id":"caption-word-43-2","text":"Protocol","start":51.779,"end":52.248}]},{"id":"caption-group-44","frame":5,"start":52.291,"end":53.904,"text":"server mounting thirty-five","words":[{"id":"caption-word-44-0","text":"server","start":52.291,"end":52.675},{"id":"caption-word-44-1","text":"mounting","start":52.76,"end":53.059},{"id":"caption-word-44-2","text":"thirty-five","start":53.187,"end":53.784}]},{"id":"caption-group-45","frame":5,"start":53.955,"end":54.523,"text":"tools,","words":[{"id":"caption-word-45-0","text":"tools,","start":53.955,"end":54.403}]},{"id":"caption-group-46","frame":5,"start":54.637,"end":55.525,"text":"agents search","words":[{"id":"caption-word-46-0","text":"agents","start":54.637,"end":55.107},{"id":"caption-word-46-1","text":"search","start":55.235,"end":55.405}]},{"id":"caption-group-47","frame":5,"start":55.619,"end":57.531,"text":"AST symbols and open","words":[{"id":"caption-word-47-0","text":"AST","start":55.619,"end":56.216},{"id":"caption-word-47-1","text":"symbols","start":56.259,"end":56.643},{"id":"caption-word-47-2","text":"and","start":56.771,"end":57.112},{"id":"caption-word-47-3","text":"open","start":57.155,"end":57.411}]},{"id":"caption-group-48","frame":5,"start":57.581,"end":59.109,"text":"PRs effortlessly,","words":[{"id":"caption-word-48-0","text":"PRs","start":57.581,"end":58.051},{"id":"caption-word-48-1","text":"effortlessly,","start":58.136,"end":58.989}]},{"id":"caption-group-49","frame":5,"start":59.245,"end":60.219,"text":"while pre-receive","words":[{"id":"caption-word-49-0","text":"while","start":59.245,"end":59.544},{"id":"caption-word-49-1","text":"pre-receive","start":59.587,"end":60.099}]},{"id":"caption-group-50","frame":5,"start":60.312,"end":61.499,"text":"hooks kill secret","words":[{"id":"caption-word-50-0","text":"hooks","start":60.312,"end":60.568},{"id":"caption-word-50-1","text":"kill","start":60.696,"end":61.037},{"id":"caption-word-50-2","text":"secret","start":61.123,"end":61.379}]},{"id":"caption-group-51","frame":5,"start":61.549,"end":62.224,"text":"leaks before","words":[{"id":"caption-word-51-0","text":"leaks","start":61.549,"end":61.848},{"id":"caption-word-51-1","text":"before","start":61.976,"end":62.104}]},{"id":"caption-group-52","frame":5,"start":62.488,"end":63.83,"text":"commits hit disk.","words":[{"id":"caption-word-52-0","text":"commits","start":62.488,"end":62.787},{"id":"caption-word-52-1","text":"hit","start":62.957,"end":63.128},{"id":"caption-word-52-2","text":"disk.","start":63.213,"end":63.71}]},{"id":"caption-group-53","frame":6,"start":64.021,"end":64.994,"text":"Pure Go.","words":[{"id":"caption-word-53-0","text":"Pure","start":64.021,"end":64.277},{"id":"caption-word-53-1","text":"Go.","start":64.362,"end":64.874}]},{"id":"caption-group-54","frame":6,"start":65.258,"end":66.957,"text":"Zero host dependencies.","words":[{"id":"caption-word-54-0","text":"Zero","start":65.258,"end":65.6},{"id":"caption-word-54-1","text":"host","start":65.728,"end":65.898},{"id":"caption-word-54-2","text":"dependencies.","start":66.069,"end":66.837}]},{"id":"caption-group-55","frame":6,"start":67.093,"end":68.152,"text":"Deploy in under","words":[{"id":"caption-word-55-0","text":"Deploy","start":67.093,"end":67.52},{"id":"caption-word-55-1","text":"in","start":67.648,"end":67.776},{"id":"caption-word-55-2","text":"under","start":67.818,"end":68.032}]},{"id":"caption-group-56","frame":6,"start":68.16,"end":68.749,"text":"five minutes","words":[{"id":"caption-word-56-0","text":"five","start":68.16,"end":68.373},{"id":"caption-word-56-1","text":"minutes","start":68.458,"end":68.629}]},{"id":"caption-group-57","frame":6,"start":68.885,"end":70.592,"text":"with existd bootstrap,","words":[{"id":"caption-word-57-0","text":"with","start":68.885,"end":69.226},{"id":"caption-word-57-1","text":"existd","start":69.354,"end":69.781},{"id":"caption-word-57-2","text":"bootstrap,","start":69.909,"end":70.485}]},{"id":"caption-group-58","frame":6,"start":70.592,"end":71.616,"text":"and give your","words":[{"id":"caption-word-58-0","text":"and","start":70.592,"end":71.061},{"id":"caption-word-58-1","text":"give","start":71.146,"end":71.36},{"id":"caption-word-58-2","text":"your","start":71.402,"end":71.53}]},{"id":"caption-group-59","frame":6,"start":71.616,"end":72.64,"text":"coding agents a","words":[{"id":"caption-word-59-0","text":"coding","start":71.616,"end":71.872},{"id":"caption-word-59-1","text":"agents","start":71.957,"end":72.256},{"id":"caption-word-59-2","text":"a","start":72.384,"end":72.597}]},{"id":"caption-group-60","frame":6,"start":72.64,"end":73.28,"text":"forge of","words":[{"id":"caption-word-60-0","text":"forge","start":72.64,"end":73.024},{"id":"caption-word-60-1","text":"of","start":73.152,"end":73.237}]},{"id":"caption-group-61","frame":6,"start":73.28,"end":73.911,"text":"their own.","words":[{"id":"caption-word-61-0","text":"their","start":73.28,"end":73.408},{"id":"caption-word-61-1","text":"own.","start":73.45,"end":73.791}]}];
+  var DURATION = 74.031;
+
+  (function () {
+    var stage = document.getElementById("caption-stage");
+
+    // build DOM: one .caption-group per group, .caption-word per word
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.createElement("div");
+      groupEl.className = "caption-group";
+      groupEl.id = "caption-group-" + g;
+      var pill = document.createElement("div");
+      pill.className = "caption-pill";
+      var line = document.createElement("div");
+      line.className = "caption-line";
+      (group.words || []).forEach(function (w, i) {
+        var span = document.createElement("span");
+        span.className = "caption-word";
+        span.id = "caption-word-" + g + "-" + i;
+        span.textContent = String(w.text);
+        line.appendChild(span);
+      });
+      pill.appendChild(line);
+      groupEl.appendChild(pill);
+      stage.appendChild(groupEl);
+    });
+
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.getElementById("caption-group-" + g);
+      var words = group.words || [];
+      var next = GROUPS[g + 1];
+      var isLast = g === GROUPS.length - 1;
+      var start = Math.max(0, Number(group.start));
+      var end = isLast ? DURATION : Math.min(Number(next.start), Number(group.end) + 0.3);
+      if (end <= start) end = start + 0.01;
+
+      // group on/off — exactly one group visible at a time
+      tl.set(groupEl, { opacity: 1 }, start);
+      tl.set(groupEl, { opacity: 0 }, end);
+
+      // 3-state karaoke via className SETS — seek-safe (gsap.set applies on the
+      // engine's frame-by-frame seek; .call callbacks would NOT fire).
+      words.forEach(function (w, i) {
+        var el = document.getElementById("caption-word-" + g + "-" + i);
+        var at = Math.max(start, Number(w.start));
+        tl.set(el, { className: "caption-word" }, start); // upcoming (also resets on reverse-seek)
+        tl.set(el, { className: "caption-word is-active" }, at); // current
+        tl.fromTo(el, { scale: 0.98 }, { scale: 1, duration: 0.16, ease: "power1.out" }, at);
+        if (i + 1 < words.length) {
+          var nextAt = Math.max(start, Number(words[i + 1].start));
+          tl.set(el, { className: "caption-word is-spoken" }, nextAt); // demote when next activates
+        }
+      });
+      if (words.length) {
+        var lastEl = document.getElementById("caption-word-" + g + "-" + (words.length - 1));
+        var lastSpoken = Math.min(end, Number(words[words.length - 1].end) + 0.1);
+        tl.set(lastEl, { className: "caption-word is-spoken" }, lastSpoken);
+      }
+    });
+
+    // full-span anchor so the sub-comp timeline spans the whole video
+    tl.to({}, { duration: DURATION }, 0);
+    window.__timelines["captions"] = tl;
+  })();
+</script>
+
+<style>
+  .caption-line { line-height: 1.1 !important; }
+</style>
+</template>
