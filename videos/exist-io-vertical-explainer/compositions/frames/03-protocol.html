@@ -1,0 +1,321 @@
+<template>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    #root {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #FAF9F5;
+      color: #1E1338;
+    }
+
+    .f03-bg {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      background: #FAF9F5;
+      background-image: 
+        radial-gradient(circle at 30% 25%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 70% 75%, rgba(30, 19, 56, 0.04) 0%, transparent 50%);
+    }
+
+    .f03-container {
+      position: absolute;
+      top: 140px;
+      left: 70px;
+      right: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 32px;
+    }
+
+    .f03-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1E1338;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f03-kicker-dot {
+      color: #B45309;
+    }
+
+    .f03-headline {
+      font-family: 'EB Garamond', serif;
+      font-size: 96px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: #1E1338;
+      margin: 0;
+    }
+
+    .f03-headline em {
+      font-style: italic;
+      color: #1E1338;
+    }
+
+    .f03-layout {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-top: 30px;
+    }
+
+    /* MCP Hub Card */
+    .f03-hub-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(30, 19, 56, 0.14);
+      border-radius: 16px;
+      padding: 32px 36px;
+      box-shadow: 0 8px 30px rgba(30, 19, 56, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .f03-hub-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .f03-hub-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: #1E1338;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f03-endpoint-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 19px;
+      font-weight: 600;
+      padding: 6px 14px;
+      background: #1E1338;
+      color: #F59E0B;
+      border-radius: 8px;
+    }
+
+    .f03-tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .f03-tool-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      padding: 10px 14px;
+      background: #F3EFE6;
+      border-radius: 8px;
+      color: #1E1338;
+      border-left: 3px solid #1E1338;
+    }
+
+    /* Agent Compatibility Pills */
+    .f03-agents-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .f03-agent-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 500;
+      padding: 12px 20px;
+      background: #FFFFFF;
+      border: 1px solid rgba(30, 19, 56, 0.16);
+      border-radius: 9999px;
+      color: #1E1338;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(30, 19, 56, 0.03);
+    }
+
+    .f03-agent-pill-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #F59E0B;
+    }
+
+    /* Read-Only Sandbox Card */
+    .f03-sandbox-card {
+      background: #1E1338;
+      border-radius: 16px;
+      padding: 32px 36px;
+      color: #FAF9F5;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 12px 36px rgba(30, 19, 56, 0.14);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .f03-sandbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .f03-sandbox-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f03-sandbox-lock {
+      font-size: 24px;
+    }
+
+    .f03-sandbox-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      font-weight: 600;
+      padding: 6px 14px;
+      background: #F59E0B;
+      color: #1E1338;
+      border-radius: 9999px;
+    }
+
+    .f03-sandbox-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 21px;
+      line-height: 1.5;
+      color: #DDD5C7;
+    }
+
+    .f03-sandbox-rule {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 19px;
+      color: #F59E0B;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      padding: 12px 18px;
+      border-radius: 8px;
+    }
+  </style>
+
+  <div id="root" data-composition-id="03-protocol" data-width="1080" data-height="1920" data-duration="12.707">
+    <div id="f03-bg" class="clip f03-bg" data-start="0" data-duration="12.707" data-track-index="0"></div>
+
+    <div id="f03-container" class="clip f03-container" data-start="0" data-duration="12.707" data-track-index="1">
+      <div id="f03-kicker" class="f03-kicker">
+        03 — AGENT PROTOCOL <span class="f03-kicker-dot">·</span> MCP JSON-RPC 2.0
+      </div>
+
+      <h1 id="f03-title" class="f03-headline">
+        35 typed <em>tools.</em>
+      </h1>
+
+      <div class="f03-layout">
+        <!-- MCP Server Hub -->
+        <div id="f03-hub" class="f03-hub-card">
+          <div class="f03-hub-header">
+            <div class="f03-hub-title">Native MCP Server</div>
+            <div class="f03-endpoint-badge">POST /mcp</div>
+          </div>
+          <div class="f03-tools-grid">
+            <div class="f03-tool-tag">repo_tree</div>
+            <div class="f03-tool-tag">diff_compare</div>
+            <div class="f03-tool-tag">pull_request_create</div>
+            <div class="f03-tool-tag">thread_comment</div>
+            <div class="f03-tool-tag">status_check_report</div>
+            <div class="f03-tool-tag">+ 119 Forge REST APIs</div>
+          </div>
+        </div>
+
+        <!-- Compatible Agent Row -->
+        <div id="f03-agents" class="f03-agents-row">
+          <div class="f03-agent-pill"><span class="f03-agent-pill-dot"></span> Claude Code</div>
+          <div class="f03-agent-pill"><span class="f03-agent-pill-dot"></span> Cursor</div>
+          <div class="f03-agent-pill"><span class="f03-agent-pill-dot"></span> OpenAI Codex</div>
+          <div class="f03-agent-pill"><span class="f03-agent-pill-dot"></span> Cline</div>
+          <div class="f03-agent-pill"><span class="f03-agent-pill-dot"></span> GitHub Copilot</div>
+        </div>
+
+        <!-- Read-Only Sandbox Card -->
+        <div id="f03-sandbox" class="f03-sandbox-card">
+          <div class="f03-sandbox-header">
+            <div class="f03-sandbox-title">
+              <span class="f03-sandbox-lock">🔒</span> Read-Only Sandbox
+            </div>
+            <div class="f03-sandbox-badge">Endpoint: /mcp/readonly</div>
+          </div>
+          <div class="f03-sandbox-desc">
+            All mutations blocked at the protocol layer. Untrusted agents can read but cannot rewrite.
+          </div>
+          <div class="f03-sandbox-rule">
+            Policy: Read allowed · Write rejected (403)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0 - 4.5s): Kicker, headline, and MCP Hub card reveal
+    tl.fromTo("#f03-kicker", 
+      { opacity: 0, y: -25 }, 
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 
+      0.3
+    );
+
+    tl.fromTo("#f03-title", 
+      { opacity: 0, y: 35 }, 
+      { opacity: 1, y: 0, duration: 1.0, ease: "power3.out" }, 
+      0.7
+    );
+
+    tl.fromTo("#f03-hub", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 1.0, ease: "power3.out" }, 
+      1.2
+    );
+
+    // Scene 2 (4.0 - 6.5s): Voiceover: "Point Claude Code, Cursor, or Codex..."
+    // Agents row reveals
+    tl.fromTo("#f03-agents", 
+      { opacity: 0, y: 30 }, 
+      { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 
+      4.0
+    );
+
+    // Scene 3 (6.5 - 11.207s): Voiceover: "...or lock untrusted runs with a read-only sandbox."
+    // Read-only sandbox card reveals and holds
+    tl.fromTo("#f03-sandbox", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 0.9, ease: "back.out(1.2)" }, 
+      6.4
+    );
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["03-protocol"] = tl;
+  </script>
+</template>

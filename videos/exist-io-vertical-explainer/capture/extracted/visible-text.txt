@@ -1,0 +1,38 @@
+The core idea
+
+exist.io is a Git forge built for the age of coding agents: your repositories, your agents, your rules, on infrastructure you control.
+Wire-compatible with existing forge interfaces, 100% self-hosted, zero proprietary dependencies.
+MIT licensed. Repo: https://github.com/RavaniRoshan/exist.io
+Landing page and docs: https://ravaniroshan.github.io/exist.io/
+
+How it is built
+
+One self-contained Go binary. No cgo, no Docker required.
+66 source files, 91,223 lines of code. Go 1.23 with the Chi router.
+HTTP on :8080, SSH on :2222, MCP at /mcp.
+Embedded SQLite with WAL — no external database service to run.
+Git LFS v1 with SHA-256 content-addressed storage and file locking.
+
+How agents talk to it
+
+A native Model Context Protocol server, JSON-RPC 2.0, exposing 35 typed tools (plus 119 REST operations on the forge API).
+Example tools: repo_tree, diff_compare, pull_request_create, thread_comment, status_check_report.
+Works with Claude Code, OpenAI Codex, Cursor, Cline and Copilot.
+A read-only sandbox: point the client at /mcp/readonly and all mutations are blocked at the protocol layer. An untrusted agent can read but cannot rewrite.
+
+How you trust it
+
+Commit signature verification: OpenSSH SIGSPEC binary blocks and GPG (RFC 4880) parsed in real time.
+Pre-receive hooks: a push that violates a policy is rejected before it lands.
+Rulesets: required checks, merge queues, bypass hierarchies, CIDR allowlists, SSH certificate authorities.
+Scoped, short-lived action tokens for CI jobs and agents.
+Signed audit logs of every action.
+Enterprise SSO: OIDC and SAML 2.0 with SCIM 2.0 — Okta, Azure AD, Google Workspace, OneLogin.
+Terraform / OpenTofu provider and a Kubernetes Helm chart.
+
+Brand
+
+exist.io's own palette is a deep violet with an amber accent. Use the project's real colours, not a default palette.
+The author's handle is @RavaniRoshan.
+Format: Vertical 1080 x 1920 (LinkedIn, Reels, Shorts). 30-45 seconds. Output a single MP4, 1080x1920, H.264, with audio mixed in.
+Reference video: /mnt/c/Users/shiva/Downloads/ig.tools-4008535088339276824.mp4

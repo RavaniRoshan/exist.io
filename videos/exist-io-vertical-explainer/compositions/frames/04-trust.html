@@ -1,0 +1,250 @@
+<template>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    #root {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #FAF9F5;
+      color: #1E1338;
+    }
+
+    .f04-bg {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      background: #FAF9F5;
+      background-image: 
+        radial-gradient(circle at 75% 20%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 25% 80%, rgba(30, 19, 56, 0.04) 0%, transparent 50%);
+    }
+
+    .f04-container {
+      position: absolute;
+      top: 140px;
+      left: 70px;
+      right: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 32px;
+    }
+
+    .f04-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1E1338;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f04-kicker-dot {
+      color: #B45309;
+    }
+
+    .f04-headline {
+      font-family: 'EB Garamond', serif;
+      font-size: 96px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: #1E1338;
+      margin: 0;
+    }
+
+    .f04-headline em {
+      font-style: italic;
+      color: #1E1338;
+    }
+
+    .f04-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-top: 30px;
+    }
+
+    .f04-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(30, 19, 56, 0.14);
+      border-radius: 16px;
+      padding: 30px 36px;
+      box-shadow: 0 8px 30px rgba(30, 19, 56, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .f04-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .f04-card-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: #1E1338;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f04-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: #F3EFE6;
+      color: #1E1338;
+      border: 1px solid rgba(30, 19, 56, 0.1);
+    }
+
+    .f04-badge-verified {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #065F46;
+    }
+
+    .f04-badge-guard {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #B45309;
+    }
+
+    .f04-card-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
+      color: #555060;
+      line-height: 1.5;
+    }
+
+    .f04-terminal-pill {
+      background: #1E1338;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 19px;
+      color: #FAF9F5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f04-term-accent {
+      color: #F59E0B;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-trust" data-width="1080" data-height="1920" data-duration="10.8">
+    <div id="f04-bg" class="clip f04-bg" data-start="0" data-duration="10.8" data-track-index="0"></div>
+
+    <div id="f04-container" class="clip f04-container" data-start="0" data-duration="10.8" data-track-index="1">
+      <div id="f04-kicker" class="f04-kicker">
+        04 — ZERO-TRUST <span class="f04-kicker-dot">·</span> CRYPTOGRAPHIC PROOF
+      </div>
+
+      <h1 id="f04-title" class="f04-headline">
+        Verified at the <em>wire.</em>
+      </h1>
+
+      <div class="f04-stack">
+        <!-- Card 1: Commit Signature Verification -->
+        <div id="f04-card-1" class="f04-card">
+          <div class="f04-card-header">
+            <div class="f04-card-title">Real-Time Signature Check</div>
+            <div class="f04-badge f04-badge-verified">✓ Verified Real-Time</div>
+          </div>
+          <div class="f04-card-desc">
+            OpenSSH SIGSPEC binary blocks and GPG (RFC 4880) parsed in real time on incoming packs.
+          </div>
+          <div class="f04-terminal-pill">
+            <span class="f04-term-accent">git:</span> SIGSPEC · Fingerprint matched to user public key
+          </div>
+        </div>
+
+        <!-- Card 2: Pre-Receive Policy Hook -->
+        <div id="f04-card-2" class="f04-card">
+          <div class="f04-card-header">
+            <div class="f04-card-title">Pre-Receive Hooks</div>
+            <div class="f04-badge f04-badge-guard">Policy Rejection</div>
+          </div>
+          <div class="f04-card-desc">
+            Pushes that violate policy are rejected before they land. Protects default branch from force-push.
+          </div>
+          <div class="f04-terminal-pill">
+            <span class="f04-term-accent">hook:</span> Rejected non-fast-forward · Secret scanner check passed
+          </div>
+        </div>
+
+        <!-- Card 3: Signed Audit Logs & SSO -->
+        <div id="f04-card-3" class="f04-card">
+          <div class="f04-card-header">
+            <div class="f04-card-title">Signed Audit Trail</div>
+            <div class="f04-badge">Enterprise Ready</div>
+          </div>
+          <div class="f04-card-desc">
+            Cryptographically signed audit logs of every action. OIDC & SAML 2.0 SSO with SCIM 2.0 lifecycle sync.
+          </div>
+          <div class="f04-terminal-pill">
+            <span class="f04-term-accent">audit:</span> Scoped action tokens · Terraform / Helm ready
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0 - 3.8s): Kicker, headline, and Card 1 reveal
+    tl.fromTo("#f04-kicker", 
+      { opacity: 0, y: -25 }, 
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 
+      0.3
+    );
+
+    tl.fromTo("#f04-title", 
+      { opacity: 0, y: 35 }, 
+      { opacity: 1, y: 0, duration: 1.0, ease: "power3.out" }, 
+      0.7
+    );
+
+    tl.fromTo("#f04-card-1", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 1.0, ease: "power3.out" }, 
+      1.2
+    );
+
+    // Scene 2 (3.5 - 5.8s): Voiceover: "...pre-receive policy hooks that block violations..."
+    // Card 2 reveals
+    tl.fromTo("#f04-card-2", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 0.9, ease: "power3.out" }, 
+      3.5
+    );
+
+    // Scene 3 (5.8 - 9.300s): Voiceover: "...and signed audit logs of every action."
+    // Card 3 reveals and holds
+    tl.fromTo("#f04-card-3", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 0.9, ease: "power3.out" }, 
+      5.8
+    );
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["04-trust"] = tl;
+  </script>
+</template>

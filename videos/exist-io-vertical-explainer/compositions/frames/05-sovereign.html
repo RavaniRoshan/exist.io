@@ -1,0 +1,250 @@
+<template>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    #root {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #FAF9F5;
+      color: #1E1338;
+    }
+
+    .f05-bg {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      background: #FAF9F5;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 50% 80%, rgba(30, 19, 56, 0.04) 0%, transparent 60%);
+    }
+
+    .f05-container {
+      position: absolute;
+      top: 140px;
+      left: 70px;
+      right: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 32px;
+    }
+
+    .f05-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1E1338;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .f05-kicker-dot {
+      color: #B45309;
+    }
+
+    .f05-headline {
+      font-family: 'EB Garamond', serif;
+      font-size: 96px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: #1E1338;
+      margin: 0;
+    }
+
+    .f05-headline em {
+      font-style: italic;
+      color: #1E1338;
+    }
+
+    .f05-card {
+      width: 100%;
+      background: #FFFFFF;
+      border: 1px solid rgba(30, 19, 56, 0.14);
+      border-radius: 20px;
+      padding: 48px 44px;
+      box-shadow: 0 16px 48px rgba(30, 19, 56, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      margin-top: 30px;
+    }
+
+    .f05-hero-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 56px;
+      font-weight: 700;
+      color: #1E1338;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .f05-hero-title span {
+      color: #B45309;
+    }
+
+    .f05-hero-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      color: #555060;
+      line-height: 1.5;
+    }
+
+    .f05-repo-box {
+      background: #1E1338;
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: #FAF9F5;
+    }
+
+    .f05-repo-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #F59E0B;
+    }
+
+    .f05-repo-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+
+    .f05-badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .f05-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 500;
+      padding: 8px 16px;
+      background: #F3EFE6;
+      border-radius: 9999px;
+      color: #1E1338;
+      border: 1px solid rgba(30, 19, 56, 0.1);
+    }
+
+    .f05-badge-amber {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #B45309;
+      font-weight: 600;
+    }
+
+    .f05-author-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(30, 19, 56, 0.1);
+      padding-top: 24px;
+    }
+
+    .f05-author-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: #1E1338;
+    }
+
+    .f05-author-handle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      color: #B45309;
+      font-weight: 600;
+    }
+  </style>
+
+  <div id="root" data-composition-id="05-sovereign" data-width="1080" data-height="1920" data-duration="7.445">
+    <div id="f05-bg" class="clip f05-bg" data-start="0" data-duration="7.445" data-track-index="0"></div>
+
+    <div id="f05-container" class="clip f05-container" data-start="0" data-duration="7.445" data-track-index="1">
+      <div id="f05-kicker" class="f05-kicker">
+        05 — SOVEREIGN FORGE <span class="f05-kicker-dot">·</span> OPEN SOURCE
+      </div>
+
+      <h1 id="f05-title" class="f05-headline">
+        Your repo. <em>Your agents.</em>
+      </h1>
+
+      <div id="f05-card" class="f05-card">
+        <div class="f05-hero-title">
+          exist<span>.io</span>
+        </div>
+
+        <div class="f05-hero-sub">
+          100% self-hosted Git forge built for autonomous coding agents and engineering teams.
+        </div>
+
+        <div id="f05-repo" class="f05-repo-box">
+          <div class="f05-repo-label">Open Source Repository</div>
+          <div class="f05-repo-url">github.com/RavaniRoshan/exist.io</div>
+        </div>
+
+        <div class="f05-badges-row">
+          <div class="f05-badge f05-badge-amber">MIT Licensed</div>
+          <div class="f05-badge">Pure-Go</div>
+          <div class="f05-badge">Zero CGO</div>
+          <div class="f05-badge">MCP Native</div>
+        </div>
+
+        <div class="f05-author-box">
+          <div class="f05-author-name">Created by Ravani Roshan</div>
+          <div class="f05-author-handle">@RavaniRoshan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0 - 3.5s): Kicker, headline, and main card reveal
+    tl.fromTo("#f05-kicker", 
+      { opacity: 0, y: -25 }, 
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 
+      0.3
+    );
+
+    tl.fromTo("#f05-title", 
+      { opacity: 0, y: 35 }, 
+      { opacity: 1, y: 0, duration: 1.0, ease: "power3.out" }, 
+      0.7
+    );
+
+    tl.fromTo("#f05-card", 
+      { opacity: 0, y: 40, scale: 0.96 }, 
+      { opacity: 1, y: 0, scale: 1.0, duration: 1.0, ease: "power3.out" }, 
+      1.2
+    );
+
+    // Scene 2 (3.5 - 7.445s): Voiceover: "Available on GitHub by Ravani Roshan."
+    // Repo box and author highlight and hold still
+    tl.fromTo("#f05-repo", 
+      { scale: 0.96 }, 
+      { scale: 1.0, duration: 0.8, ease: "back.out(1.4)" }, 
+      3.6
+    );
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["05-sovereign"] = tl;
+  </script>
+</template>
