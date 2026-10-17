@@ -6,6 +6,8 @@ import type {
   FileItem,
   CommitItem,
   PullRequest,
+  ReviewComment,
+  NotificationItem,
   AgentActivityItem,
   AuditEvent,
   ClusterMetrics,
@@ -590,25 +592,39 @@ export async function createPullRequest(
   return data.pull
 }
 
+export interface AddCommentPayload {
+  body: string
+  path?: string
+  line?: number
+  side?: string
+  start_line?: number
+  end_line?: number
+  thread_id?: string
+}
+
 export async function addPullRequestComment(
   owner: string,
   name: string,
   prNumber: number,
-  body: string
+  payload: string | AddCommentPayload
 ): Promise<any> {
+  const reqBody = typeof payload === 'string' ? { body: payload } : payload
   if (isDemoModeActive()) {
     return {
       id: `c-${Date.now()}`,
       author: 'shiva',
-      body,
+      body: reqBody.body,
       createdAt: 'Just now',
+      path: reqBody.path,
+      line: reqBody.line,
+      side: reqBody.side,
     }
   }
 
   const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ body }),
+    body: JSON.stringify(reqBody),
   })
   if (!res.ok) {
     const errText = await res.text()
@@ -616,6 +632,228 @@ export async function addPullRequestComment(
   }
   const data = await res.json()
   return data.comment
+}
+
+export async function getPullRequestComments(
+  owner: string,
+  name: string,
+  prNumber: number
+): Promise<ReviewComment[]> {
+  if (isDemoModeActive()) {
+    return []
+  }
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/comments`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.comments || []
+    }
+    return []
+  } catch {
+    return []
+  }
+}
+
+export async function applyCodeSuggestion(
+  owner: string,
+  name: string,
+  prNumber: number,
+  commentId: string
+): Promise<{ ok: boolean; commitSha: string }> {
+  if (isDemoModeActive()) {
+    return { ok: true, commitSha: 'sugg-' + Date.now().toString(16) }
+  }
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/comments/${commentId}/apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Failed to apply suggestion: ${err}`)
+  }
+  return res.json()
+}
+
+export async function toggleThreadResolved(
+  owner: string,
+  name: string,
+  prNumber: number,
+  threadId: string,
+  resolved: boolean
+): Promise<any> {
+  if (isDemoModeActive()) {
+    return { ok: true, threadId, resolved }
+  }
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/threads/${threadId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resolved }),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Failed to update thread: ${err}`)
+  }
+  return res.json()
+}
+
+export async function submitPullRequestReview(
+  owner: string,
+  name: string,
+  prNumber: number,
+  review: {
+    verdict: 'approve' | 'request_changes' | 'comment'
+    body?: string
+    comments?: { path: string; line: number; side: string; body: string }[]
+  }
+): Promise<any> {
+  if (isDemoModeActive()) {
+    return { ok: true, review }
+  }
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/reviews`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(review),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Failed to submit review: ${err}`)
+  }
+  return res.json()
+}
+
+export async function getAutoMergeStatus(
+  owner: string,
+  name: string,
+  prNumber: number
+): Promise<{ ok: boolean; enabled: boolean; autoMerge?: any }> {
+  if (isDemoModeActive()) {
+    return { ok: true, enabled: false }
+  }
+  try {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/auto-merge`)
+    if (res.ok) return res.json()
+    return { ok: false, enabled: false }
+  } catch {
+    return { ok: false, enabled: false }
+  }
+}
+
+export async function setAutoMerge(
+  owner: string,
+  name: string,
+  prNumber: number,
+  enabled: boolean,
+  method: string = 'squash'
+): Promise<any> {
+  if (isDemoModeActive()) {
+    return { ok: true, enabled }
+  }
+  if (!enabled) {
+    const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/auto-merge`, {
+      method: 'DELETE',
+    })
+    return res.json()
+  }
+  const res = await fetch(`/api/v1/repos/${owner}/${name}/pulls/${prNumber}/auto-merge`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ merge_method: method }),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Failed to configure auto-merge: ${err}`)
+  }
+  return res.json()
+}
+
+export async function getNotifications(unreadOnly: boolean = false): Promise<NotificationItem[]> {
+  if (isDemoModeActive()) {
+    return []
+  }
+  try {
+    const url = unreadOnly ? '/api/v1/notifications?unread=true' : '/api/v1/notifications'
+    const res = await fetch(url)
+    if (res.ok) {
+      const data = await res.json()
+      return data.notifications || []
+    }
+    return []
+  } catch {
+    return []
+  }
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  if (isDemoModeActive()) {
+    return 0
+  }
+  try {
+    const res = await fetch('/api/v1/notifications/unread-count')
+    if (res.ok) {
+      const data = await res.json()
+      return data.count || 0
+    }
+    return 0
+  } catch {
+    return 0
+  }
+}
+
+export async function markNotificationRead(id: string): Promise<any> {
+  if (isDemoModeActive()) {
+    return { ok: true }
+  }
+  const res = await fetch(`/api/v1/notifications/${id}/read`, {
+    method: 'PATCH',
+  })
+  return res.json()
+}
+
+export async function markAllNotificationsRead(): Promise<any> {
+  if (isDemoModeActive()) {
+    return { ok: true }
+  }
+  const res = await fetch('/api/v1/notifications/mark-all-read', {
+    method: 'POST',
+  })
+  return res.json()
+}
+
+export interface MigrateRepoPayload {
+  clone_url: string
+  owner: string
+  repo_name: string
+  github_token?: string
+  import_issues?: boolean
+  import_prs?: boolean
+  private?: boolean
+}
+
+export async function startRepoMigration(payload: MigrateRepoPayload): Promise<{ ok: boolean; jobId: string }> {
+  if (isDemoModeActive()) {
+    return { ok: true, jobId: 'mig-demo-' + Date.now() }
+  }
+  const res = await fetch('/api/v1/repos/migrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Migration failed to start: ${err}`)
+  }
+  return res.json()
+}
+
+export async function getMigrationStatus(jobId: string): Promise<{ id: string; phase: string; progress: number; error?: string }> {
+  if (isDemoModeActive()) {
+    return { id: jobId, phase: 'complete', progress: 100 }
+  }
+  const res = await fetch(`/api/v1/repos/migrate/${jobId}/status`)
+  if (!res.ok) {
+    throw new Error('Failed to get migration status')
+  }
+  return res.json()
 }
 
 export async function getAgentActivities(): Promise<AgentActivityItem[]> {

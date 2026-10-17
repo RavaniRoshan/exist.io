@@ -21,11 +21,13 @@ import (
 	"exist.io/internal/audit"
 	"exist.io/internal/auth"
 	"exist.io/internal/config"
+	"exist.io/internal/engine"
 	"exist.io/internal/gitlfs"
 	"exist.io/internal/gitstore"
 	"exist.io/internal/gittransport"
 	"exist.io/internal/mcp"
 	"exist.io/internal/metrics"
+	"exist.io/internal/notifications"
 	"exist.io/internal/objectshard"
 	"exist.io/internal/openapi"
 	"exist.io/internal/origin"
@@ -36,6 +38,7 @@ import (
 	"exist.io/internal/webui"
 	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
+	"exist.io/pkg/scopes"
 	"exist.io/pkg/slug"
 
 	"github.com/go-git/go-git/v6/plumbing/object"
@@ -44,15 +47,18 @@ import (
 // App is the composition root for exist.io. It owns configuration, metadata
 // storage, Git object storage, Origin compatibility routes, and server lifecycle.
 type App struct {
-	Config       config.Config
-	Store        *store.DB
-	Git          *gitstore.Store
-	Origin       *origin.Server
-	GitTransport *gittransport.Server
-	SSHServer    *sshserver.Server
-	Replication  *replication.Controller
-	Raft         *raftcluster.Node
-	Shards       *objectshard.Manager
+	Config        config.Config
+	Store         *store.DB
+	Git           *gitstore.Store
+	Origin        *origin.Server
+	GitTransport  *gittransport.Server
+	SSHServer     *sshserver.Server
+	Replication   *replication.Controller
+	Raft          *raftcluster.Node
+	Shards        *objectshard.Manager
+	AutoMerge     *AutoMergeEngine
+	Notifications *notifications.Worker
+	Mailer        *notifications.Mailer
 
 	handler http.Handler
 }
@@ -128,6 +134,24 @@ func Open(cfg config.Config) (*App, error) {
 		},
 		CacheCapacity: 5000,
 	})
+
+	autoMerge := NewAutoMergeEngine(db, git, engine.New(db))
+	if cfg.DataDir != ":memory:" {
+		autoMerge.Start()
+	}
+
+	mailer := notifications.NewMailer(notifications.SMTPConfig{
+		Host:     cfg.SMTPHost,
+		Port:     cfg.SMTPPort,
+		Username: cfg.SMTPUsername,
+		Password: cfg.SMTPPassword,
+		From:     cfg.SMTPFrom,
+		TLS:      cfg.SMTPTLS,
+	})
+	notifWorker := notifications.NewWorker(mailer, 256)
+	if cfg.DataDir != ":memory:" {
+		notifWorker.Start()
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -2353,6 +2377,113 @@ func Open(cfg config.Config) (*App, error) {
 			"ok":             true,
 			"mergeCommitSha": mergeCommitSHA,
 		})
+
+		if notifWorker != nil {
+			notifWorker.Enqueue(notifications.NotificationEvent{
+				Type:      notifications.EventPRMerged,
+				RepoOwner: owner,
+				RepoName:  name,
+				ActorName: "shiva",
+				Subject:   fmt.Sprintf("[%s/%s] Pull request #%d merged", owner, name, num),
+				Payload: map[string]string{
+					"RepoOwner":   owner,
+					"RepoName":    name,
+					"PRNumber":    strconv.Itoa(num),
+					"PRTitle":     pr.Title,
+					"ActorName":   "shiva",
+					"MergeMethod": method,
+					"MergeSHA":    mergeCommitSHA,
+				},
+			})
+		}
+	})
+
+	// ---------------------------------------------------------
+	// 9b. PR Comments & Discussion Threads (with Inline Diff Support)
+	// ---------------------------------------------------------
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/pulls/{number}/comments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		rawComments, err := db.ListComments(r.Context(), pr.ID)
+		if err != nil {
+			http.Error(w, "Failed to list comments: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		threadsMap := make(map[string]store.PRThread)
+		for _, c := range rawComments {
+			if c.ThreadID != "" {
+				if _, ok := threadsMap[c.ThreadID]; !ok {
+					if th, err := db.GetThread(r.Context(), c.ThreadID); err == nil {
+						threadsMap[c.ThreadID] = th
+					}
+				}
+			}
+		}
+
+		comments := make([]map[string]any, 0, len(rawComments))
+		for _, c := range rawComments {
+			cAuthor := c.AuthorUserID
+			if cAuthor == "" {
+				cAuthor = "shiva"
+			}
+			path := c.Path
+			line := c.Line
+			side := c.Side
+			resolved := false
+			if th, ok := threadsMap[c.ThreadID]; ok {
+				if path == "" {
+					path = th.Path
+				}
+				if line <= 0 {
+					line = th.EndLine
+				}
+				if side == "" {
+					side = th.Side
+				}
+				resolved = (th.ResolvedAt != "")
+			}
+			comments = append(comments, map[string]any{
+				"id":        c.ID,
+				"author":    cAuthor,
+				"body":      c.Body,
+				"createdAt": c.CreatedAt,
+				"isAgent":   strings.Contains(strings.ToLower(cAuthor), "agent") || strings.Contains(strings.ToLower(cAuthor), "bot"),
+				"path":      path,
+				"line":      line,
+				"side":      side,
+				"threadId":  c.ThreadID,
+				"resolved":  resolved,
+			})
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":       true,
+			"comments": comments,
+		})
 	})
 
 	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/pulls/{number}/comments", func(w http.ResponseWriter, r *http.Request) {
@@ -2386,7 +2517,14 @@ func Open(cfg config.Config) (*App, error) {
 		}
 
 		var req struct {
-			Body string `json:"body"`
+			Body      string `json:"body"`
+			Path      string `json:"path"`
+			Line      int    `json:"line"`
+			Side      string `json:"side"`
+			StartLine int    `json:"start_line"`
+			EndLine   int    `json:"end_line"`
+			CommitSHA string `json:"commit_sha"`
+			ThreadID  string `json:"thread_id"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
@@ -2405,12 +2543,48 @@ func Open(cfg config.Config) (*App, error) {
 			authorUserID = u.ID
 		}
 
+		threadID := req.ThreadID
+		if req.Path != "" && threadID == "" {
+			sLine := req.StartLine
+			eLine := req.EndLine
+			if sLine <= 0 && req.Line > 0 {
+				sLine = req.Line
+			}
+			if eLine <= 0 && req.Line > 0 {
+				eLine = req.Line
+			}
+			side := req.Side
+			if side == "" {
+				side = "RIGHT"
+			}
+			th := store.PRThread{
+				ID:            idgen.NewPRThread(),
+				RepoID:        repo.ID,
+				PullRequestID: pr.ID,
+				Path:          req.Path,
+				Side:          side,
+				StartLine:     sLine,
+				EndLine:       eLine,
+				HeadSHA:       pr.HeadSHA,
+				BaseSHA:       pr.BaseSHA,
+				VersionNumber: 1,
+			}
+			if err := db.CreateThread(r.Context(), th); err == nil {
+				threadID = th.ID
+			}
+		}
+
 		comment := store.PRComment{
 			ID:            idgen.NewPRComment(),
 			RepoID:        repo.ID,
 			PullRequestID: pr.ID,
+			ThreadID:      threadID,
 			AuthorUserID:  authorUserID,
 			Body:          req.Body,
+			Path:          req.Path,
+			Line:          req.Line,
+			Side:          req.Side,
+			CommitSHA:     req.CommitSHA,
 		}
 		if err := db.CreateComment(r.Context(), comment); err != nil {
 			http.Error(w, "Failed to create comment: "+err.Error(), http.StatusInternalServerError)
@@ -2425,7 +2599,352 @@ func Open(cfg config.Config) (*App, error) {
 				"author":    "shiva",
 				"body":      comment.Body,
 				"createdAt": comment.CreatedAt,
+				"path":      comment.Path,
+				"line":      comment.Line,
+				"side":      comment.Side,
+				"threadId":  comment.ThreadID,
 			},
+		})
+	})
+
+	mux.HandleFunc("PATCH /api/v1/repos/{owner}/{name}/pulls/{number}/threads/{threadId}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		threadID := r.PathValue("threadId")
+		var req struct {
+			Resolved bool `json:"resolved"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var resolvedAt *string
+		var resolvedBy *string
+		if req.Resolved {
+			nowStr := time.Now().UTC().Format(time.RFC3339)
+			resolvedAt = &nowStr
+			if tok, ok := auth.ContextToken(r.Context()); ok && tok.Type() == scopes.TypeUser {
+				s := tok.Subject()
+				resolvedBy = &s
+			}
+		} else {
+			empty := ""
+			resolvedAt = &empty
+			resolvedBy = &empty
+		}
+
+		if err := db.UpdateThread(r.Context(), threadID, resolvedAt, resolvedBy); err != nil {
+			http.Error(w, "Failed to update thread: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":       true,
+			"threadId": threadID,
+			"resolved": req.Resolved,
+		})
+	})
+
+	// ---------------------------------------------------------
+	// 9c. Review Batching (Draft -> Submit Workflow)
+	// ---------------------------------------------------------
+	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/pulls/{number}/reviews", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			Verdict  string `json:"verdict"` // approve | request_changes | comment
+			Body     string `json:"body"`
+			Comments []struct {
+				Path string `json:"path"`
+				Line int    `json:"line"`
+				Side string `json:"side"`
+				Body string `json:"body"`
+			} `json:"comments"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if req.Verdict != "approve" && req.Verdict != "request_changes" && req.Verdict != "comment" {
+			http.Error(w, "Invalid verdict: must be approve, request_changes, or comment", http.StatusBadRequest)
+			return
+		}
+
+		var authorUserID string
+		if u, err := db.GetUserByLogin(r.Context(), "shiva"); err == nil {
+			authorUserID = u.ID
+		} else if u, err := db.GetUserByLogin(r.Context(), owner); err == nil {
+			authorUserID = u.ID
+		}
+
+		// Insert batch comments if any
+		for _, bc := range req.Comments {
+			if bc.Body == "" {
+				continue
+			}
+			side := bc.Side
+			if side == "" {
+				side = "RIGHT"
+			}
+			th := store.PRThread{
+				ID:            idgen.NewPRThread(),
+				RepoID:        repo.ID,
+				PullRequestID: pr.ID,
+				Path:          bc.Path,
+				Side:          side,
+				StartLine:     bc.Line,
+				EndLine:       bc.Line,
+				HeadSHA:       pr.HeadSHA,
+				BaseSHA:       pr.BaseSHA,
+				VersionNumber: 1,
+			}
+			_ = db.CreateThread(r.Context(), th)
+			cm := store.PRComment{
+				ID:            idgen.NewPRComment(),
+				RepoID:        repo.ID,
+				PullRequestID: pr.ID,
+				ThreadID:      th.ID,
+				AuthorUserID:  authorUserID,
+				Body:          bc.Body,
+				Path:          bc.Path,
+				Line:          bc.Line,
+				Side:          side,
+				CommitSHA:     pr.HeadSHA,
+			}
+			_ = db.CreateComment(r.Context(), cm)
+		}
+
+		review := store.PRReview{
+			ID:            idgen.NewPRReview(),
+			RepoID:        repo.ID,
+			PullRequestID: pr.ID,
+			AuthorUserID:  authorUserID,
+			State:         req.Verdict,
+			Body:          req.Body,
+			CommitSHA:     pr.HeadSHA,
+			VersionNumber: 1,
+		}
+		if err := db.CreateReview(r.Context(), review); err != nil {
+			http.Error(w, "Failed to create review: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Notify auto-merge engine
+		if autoMerge != nil {
+			autoMerge.Notify(AutoMergeEvent{
+				Type:          "review_submitted",
+				RepoID:        repo.ID,
+				PullRequestID: pr.ID,
+			})
+		}
+
+		// Notify email worker
+		if notifWorker != nil {
+			notifWorker.Enqueue(notifications.NotificationEvent{
+				Type:      notifications.EventPRReviewed,
+				RepoOwner: owner,
+				RepoName:  name,
+				ActorName: "shiva",
+				Subject:   fmt.Sprintf("[%s/%s] Review submitted on PR #%d: %s", owner, name, num, req.Verdict),
+				Payload: map[string]string{
+					"RepoOwner":  owner,
+					"RepoName":   name,
+					"PRNumber":   strconv.Itoa(num),
+					"PRTitle":    pr.Title,
+					"ActorName":  "shiva",
+					"Verdict":    req.Verdict,
+					"ReviewBody": req.Body,
+				},
+			})
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"review":  review,
+			"verdict": review.State,
+		})
+	})
+
+	// ---------------------------------------------------------
+	// 9d. PR Auto-Merge Configuration & Triggers
+	// ---------------------------------------------------------
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/pulls/{number}/auto-merge", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		am, err := db.GetAutoMerge(r.Context(), pr.ID)
+		if err != nil {
+			http.Error(w, "Failed to get auto-merge: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":        true,
+			"enabled":   am != nil,
+			"autoMerge": am,
+		})
+	})
+
+	mux.HandleFunc("PUT /api/v1/repos/{owner}/{name}/pulls/{number}/auto-merge", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		if repo.Archived {
+			http.Error(w, "Repository is archived and read-only", http.StatusForbidden)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		var req struct {
+			MergeMethod   string `json:"merge_method"`
+			CommitTitle   string `json:"commit_title"`
+			CommitMessage string `json:"commit_message"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		method := req.MergeMethod
+		if method == "" {
+			method = "squash"
+		}
+
+		var enabledByUserID string
+		if u, err := db.GetUserByLogin(r.Context(), "shiva"); err == nil {
+			enabledByUserID = u.ID
+		} else if u, err := db.GetUserByLogin(r.Context(), owner); err == nil {
+			enabledByUserID = u.ID
+		}
+
+		am := store.PRAutoMerge{
+			PullRequestID:   pr.ID,
+			EnabledByUserID: enabledByUserID,
+			MergeMethod:     method,
+			CommitTitle:     req.CommitTitle,
+			CommitMessage:   req.CommitMessage,
+		}
+		if err := db.SetAutoMerge(r.Context(), am); err != nil {
+			http.Error(w, "Failed to set auto-merge: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Trigger immediate evaluation in case checks/reviews already passed
+		if autoMerge != nil {
+			autoMerge.Notify(AutoMergeEvent{
+				Type:          "check_completed",
+				RepoID:        repo.ID,
+				PullRequestID: pr.ID,
+			})
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":        true,
+			"autoMerge": am,
+		})
+	})
+
+	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/pulls/{number}/auto-merge", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		owner := r.PathValue("owner")
+		name := r.PathValue("name")
+		repo, err := db.GetRepo(r.Context(), owner, name)
+		if err != nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		num, err := strconv.Atoi(r.PathValue("number"))
+		if err != nil {
+			http.Error(w, "Invalid PR number", http.StatusBadRequest)
+			return
+		}
+		pr, err := db.GetPullRequest(r.Context(), repo.ID, num)
+		if err != nil {
+			http.Error(w, "Pull request not found", http.StatusNotFound)
+			return
+		}
+
+		if err := db.DeleteAutoMerge(r.Context(), pr.ID); err != nil {
+			http.Error(w, "Failed to delete auto-merge: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
 		})
 	})
 
@@ -3114,18 +3633,23 @@ func Open(cfg config.Config) (*App, error) {
 	}
 
 	app := &App{
-		Config:       cfg,
-		Store:        db,
-		Git:          git,
-		Origin:       originServer,
-		GitTransport: gitTransport,
-		SSHServer:    sshSrv,
-		Replication:  replCtrl,
-		Raft:         raftNode,
-		Shards:       shardMgr,
-		handler:      mux,
+		Config:        cfg,
+		Store:         db,
+		Git:           git,
+		Origin:        originServer,
+		GitTransport:  gitTransport,
+		SSHServer:     sshSrv,
+		Replication:   replCtrl,
+		Raft:          raftNode,
+		Shards:        shardMgr,
+		AutoMerge:     autoMerge,
+		Notifications: notifWorker,
+		Mailer:        mailer,
+		handler:       mux,
 	}
 	app.registerMigrateRoutes(mux, db, git)
+	app.registerSuggestionRoutes(mux, db, git)
+	app.registerNotificationRoutes(mux, db)
 	return app, nil
 }
 
@@ -3140,6 +3664,12 @@ func (a *App) StartSSH() error {
 // Close shuts down all held resources.
 func (a *App) Close() error {
 	var errs []error
+	if a.AutoMerge != nil {
+		a.AutoMerge.Stop()
+	}
+	if a.Notifications != nil {
+		a.Notifications.Stop()
+	}
 	if a.Raft != nil {
 		a.Raft.Stop()
 	}

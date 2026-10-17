@@ -61,6 +61,8 @@ export interface ReviewComment {
   body: string
   path?: string
   line?: number
+  side?: string
+  threadId?: string
   resolved?: boolean
 }
 
@@ -83,6 +85,7 @@ export interface PullRequest {
   checks: CheckRun[]
   comments: ReviewComment[]
   mergeable: boolean
+  autoMerge?: boolean
   diffHunks: {
     oldPath: string
     newPath: string
@@ -91,6 +94,17 @@ export interface PullRequest {
     deletions: number
     hunk: string
   }[]
+}
+
+export interface NotificationItem {
+  id: string
+  userId: string
+  eventType: string
+  title: string
+  body: string
+  url: string
+  read: boolean
+  createdAt: string
 }
 
 export interface AgentActivityItem {

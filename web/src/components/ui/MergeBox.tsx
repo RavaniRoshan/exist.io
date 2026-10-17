@@ -12,6 +12,9 @@ export interface MergeBoxProps {
   className?: string
   checksPassed?: boolean
   isMerged?: boolean
+  autoMergeEnabled?: boolean
+  autoMergeMethod?: 'merge' | 'squash' | 'rebase'
+  onToggleAutoMerge?: (enabled: boolean, method: 'merge' | 'squash' | 'rebase') => Promise<void> | void
 }
 
 /**
@@ -28,6 +31,9 @@ export const MergeBox: React.FC<MergeBoxProps> = ({
   className,
   checksPassed = true,
   isMerged = false,
+  autoMergeEnabled = false,
+  autoMergeMethod,
+  onToggleAutoMerge,
 }) => {
   const [method, setMethod] = useState<'merge' | 'squash' | 'rebase'>(defaultMethod)
   const [isConfirming, setIsConfirming] = useState(false)
@@ -177,6 +183,33 @@ export const MergeBox: React.FC<MergeBoxProps> = ({
                 Cancel
               </Button>
             </div>
+          </div>
+        )}
+
+        {onToggleAutoMerge && (
+          <div className="pt-3 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'w-2 h-2 rounded-full shrink-0',
+                  autoMergeEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'
+                )}
+              />
+              <span className="text-muted-foreground">
+                {autoMergeEnabled
+                  ? `Auto-merge is enabled (will ${autoMergeMethod || method} automatically once required checks pass).`
+                  : 'Automatically merge when all requirements and status checks are met.'}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant={autoMergeEnabled ? 'outline' : 'secondary'}
+              size="xs"
+              onClick={() => onToggleAutoMerge(!autoMergeEnabled, method)}
+              className="text-xs shrink-0"
+            >
+              {autoMergeEnabled ? 'Disable auto-merge' : 'Enable auto-merge'}
+            </Button>
           </div>
         )}
       </div>

@@ -254,3 +254,68 @@ func canBypass(actors []store.RulesetBypassActor, actingUserID, actingAppID stri
 	}
 	return false
 }
+
+// Engine evaluates rulesets and policies.
+type Engine struct {
+	db *store.DB
+}
+
+// New creates a new ruleset Engine.
+func New(db *store.DB) *Engine {
+	return &Engine{db: db}
+}
+
+// RequiredReviewCount returns the required approving review count for a target ref based on rulesets.
+func (e *Engine) RequiredReviewCount(ctx context.Context, repoID, baseRef string) int {
+	if e == nil || e.db == nil {
+		return 0
+	}
+	repo, err := e.db.GetRepoByID(ctx, repoID)
+	if err != nil {
+		return 0
+	}
+	rulesets, err := e.db.ListRulesets(ctx, repoID)
+	if err != nil {
+		return 0
+	}
+	maxReq := 0
+	for _, rs := range rulesets {
+		if rs.Enforcement != "active" || rs.Kind != "merge_branch" {
+			continue
+		}
+		if !refApplies(baseRef, rs.IncludedRefNames, rs.ExcludedRefNames, repo.DefaultBranch) {
+			continue
+		}
+		for _, rule := range rs.Rules {
+			if rule.RuleType == "pull_request" {
+				reqApprovals := 1
+				if rawCount, ok := rule.Parameters["requiredApprovingReviewCount"]; ok {
+					switch v := rawCount.(type) {
+					case float64:
+						reqApprovals = int(v)
+					case int:
+						reqApprovals = v
+					}
+				}
+				if reqApprovals > maxReq {
+					maxReq = reqApprovals
+				}
+			}
+		}
+	}
+	return maxReq
+}
+
+// EvaluateMerge evaluates merge protection rulesets for a target pull request.
+func (e *Engine) EvaluateMerge(
+	ctx context.Context,
+	rulesets []store.Ruleset,
+	defaultBranch string,
+	baseRef string,
+	actingUserID string,
+	actingAppID string,
+	approvedReviewCount int,
+	checkRuns []store.CheckRun,
+) EvaluationResult {
+	return EvaluateMerge(ctx, rulesets, defaultBranch, baseRef, actingUserID, actingAppID, approvedReviewCount, checkRuns)
+}

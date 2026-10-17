@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom/vitest'
 import { vi } from 'vitest'
+import { configure } from '@testing-library/react'
+
+configure({ asyncUtilTimeout: 4000 })
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {

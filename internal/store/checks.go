@@ -412,6 +412,11 @@ func (db *DB) ListCheckRunsForSuite(ctx context.Context, suiteID string, limit, 
 	return runs, rows.Err()
 }
 
+// ListCheckRuns retrieves check runs for a repository commit SHA.
+func (db *DB) ListCheckRuns(ctx context.Context, repoID, sha string) ([]CheckRun, error) {
+	return db.ListCheckRunsForCommit(ctx, repoID, sha, "", "", 100, 0)
+}
+
 // ListCheckRunsForCommit retrieves check runs for a commit SHA.
 // Default returns the latest run per key.
 func (db *DB) ListCheckRunsForCommit(ctx context.Context, repoID, sha, checkName, status string, limit, offset int) ([]CheckRun, error) {

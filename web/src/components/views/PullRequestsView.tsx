@@ -30,6 +30,7 @@ import { Badge, StateLabel } from '@/components/ui/Badge'
 import { LivingAvatar } from '@/components/ui/LivingAvatar'
 import { MergeBox } from '@/components/ui/MergeBox'
 import { CreatePullRequestModal } from '@/components/modals/CreatePullRequestModal'
+import { InlineDiffViewer } from './InlineDiffViewer'
 import {
   type PullRequest,
   type RepoInfo,
@@ -37,6 +38,9 @@ import {
   getPullRequests,
   mergePullRequest,
   addPullRequestComment,
+  getPullRequestComments,
+  getAutoMergeStatus,
+  setAutoMerge,
   triggerAgentReview,
   isDemoModeActive,
   samplePullRequests,
@@ -80,6 +84,32 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
   const [copiedCli, setCopiedCli] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [autoMergeEnabled, setAutoMergeEnabled] = useState(false)
+  const [autoMergeMethod, setAutoMergeMethod] = useState<'merge' | 'squash' | 'rebase'>('squash')
+
+  const refreshComments = async () => {
+    if (!selectedPr) return
+    try {
+      const comments = await getPullRequestComments(owner, repoName, selectedPr.number)
+      if (comments) {
+        setSelectedPr((prev) => (prev ? { ...prev, comments } : null))
+        setPrs((prev) => prev.map((p) => (p.number === selectedPr.number ? { ...p, comments } : p)))
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleToggleAutoMerge = async (enabled: boolean, method: 'merge' | 'squash' | 'rebase') => {
+    if (!selectedPr) return
+    try {
+      await setAutoMerge(owner, repoName, selectedPr.number, enabled, method)
+      setAutoMergeEnabled(enabled)
+      setAutoMergeMethod(method)
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to update auto-merge')
+    }
+  }
 
   const loadPRs = async () => {
     setLoading(true)
@@ -123,6 +153,35 @@ export const PullRequestsView: React.FC<PullRequestsViewProps> = ({
     window.addEventListener('exist_mode_changed', onModeChange)
     return () => window.removeEventListener('exist_mode_changed', onModeChange)
   }, [owner, repoName])
+
+  useEffect(() => {
+    if (!selectedPr) return
+    let isCurrent = true
+    const fetchPrExtras = async () => {
+      try {
+        const [comments, amStatus] = await Promise.all([
+          getPullRequestComments(owner, repoName, selectedPr.number),
+          getAutoMergeStatus(owner, repoName, selectedPr.number),
+        ])
+        if (!isCurrent) return
+        if (comments && comments.length > 0) {
+          setSelectedPr((prev) => (prev ? { ...prev, comments } : null))
+        }
+        if (amStatus) {
+          setAutoMergeEnabled(Boolean(amStatus.enabled))
+          if (amStatus.autoMerge?.merge_method) {
+            setAutoMergeMethod(amStatus.autoMerge.merge_method)
+          }
+        }
+      } catch {
+        // demo mode or network error
+      }
+    }
+    fetchPrExtras()
+    return () => {
+      isCurrent = false
+    }
+  }, [selectedPr?.number, owner, repoName])
 
   const openPrsCount = prs.filter((p) => p.state === 'open').length
   const mergedPrsCount = prs.filter((p) => p.state === 'merged').length
@@ -486,6 +545,9 @@ git push origin feature/agent-capabilities`
                       checksPassed={true}
                       defaultTitle={`${selectedPr.title} (#${selectedPr.number})`}
                       defaultMessage={`Squash and merge pull request #${selectedPr.number} into ${selectedPr.baseRef}.`}
+                      autoMergeEnabled={autoMergeEnabled}
+                      autoMergeMethod={autoMergeMethod}
+                      onToggleAutoMerge={handleToggleAutoMerge}
                     />
 
                     {/* New Comment Box */}
@@ -546,50 +608,15 @@ git push origin feature/agent-capabilities`
 
                 {/* Sub-tab: Files Changed (Diff View) */}
                 {activeSubTab === 'diff' && (
-                  <div className="space-y-4">
-                    {(selectedPr.diffHunks || []).length === 0 ? (
-                      <Box className="p-8 text-center text-muted-foreground text-xs">
-                        No modified files found for this pull request.
-                      </Box>
-                    ) : (
-                      (selectedPr.diffHunks || []).map((diff, idx) => (
-                        <Box key={idx}>
-                          <BoxHeader className="bg-secondary/35 py-2 font-mono text-xs">
-                            <span className="font-semibold text-foreground">{diff.newPath}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-emerald-500 font-semibold">+{diff.additions}</span>
-                              <span className="text-rose-500 font-semibold">-{diff.deletions}</span>
-                            </div>
-                          </BoxHeader>
-                          <div className="p-3 font-mono text-xs overflow-x-auto leading-relaxed bg-background">
-                            <pre>
-                              {diff.hunk.split('\n').map((line, lIdx) => {
-                                const isAdd = line.startsWith('+')
-                                const isDel = line.startsWith('-')
-                                const isHeader = line.startsWith('@@')
-                                return (
-                                  <div
-                                    key={lIdx}
-                                    className={`px-2 py-0.5 rounded-sm ${
-                                      isAdd
-                                        ? 'bg-emerald-500/10 text-emerald-400'
-                                        : isDel
-                                        ? 'bg-rose-500/10 text-rose-400'
-                                        : isHeader
-                                        ? 'text-muted-foreground bg-secondary/50 font-semibold'
-                                        : 'text-foreground/90'
-                                    }`}
-                                  >
-                                    {line}
-                                  </div>
-                                )
-                              })}
-                            </pre>
-                          </div>
-                        </Box>
-                      ))
-                    )}
-                  </div>
+                  <InlineDiffViewer
+                    owner={owner}
+                    repoName={repoName}
+                    prNumber={selectedPr.number}
+                    diffHunks={selectedPr.diffHunks || []}
+                    comments={selectedPr.comments || []}
+                    onRefreshComments={refreshComments}
+                    isPrOpen={selectedPr.state === 'open'}
+                  />
                 )}
 
                 {/* Sub-tab: Checks & CI Policy */}

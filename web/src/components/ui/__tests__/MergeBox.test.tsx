@@ -55,4 +55,29 @@ describe('Canonical GitHub PR MergeBox Component', () => {
       'Squashed commits into main.'
     )
   })
+
+  it('renders auto-merge option and triggers onToggleAutoMerge', () => {
+    const handleToggle = vi.fn()
+    const { rerender } = render(
+      <MergeBox
+        onMerge={() => {}}
+        autoMergeEnabled={false}
+        onToggleAutoMerge={handleToggle}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: /enable auto-merge/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /enable auto-merge/i }))
+    expect(handleToggle).toHaveBeenCalledWith(true, 'merge')
+
+    rerender(
+      <MergeBox
+        onMerge={() => {}}
+        autoMergeEnabled={true}
+        onToggleAutoMerge={handleToggle}
+      />
+    )
+    expect(screen.getByRole('button', { name: /disable auto-merge/i })).toBeInTheDocument()
+    expect(screen.getByText(/auto-merge is enabled/i)).toBeInTheDocument()
+  })
 })
