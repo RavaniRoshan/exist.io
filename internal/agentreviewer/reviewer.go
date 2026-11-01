@@ -27,15 +27,15 @@ type Violation struct {
 
 // ReviewResult encapsulates the complete outcome of an automated agent review.
 type ReviewResult struct {
-	Verdict    string            `json:"verdict"`    // "approve" | "request_changes" | "comment"
-	Conclusion string            `json:"conclusion"` // "success" | "failure" | "neutral"
-	Score      int               `json:"score"`      // 0-100 quality score
-	Summary    string            `json:"summary"`    // Executive summary text
-	OverviewMD string            `json:"overviewMd"` // Full Markdown review text
-	Violations []Violation       `json:"violations"`
-	ReviewID   string            `json:"reviewId"`
-	CheckRunID string            `json:"checkRunId"`
-	CreatedAt  string            `json:"createdAt"`
+	Verdict    string      `json:"verdict"`    // "approve" | "request_changes" | "comment"
+	Conclusion string      `json:"conclusion"` // "success" | "failure" | "neutral"
+	Score      int         `json:"score"`      // 0-100 quality score
+	Summary    string      `json:"summary"`    // Executive summary text
+	OverviewMD string      `json:"overviewMd"` // Full Markdown review text
+	Violations []Violation `json:"violations"`
+	ReviewID   string      `json:"reviewId"`
+	CheckRunID string      `json:"checkRunId"`
+	CreatedAt  string      `json:"createdAt"`
 }
 
 // Security secret patterns
@@ -384,7 +384,7 @@ func generateMarkdownReport(ownerSlug string, repo store.Repo, pr store.PullRequ
 			icon = "⚠️ WARN"
 		}
 
-		loc := v.File
+		var loc string
 		if v.Line > 0 {
 			loc = fmt.Sprintf("`%s:%d`", v.File, v.Line)
 		} else {

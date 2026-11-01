@@ -1,0 +1,33 @@
+.git
+.github
+.vscode
+.idea
+
+# Runtime state and credentials
+data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+jwt_secret
+ssh_host_key
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+.mcp.json
+
+# Build outputs and dependencies
+node_modules
+web/node_modules
+site/node_modules
+web/dist
+site/dist
+dist
+bin
+
+# Non-published and historical material
+videos
+docs/internal
+research

@@ -3,8 +3,14 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -12,11 +18,14 @@ const (
 	defaultPublicURL = "http://127.0.0.1:8080"
 	defaultGitURL    = "127.0.0.1:8080"
 	defaultDataDir   = "data"
+
+	minJWTSecretBytes = 32
 )
 
 // Config holds runtime configuration for the exist.io server and CLI.
 // Defaults are strictly self-hosted and never reference Cursor infrastructure.
 type Config struct {
+	Version    string
 	ListenAddr string
 	DataDir    string
 	PublicURL  string
@@ -43,7 +52,8 @@ type Config struct {
 }
 
 // Load reads configuration from environment variables, falling back to safe self-hosted defaults.
-func Load() Config {
+// The lease signing key is resolved from EXIST_JWT_SECRET or generated once under the data directory.
+func Load() (Config, error) {
 	listenAddr := getEnv("EXIST_LISTEN_ADDR", defaultListen)
 	dataDir := getEnv("EXIST_DATA_DIR", defaultDataDir)
 
@@ -51,7 +61,11 @@ func Load() Config {
 	gitURL := getEnvFirst([]string{"EXIST_GIT_URL", "EXIST_GIT_HOST"}, defaultGitURL)
 	sshAddr := getEnv("EXIST_SSH_ADDR", "127.0.0.1:2222")
 	sshHostKeyPath := getEnv("EXIST_SSH_HOST_KEY", dataDir+"/ssh_host_key")
-	jwtSecret := getEnv("EXIST_JWT_SECRET", "exist-ephemeral-agent-lease-signing-key")
+
+	jwtSecret, err := resolveJWTSecret(dataDir)
+	if err != nil {
+		return Config{}, err
+	}
 
 	clusterRole := getEnv("EXIST_CLUSTER_ROLE", "primary")
 	replicaDir := getEnv("EXIST_REPLICA_DIR", "")
@@ -69,7 +83,10 @@ func Load() Config {
 	smtpFrom := getEnv("EXIST_SMTP_FROM", "noreply@exist.io")
 	smtpTLS := getEnv("EXIST_SMTP_TLS", "true") != "false"
 
+	version := getEnv("EXIST_VERSION", "dev")
+
 	return Config{
+		Version:        version,
 		ListenAddr:     listenAddr,
 		DataDir:        dataDir,
 		PublicURL:      publicURL,
@@ -88,7 +105,42 @@ func Load() Config {
 		SMTPPassword:   smtpPassword,
 		SMTPFrom:       smtpFrom,
 		SMTPTLS:        smtpTLS,
+	}, nil
+}
+
+// resolveJWTSecret returns the lease signing key, generating and persisting one
+// under dataDir on first use. It never falls back to a literal in the source.
+func resolveJWTSecret(dataDir string) (string, error) {
+	if v := os.Getenv("EXIST_JWT_SECRET"); v != "" {
+		if len(v) < minJWTSecretBytes {
+			return "", fmt.Errorf("EXIST_JWT_SECRET must be at least %d bytes (got %d)", minJWTSecretBytes, len(v))
+		}
+		return v, nil
 	}
+
+	path := filepath.Join(dataDir, "jwt_secret")
+	if body, err := os.ReadFile(path); err == nil { // #nosec G304 -- path comes from operator configuration or a validated internal identifier
+		secret := strings.TrimSpace(string(body))
+		if len(secret) >= minJWTSecretBytes {
+			return secret, nil
+		}
+	}
+
+	if err := os.MkdirAll(dataDir, 0o700); err != nil {
+		return "", fmt.Errorf("create data directory %s: %w", dataDir, err)
+	}
+
+	buf := make([]byte, minJWTSecretBytes)
+	if _, err := rand.Read(buf); err != nil {
+		return "", fmt.Errorf("generate lease signing key: %w", err)
+	}
+	secret := hex.EncodeToString(buf)
+
+	if err := os.WriteFile(path, []byte(secret), 0o600); err != nil {
+		return "", fmt.Errorf("write lease signing key %s: %w", path, err)
+	}
+	log.Printf("generated lease signing key at %s", path)
+	return secret, nil
 }
 
 func getEnv(key, fallback string) string {

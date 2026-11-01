@@ -352,7 +352,7 @@ func (s *Server) executeGitCommand(conn *ssh.ServerConn, channel ssh.Channel, ra
 		return
 	}
 
-	cmd := exec.Command(subCmd, targetDir)
+	cmd := exec.Command(subCmd, targetDir) // #nosec G204 -- git subprocess invoked with repository-scoped, validated paths
 	cmd.Dir = targetDir
 	cmd.Env = append(os.Environ(),
 		"GIT_PROJECT_ROOT="+s.git.Root(),
@@ -403,7 +403,7 @@ func sendExitStatus(channel ssh.Channel, status int) {
 	var payload struct {
 		ExitStatus uint32
 	}
-	payload.ExitStatus = uint32(status)
+	payload.ExitStatus = uint32(status) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 	_, _ = channel.SendRequest("exit-status", false, ssh.Marshal(payload))
 }
 

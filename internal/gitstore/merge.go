@@ -167,17 +167,17 @@ func (s *Store) ListPRCommits(namespaceSlug, repoName, baseSHA, headSHA string, 
 		}
 
 		commits = append(commits, CommitInfo{
-			SHA:           c.Hash.String(),
-			TreeSHA:       c.TreeHash.String(),
-			Message:       c.Message,
-			Parents:       parents,
-			AuthorName:    c.Author.Name,
-			AuthorEmail:   c.Author.Email,
-			AuthorDate:    c.Author.When.Format("2006-01-02T15:04:05Z07:00"),
-			CommitterName: c.Committer.Name,
+			SHA:            c.Hash.String(),
+			TreeSHA:        c.TreeHash.String(),
+			Message:        c.Message,
+			Parents:        parents,
+			AuthorName:     c.Author.Name,
+			AuthorEmail:    c.Author.Email,
+			AuthorDate:     c.Author.When.Format("2006-01-02T15:04:05Z07:00"),
+			CommitterName:  c.Committer.Name,
 			CommitterEmail: c.Committer.Email,
-			CommitterDate: c.Committer.When.Format("2006-01-02T15:04:05Z07:00"),
-			Verification:  VerifyCommitSignature(c, nil),
+			CommitterDate:  c.Committer.When.Format("2006-01-02T15:04:05Z07:00"),
+			Verification:   VerifyCommitSignature(c, nil),
 		})
 	}
 
@@ -213,7 +213,7 @@ func (s *Store) CheckMergeable(namespaceSlug, repoName, baseRef, headRef string)
 		return false, "", nil, fmt.Errorf("resolve head ref %s: %w", headRef, err)
 	}
 
-	cmd := exec.Command("git", "-C", repoPath, "merge-tree", "--write-tree", baseSHA.String(), headSHA.String())
+	cmd := exec.Command("git", "-C", repoPath, "merge-tree", "--write-tree", baseSHA.String(), headSHA.String()) // #nosec G204 -- git subprocess invoked with repository-scoped, validated paths
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

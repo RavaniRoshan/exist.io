@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-VERSION="${1:-${VERSION:-v0.5.0-beta}}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VERSION="${1:-${VERSION:-$(tr -d '[:space:]' < "${ROOT_DIR}/VERSION")}}"
 OUTPUT_DIR="${ROOT_DIR}/dist/release"
 
 echo "==> Building exist.io release ${VERSION}"
@@ -44,13 +44,13 @@ for target in "${PLATFORMS[@]}"; do
   # Build binaries
   CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" go build \
     -trimpath \
-    -ldflags="-s -w -X main.version=${VERSION}" \
+    -ldflags="-s -w -X main.version=${VERSION} -X exist.io/internal/cli.Version=${VERSION}" \
     -o "${STAGE_DIR}/existd${BIN_EXT}" \
     "${ROOT_DIR}/cmd/existd"
 
   CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" go build \
     -trimpath \
-    -ldflags="-s -w -X main.version=${VERSION}" \
+    -ldflags="-s -w -X main.version=${VERSION} -X exist.io/internal/cli.Version=${VERSION}" \
     -o "${STAGE_DIR}/exist${BIN_EXT}" \
     "${ROOT_DIR}/cmd/exist"
 

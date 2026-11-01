@@ -55,10 +55,6 @@ func conflict(w http.ResponseWriter, msg string) {
 	writeError(w, http.StatusConflict, codeAlreadyExists, msg)
 }
 
-func permissionDenied(w http.ResponseWriter, msg string) {
-	writeError(w, http.StatusForbidden, codePermissionDenied, msg)
-}
-
 func internalError(w http.ResponseWriter, msg string) {
 	writeError(w, http.StatusInternalServerError, codeInternal, msg)
 }
@@ -83,10 +79,4 @@ func decodeJSON(r *http.Request, dst any) error {
 	}
 	dec := json.NewDecoder(http.MaxBytesReader(nil, r.Body, 1<<20))
 	return dec.Decode(dst)
-}
-
-// queryInt parses an optional integer query parameter, returning def when
-// absent or invalid.
-func pathParam(r *http.Request, key string) string {
-	return r.PathValue(key)
 }

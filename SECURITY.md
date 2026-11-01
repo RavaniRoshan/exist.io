@@ -6,8 +6,18 @@ Security updates and patches are actively applied to the current release:
 
 | Version | Supported |
 | :--- | :--- |
-| `0.5.x-beta` | Yes |
-| `< 0.5.0` | No |
+| `0.6.x-beta` | Yes |
+| `< 0.6.0` | No |
+
+## Lease Signing Key
+
+Capability leases are signed with HMAC-SHA256 using a 32-byte key resolved at startup:
+
+1. If `EXIST_JWT_SECRET` is set, it is used and must be at least 32 bytes.
+2. Otherwise the key is read from `${EXIST_DATA_DIR}/jwt_secret`.
+3. If no key exists, one is generated with `crypto/rand`, written with mode `0600`, and reused on restart.
+
+**Rotation requirement.** Any instance started before this change with the previously published literal default key must treat all leases signed with that key as compromised. To rotate: stop the daemon, delete `${EXIST_DATA_DIR}/jwt_secret` (or set a new `EXIST_JWT_SECRET` of at least 32 bytes), and restart. Leases signed with the old key are invalidated.
 
 ## Reporting a Vulnerability
 

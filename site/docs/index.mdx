@@ -70,7 +70,7 @@ Then initialize storage and launch your forge daemon:
 
 ```bash
 # Initialize storage and primary administrator
-existd bootstrap --email admin@example.com --namespace acme --data-dir ./data
+existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
 
 # Start the forge daemon (Smart-HTTP :8080, SSH :2222, MCP :8080/mcp, Web UI)
 existd
@@ -80,7 +80,7 @@ Or build from source with zero CGO dependencies:
 
 ```bash
 go build -o bin/existd ./cmd/existd
-./bin/existd bootstrap --email admin@example.com --namespace acme --data-dir ./data
+./bin/existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
 ./bin/existd
 ```
 

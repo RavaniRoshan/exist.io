@@ -7,7 +7,6 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"runtime"
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver, registers name "sqlite"
@@ -43,13 +42,13 @@ func Open(path string) (*DB, error) {
 	}
 
 	if _, err := sqlDB.Exec(`PRAGMA foreign_keys = ON`); err != nil {
-		sqlDB.Close()
+		_ = sqlDB.Close()
 		return nil, fmt.Errorf("store: enable foreign_keys: %w", err)
 	}
 
 	db := &DB{sql: sqlDB}
 	if err := db.migrate(); err != nil {
-		sqlDB.Close()
+		_ = sqlDB.Close()
 		return nil, fmt.Errorf("store: migrate: %w", err)
 	}
 	return db, nil
@@ -71,12 +70,3 @@ func (db *DB) SQL() *sql.DB { return db.sql }
 // by this metadata DB (i.e. the parent of the sqlite file). For ":memory:" it
 // returns "".
 func (db *DB) Dir() string { return "" }
-
-// ensureDir is a small helper for later phases that lay git repos next to the
-// metadata file.
-func dataDir(path string) string {
-	if path == ":memory:" {
-		return ""
-	}
-	return filepath.Dir(path)
-}

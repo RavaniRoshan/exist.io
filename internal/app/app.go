@@ -71,11 +71,15 @@ func (a *App) Handler() http.Handler {
 // Open initializes all subsystems according to cfg and returns the ready-to-serve App.
 // If initialization fails at any stage, any resources already opened are closed cleanly.
 func Open(cfg config.Config) (*App, error) {
+	auth.SetSessionCookieSecure(strings.HasPrefix(cfg.PublicURL, "https://"))
+	if cfg.Version == "" {
+		cfg.Version = "dev"
+	}
 	var dbPath string
 	if cfg.DataDir == ":memory:" {
 		dbPath = ":memory:"
 	} else {
-		if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 			return nil, fmt.Errorf("app: create data dir %s: %w", cfg.DataDir, err)
 		}
 		dbPath = filepath.Join(cfg.DataDir, "meta.db")
@@ -155,9 +159,9 @@ func Open(cfg config.Config) (*App, error) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "ok")
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "version": cfg.Version})
 	})
 
 	// Cluster Disaster Recovery & Replication API
@@ -250,7 +254,7 @@ func Open(cfg config.Config) (*App, error) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"serverStatus":         "healthy",
 			"uptime":               fmt.Sprintf("%.0fs", metrics.DefaultRegistry.UptimeSeconds()),
-			"version":              "existd v0.5.0-beta",
+			"version":              "existd " + cfg.Version,
 			"activeGitSessions":    metrics.DefaultRegistry.GitTransfersTotal(),
 			"sqliteWalSizeBytes":   walSize,
 			"databasePath":         filepath.Join(cfg.DataDir, "meta.db"),
@@ -317,7 +321,7 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"version":    "v0.4.0-enterprise",
+			"version":    cfg.Version,
 			"publicUrl":  cfg.PublicURL,
 			"gitHttpUrl": cfg.GitURL,
 			"sshAddr":    cfg.SSHAddr,
@@ -1414,7 +1418,7 @@ func Open(cfg config.Config) (*App, error) {
 		if hooks == nil {
 			hooks = []*store.RepoWebhook{}
 		}
-		_ = json.NewEncoder(w).Encode(hooks)
+		_ = json.NewEncoder(w).Encode(hooks) // #nosec G117 -- secret is returned once to the authorized creator by design
 	})
 
 	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/hooks", func(w http.ResponseWriter, r *http.Request) {
@@ -1472,7 +1476,7 @@ func Open(cfg config.Config) (*App, error) {
 			Details:   fmt.Sprintf("Webhook registered: %s", created.URL),
 		})
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(created)
+		_ = json.NewEncoder(w).Encode(created) // #nosec G117 -- secret is returned once to the authorized creator by design
 	})
 
 	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/hooks/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -3023,7 +3027,7 @@ func Open(cfg config.Config) (*App, error) {
 						"name":          fmt.Sprintf("%s-%s.tar.gz", name, rel.TagName),
 						"size":          1428571,
 						"downloadCount": 12,
-						"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+						"sha256":        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					},
 				},
 			})
@@ -3053,7 +3057,7 @@ func Open(cfg config.Config) (*App, error) {
 							"name":          fmt.Sprintf("%s-%s.tar.gz", name, t.Name),
 							"size":          1428571,
 							"downloadCount": 0,
-							"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+							"sha256":        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 						},
 					},
 				})
@@ -3155,7 +3159,7 @@ func Open(cfg config.Config) (*App, error) {
 						"name":          fmt.Sprintf("%s-%s.tar.gz", name, rel.TagName),
 						"size":          1428571,
 						"downloadCount": 0,
-						"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+						"sha256":        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					},
 				},
 			},

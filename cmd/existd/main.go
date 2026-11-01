@@ -20,8 +20,19 @@ import (
 	"exist.io/internal/security"
 )
 
+var version = "dev"
+
 func main() {
-	cfg := config.Load()
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "version") {
+		fmt.Printf("existd %s\n", version)
+		return
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
+	cfg.Version = version
 
 	// Check for CLI subcommands
 	if len(os.Args) > 1 && os.Args[1] == "hook" {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -37,8 +38,15 @@ func TestAppLifecycle(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /healthz status = %d, want 200", rec.Code)
 	}
-	if rec.Body.String() != "ok\n" {
-		t.Fatalf("GET /healthz body = %q, want %q", rec.Body.String(), "ok\n")
+	var health struct {
+		Status  string `json:"status"`
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &health); err != nil {
+		t.Fatalf("GET /healthz body is not JSON: %v", err)
+	}
+	if health.Status != "ok" || health.Version == "" {
+		t.Fatalf("GET /healthz = %+v, want status ok and a version", health)
 	}
 
 	// 2. Origin route is mounted (GET /v1/origin/namespaces returns 401 unauthenticated when no token provided)

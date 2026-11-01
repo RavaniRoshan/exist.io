@@ -11,10 +11,10 @@ import (
 
 // LRUCache provides a thread-safe least-recently-used object cache.
 type LRUCache struct {
-	mu         sync.Mutex
-	capacity   int
-	items      map[string]*list.Element
-	evictList  *list.List
+	mu        sync.Mutex
+	capacity  int
+	items     map[string]*list.Element
+	evictList *list.List
 }
 
 type cacheEntry struct {

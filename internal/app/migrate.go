@@ -33,7 +33,7 @@ type MigrateRequest struct {
 // MigrateStatus tracks migration progress.
 type MigrateStatus struct {
 	ID       string `json:"id"`
-	Phase    string `json:"phase"` // cloning | importing_issues | importing_prs | complete | failed
+	Phase    string `json:"phase"`    // cloning | importing_issues | importing_prs | complete | failed
 	Progress int    `json:"progress"` // 0-100
 	Error    string `json:"error,omitempty"`
 }
@@ -191,7 +191,7 @@ func (a *App) registerMigrateRoutes(mux *http.ServeMux, db *store.DB, git *gitst
 		}
 		setMigrationJob(initialStatus)
 
-		go a.runMigration(jobID, req, ns, db, git)
+		go a.runMigration(jobID, req, ns, db, git) // #nosec G118 -- background worker intentionally outlives the request context
 
 		w.WriteHeader(http.StatusAccepted)
 		_ = json.NewEncoder(w).Encode(map[string]any{

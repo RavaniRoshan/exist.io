@@ -1,0 +1,24 @@
+title = "exist.io secret scan"
+
+[extend]
+useDefault = true
+
+# Deliberate fixtures and generated artefacts. Each path is listed explicitly so a
+# real credential in any other file still fails the scan.
+[allowlist]
+description = "Runtime state, dependency trees, and deliberate test fixtures"
+paths = [
+  '''(^|/)data/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)videos/''',
+  '''internal/app/repos_lifecycle_test\.go$''',
+  '''internal/auth/token_test\.go$''',
+  '''internal/objectshard/objectshard_test\.go$''',
+  '''internal/security/scanner_test\.go$''',
+  '''internal/store/credentials_test\.go$''',
+  '''pkg/agentlease/lease_fuzz_test\.go$''',
+  '''internal/openapi/origin\.openapi\.yaml$''',
+  '''(^|/)origin\.openapi\.yaml$''',
+  '''web/src/components/views/__tests__/AgentConsoleView\.test\.tsx$''',
+]

@@ -56,6 +56,8 @@ func New() *CLI {
 	}
 }
 
+var Version = "dev"
+
 // Run executes the command specified by args.
 func (c *CLI) Run(args []string) error {
 	if len(args) == 0 {
@@ -67,7 +69,7 @@ func (c *CLI) Run(args []string) error {
 		return c.printHelp()
 	}
 	if args[0] == "--version" || args[0] == "-v" {
-		fmt.Fprintln(c.Stdout, "exist version 2026.10.14")
+		fmt.Fprintf(c.Stdout, "exist version %s\n", Version)
 		return nil
 	}
 

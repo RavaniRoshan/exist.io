@@ -53,7 +53,7 @@ Every toolchain and test suite was executed against the clean repository:
 - **Evidence**: `internal/config/config.go:40`
 - **Details**: If `EXIST_JWT_SECRET` is omitted from the environment, `config.Load()` falls back to a public static string:
   ```go
-  jwtSecret := getEnv("EXIST_JWT_SECRET", "exist-ephemeral-agent-lease-signing-key")
+  jwtSecret := getEnv("EXIST_JWT_SECRET", "<literal-default>")
   ```
   Any attacker or agent with knowledge of this hardcoded default can forge arbitrary capability leases.
 - **Remediation**: In Phase 4, generate an ephemeral, cryptographically secure random secret on startup if none is configured, or require explicit secret configuration.

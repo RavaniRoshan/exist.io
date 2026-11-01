@@ -268,7 +268,7 @@ func (db *DB) UpdatePullRequest(ctx context.Context, prID string, u PullRequestU
 	args = append(args, now())
 	args = append(args, prID)
 
-	query := fmt.Sprintf("UPDATE pull_requests SET %s WHERE id = ?", strings.Join(sets, ", "))
+	query := fmt.Sprintf("UPDATE pull_requests SET %s WHERE id = ?", strings.Join(sets, ", ")) // #nosec G201 -- column list is built from fixed literals; values are parameterized
 	res, err := db.sql.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -390,20 +390,20 @@ func (db *DB) DeleteAutoMerge(ctx context.Context, prID string) error {
 
 // PRThread represents a discussion thread (general or anchored).
 type PRThread struct {
-	ID                string
-	RepoID            string
-	PullRequestID     string
-	Path              string
-	Side              string
-	StartLine         int
-	EndLine           int
-	VersionNumber     int
-	HeadSHA           string
-	BaseSHA           string
-	ResolvedAt        string
-	ResolvedByUserID  string
-	CreatedAt         string
-	UpdatedAt         string
+	ID               string
+	RepoID           string
+	PullRequestID    string
+	Path             string
+	Side             string
+	StartLine        int
+	EndLine          int
+	VersionNumber    int
+	HeadSHA          string
+	BaseSHA          string
+	ResolvedAt       string
+	ResolvedByUserID string
+	CreatedAt        string
+	UpdatedAt        string
 }
 
 // CreateThread inserts a new discussion thread.
@@ -452,7 +452,7 @@ func (db *DB) UpdateThread(ctx context.Context, id string, resolvedAt *string, r
 	}
 	args = append(args, id)
 
-	query := fmt.Sprintf("UPDATE pr_threads SET %s WHERE id = ?", strings.Join(sets, ", "))
+	query := fmt.Sprintf("UPDATE pr_threads SET %s WHERE id = ?", strings.Join(sets, ", ")) // #nosec G201 -- column list is built from fixed literals; values are parameterized
 	res, err := db.sql.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -469,19 +469,19 @@ func (db *DB) UpdateThread(ctx context.Context, id string, resolvedAt *string, r
 
 // PRComment represents a single comment in a thread.
 type PRComment struct {
-	ID             string
-	RepoID         string
-	PullRequestID  string
-	ThreadID       string
-	AuthorUserID   string
-	Body           string
-	Path           string
-	Line           int
-	Side           string
-	CommitSHA      string
-	InReplyTo      string
-	CreatedAt      string
-	UpdatedAt      string
+	ID            string
+	RepoID        string
+	PullRequestID string
+	ThreadID      string
+	AuthorUserID  string
+	Body          string
+	Path          string
+	Line          int
+	Side          string
+	CommitSHA     string
+	InReplyTo     string
+	CreatedAt     string
+	UpdatedAt     string
 }
 
 // CreateComment inserts a comment on a pull request.
@@ -624,20 +624,20 @@ func (db *DB) ListReactions(ctx context.Context, commentID string) ([]PRCommentR
 
 // PRReview represents a pull request review.
 type PRReview struct {
-	ID               string
-	RepoID           string
-	PullRequestID    string
-	AuthorUserID     string
-	State            string // approved | changes_requested | commented | dismissed
-	Body             string
-	CommitSHA        string
-	Dismissed        bool
-	DismissalMessage string
+	ID                string
+	RepoID            string
+	PullRequestID     string
+	AuthorUserID      string
+	State             string // approved | changes_requested | commented | dismissed
+	Body              string
+	CommitSHA         string
+	Dismissed         bool
+	DismissalMessage  string
 	DismissedByUserID string
-	DismissedAt      string
-	VersionNumber    int
-	CreatedAt        string
-	UpdatedAt        string
+	DismissedAt       string
+	VersionNumber     int
+	CreatedAt         string
+	UpdatedAt         string
 }
 
 // CreateReview inserts a new review.

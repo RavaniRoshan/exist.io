@@ -315,7 +315,7 @@ func (s *Server) execBackend(w http.ResponseWriter, r *http.Request, ownerSlug, 
 
 	pathInfo := "/" + ownerSlug + "/" + repoName + ".git" + subPath
 
-	cmd := exec.CommandContext(r.Context(), s.backendPath)
+	cmd := exec.CommandContext(r.Context(), s.backendPath) // #nosec G204 -- git subprocess invoked with repository-scoped, validated paths
 	cmd.Dir = s.git.Root()
 	cmd.Env = append(os.Environ(),
 		"GIT_PROJECT_ROOT="+s.git.Root(),

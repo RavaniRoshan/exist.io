@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml"><img src="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
   <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Documentation-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.6.0--beta-0F172A?style=flat-square&logo=git&logoColor=white" alt="Version"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/github/v/release/RavaniRoshan/exist.io?include_prereleases&style=flat-square&label=Release&color=0F172A" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Go-Pure--Go%20(Zero%20CGO)-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Pure-Go">
   <img src="https://img.shields.io/badge/SSH-Pure--Go%20:2222-10B981?style=flat-square&logo=openssh&logoColor=white" alt="Pure-Go SSH">
@@ -69,10 +69,7 @@ Initialize the SQLite WAL database, create the initial organization namespace, a
 
 ```bash
 # If installed via 1-line script (binary in PATH):
-existd bootstrap \
-  --email admin@corp.exist.io \
-  --namespace acme \
-  --data-dir ./data
+existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
 
 # Or if built from source:
 # ./bin/existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data

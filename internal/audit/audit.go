@@ -87,7 +87,7 @@ func NewLogger(w io.Writer) *Logger {
 
 // NewFileLogger initializes or opens an append-only JSON-lines audit log file.
 func NewFileLogger(filePath string) (*Logger, error) {
-	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600) // #nosec G304 -- path comes from operator configuration or a validated internal identifier
 	if err != nil {
 		return nil, fmt.Errorf("audit: open log file: %w", err)
 	}

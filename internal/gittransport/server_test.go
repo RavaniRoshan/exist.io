@@ -195,10 +195,10 @@ func TestGitSmartHTTPProtocolAndClonePush(t *testing.T) {
 	// 11. Test unauthorized write denial (user with only read access)
 	readerUserID := idgen.NewUser()
 	_ = db.CreateNamespace(ctx, store.Namespace{
-		ID:        idgen.NewNS(),
-		Slug:      "reader-ns",
-		Type:      "user",
-		Name:      "Reader",
+		ID:          idgen.NewNS(),
+		Slug:        "reader-ns",
+		Type:        "user",
+		Name:        "Reader",
 		OwnerUserID: readerUserID,
 	})
 	readerRawKey, readerPrefix, readerHash, _ := auth.GenerateAPIKey()
