@@ -839,6 +839,10 @@ func (s *Server) getPullRequestMergeability(w http.ResponseWriter, r *http.Reque
 	}
 
 	mergeable, _, conflicts, err := s.git.CheckMergeable(owner, name, pr.BaseRef, pr.HeadRef)
+	if err != nil {
+		internalError(w, "check mergeable: "+err.Error())
+		return
+	}
 	verdict := "mergeable"
 	var blockers []any
 
@@ -1163,4 +1167,3 @@ func (s *Server) triggerAgentReview(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, res)
 }
-

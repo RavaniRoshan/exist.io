@@ -58,14 +58,20 @@ func GenerateCSRFToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+var sessionCookieSecure bool
+
+// SetSessionCookieSecure sets the Secure attribute for session cookies from the
+// configured public URL scheme. Call once at startup.
+func SetSessionCookieSecure(secure bool) { sessionCookieSecure = secure }
+
 // SetSessionCookie configures a secure, HttpOnly session cookie on the response.
 func SetSessionCookie(w http.ResponseWriter, rawToken string, maxAge time.Duration) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure follows the configured public URL scheme
 		Name:     SessionCookieName,
 		Value:    rawToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // Set to true behind TLS termination
+		Secure:   sessionCookieSecure, // #nosec G124 -- follows the configured public URL scheme; local HTTP development would break if always true
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(maxAge.Seconds()),
 	})
@@ -73,11 +79,12 @@ func SetSessionCookie(w http.ResponseWriter, rawToken string, maxAge time.Durati
 
 // ClearSessionCookie invalidates the browser session cookie.
 func ClearSessionCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure follows the configured public URL scheme
 		Name:     SessionCookieName,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   sessionCookieSecure, // #nosec G124 -- mirrors SetSessionCookie
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})

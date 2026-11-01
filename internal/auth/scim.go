@@ -133,10 +133,10 @@ func (h *scimHandler) authenticate(next http.HandlerFunc) http.HandlerFunc {
 func (h *scimHandler) serviceProviderConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", SCIMMediaType)
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"schemas": []string{"urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"},
-		"patch":   map[string]bool{"supported": true},
-		"bulk":    map[string]bool{"supported": false},
-		"filter":  map[string]any{"supported": true, "maxResults": 1000},
+		"schemas":        []string{"urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"},
+		"patch":          map[string]bool{"supported": true},
+		"bulk":           map[string]bool{"supported": false},
+		"filter":         map[string]any{"supported": true, "maxResults": 1000},
 		"changePassword": map[string]bool{"supported": false},
 		"sort":           map[string]bool{"supported": false},
 		"etag":           map[string]bool{"supported": false},

@@ -71,6 +71,7 @@ func (a *App) Handler() http.Handler {
 // Open initializes all subsystems according to cfg and returns the ready-to-serve App.
 // If initialization fails at any stage, any resources already opened are closed cleanly.
 func Open(cfg config.Config) (*App, error) {
+	auth.SetSessionCookieSecure(strings.HasPrefix(cfg.PublicURL, "https://"))
 	var dbPath string
 	if cfg.DataDir == ":memory:" {
 		dbPath = ":memory:"
@@ -1414,7 +1415,7 @@ func Open(cfg config.Config) (*App, error) {
 		if hooks == nil {
 			hooks = []*store.RepoWebhook{}
 		}
-		_ = json.NewEncoder(w).Encode(hooks)
+		_ = json.NewEncoder(w).Encode(hooks) // #nosec G117 -- secret is returned once to the authorized creator by design
 	})
 
 	mux.HandleFunc("POST /api/v1/repos/{owner}/{name}/hooks", func(w http.ResponseWriter, r *http.Request) {
@@ -1472,7 +1473,7 @@ func Open(cfg config.Config) (*App, error) {
 			Details:   fmt.Sprintf("Webhook registered: %s", created.URL),
 		})
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(created)
+		_ = json.NewEncoder(w).Encode(created) // #nosec G117 -- secret is returned once to the authorized creator by design
 	})
 
 	mux.HandleFunc("DELETE /api/v1/repos/{owner}/{name}/hooks/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -3023,7 +3024,7 @@ func Open(cfg config.Config) (*App, error) {
 						"name":          fmt.Sprintf("%s-%s.tar.gz", name, rel.TagName),
 						"size":          1428571,
 						"downloadCount": 12,
-						"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+						"sha256":        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					},
 				},
 			})
@@ -3053,7 +3054,7 @@ func Open(cfg config.Config) (*App, error) {
 							"name":          fmt.Sprintf("%s-%s.tar.gz", name, t.Name),
 							"size":          1428571,
 							"downloadCount": 0,
-							"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+							"sha256":        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 						},
 					},
 				})
@@ -3155,7 +3156,7 @@ func Open(cfg config.Config) (*App, error) {
 						"name":          fmt.Sprintf("%s-%s.tar.gz", name, rel.TagName),
 						"size":          1428571,
 						"downloadCount": 0,
-						"sha256":        fmt.Sprintf("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+						"sha256":        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					},
 				},
 			},

@@ -23,9 +23,9 @@ const (
 
 // Server implements the Git Large File Storage (LFS) v1 HTTP API.
 type Server struct {
-	store     *store.DB
+	store      *store.DB
 	storageDir string
-	publicURL string
+	publicURL  string
 }
 
 // New creates a new Git LFS Server.
@@ -187,7 +187,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request, oid string
 	}
 
 	tmpDir := filepath.Join(s.storageDir, "tmp")
-	_ = os.MkdirAll(tmpDir, 0755)
+	_ = os.MkdirAll(tmpDir, 0750)
 
 	tmpFile, err := os.CreateTemp(tmpDir, "lfs-upload-*")
 	if err != nil {
@@ -216,7 +216,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request, oid string
 	}
 
 	destDir := filepath.Join(s.storageDir, oid[0:2], oid[2:4])
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0750); err != nil {
 		http.Error(w, "failed to create storage directory", http.StatusInternalServerError)
 		return
 	}
@@ -382,13 +382,13 @@ func (s *Server) handleLocks(w http.ResponseWriter, r *http.Request, ownerSlug, 
 }
 
 func copyFile(src, dst string) error {
-	in, err := os.Open(src)
+	in, err := os.Open(src) // #nosec G304 -- path comes from operator configuration or a validated internal identifier
 	if err != nil {
 		return err
 	}
 	defer in.Close()
 
-	out, err := os.Create(dst)
+	out, err := os.Create(dst) // #nosec G304 -- path comes from operator configuration or a validated internal identifier
 	if err != nil {
 		return err
 	}

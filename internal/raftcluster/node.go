@@ -18,12 +18,12 @@ type Transport interface {
 
 // Config configures a Raft cluster node.
 type Config struct {
-	NodeID            string
-	Peers             []string
+	NodeID             string
+	Peers              []string
 	ElectionTimeoutMin time.Duration
 	ElectionTimeoutMax time.Duration
 	HeartbeatInterval  time.Duration
-	Transport         Transport
+	Transport          Transport
 }
 
 // Node coordinates Raft consensus, leader election, log replication, and FSM commits.
@@ -43,10 +43,10 @@ type Node struct {
 
 	peers map[string]struct{}
 
-	started   atomic.Bool
-	stopCh    chan struct{}
+	started    atomic.Bool
+	stopCh     chan struct{}
 	resetTimer chan struct{}
-	startTime time.Time
+	startTime  time.Time
 }
 
 // NewNode instantiates a new Raft consensus node.
@@ -163,7 +163,7 @@ func (n *Node) Propose(ctx context.Context, cmd Command) error {
 
 	// Replicate to quorum
 	successCount := 1 // self
-	quorum := (len(n.peers) + 1)/2 + 1
+	quorum := (len(n.peers)+1)/2 + 1
 	var replMu sync.Mutex
 
 	var wg sync.WaitGroup
@@ -233,7 +233,7 @@ func (n *Node) RequestVote(req VoteRequest) VoteResponse {
 	resp := VoteResponse{Term: n.currentTerm, VoteGranted: false}
 
 	if req.Term == n.currentTerm && (n.votedFor == "" || n.votedFor == req.CandidateID) {
-		lastLogIndex := uint64(len(n.log) - 1)
+		lastLogIndex := uint64(len(n.log) - 1) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 		lastLogTerm := n.log[lastLogIndex].Term
 
 		if req.LastLogTerm > lastLogTerm || (req.LastLogTerm == lastLogTerm && req.LastLogIndex >= lastLogIndex) {
@@ -286,7 +286,7 @@ func (n *Node) AppendEntries(req AppendEntriesRequest) AppendEntriesResponse {
 
 	// Advance commit index
 	if req.LeaderCommit > n.commitIndex {
-		lastIdx := uint64(len(n.log) - 1)
+		lastIdx := uint64(len(n.log) - 1) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 		if req.LeaderCommit < lastIdx {
 			n.commitIndex = req.LeaderCommit
 		} else {
@@ -296,7 +296,7 @@ func (n *Node) AppendEntries(req AppendEntriesRequest) AppendEntriesResponse {
 	}
 
 	resp.Success = true
-	resp.Index = uint64(len(n.log) - 1)
+	resp.Index = uint64(len(n.log) - 1) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 	return resp
 }
 
@@ -340,7 +340,7 @@ func (n *Node) randomElectionTimeout() time.Duration {
 	if diff <= 0 {
 		return n.cfg.ElectionTimeoutMin
 	}
-	extra := time.Duration(rand.Int63n(int64(diff)))
+	extra := time.Duration(rand.Int63n(int64(diff))) // #nosec G404 -- election jitter has no security property
 	return n.cfg.ElectionTimeoutMin + extra
 }
 
@@ -350,7 +350,7 @@ func (n *Node) startElection() {
 	n.currentTerm++
 	n.votedFor = n.cfg.NodeID
 	term := n.currentTerm
-	lastLogIndex := uint64(len(n.log) - 1)
+	lastLogIndex := uint64(len(n.log) - 1) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 	lastLogTerm := n.log[lastLogIndex].Term
 	peers := make([]string, 0, len(n.peers))
 	for p := range n.peers {
@@ -368,7 +368,7 @@ func (n *Node) startElection() {
 	}
 
 	votesReceived := 1 // self
-	quorum := (len(peers) + 1)/2 + 1
+	quorum := (len(peers)+1)/2 + 1
 	var voteMu sync.Mutex
 
 	var wg sync.WaitGroup
@@ -414,7 +414,7 @@ func (n *Node) sendHeartbeats() {
 	}
 	term := n.currentTerm
 	commit := n.commitIndex
-	lastLogIdx := uint64(len(n.log) - 1)
+	lastLogIdx := uint64(len(n.log) - 1) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 	lastLogTerm := n.log[lastLogIdx].Term
 	peers := make([]string, 0, len(n.peers))
 	for p := range n.peers {

@@ -233,7 +233,7 @@ func readLengthPrefixed(r *bytes.Reader) ([]byte, error) {
 }
 
 func writeLengthPrefixed(buf *bytes.Buffer, data []byte) {
-	_ = binary.Write(buf, binary.BigEndian, uint32(len(data)))
+	_ = binary.Write(buf, binary.BigEndian, uint32(len(data))) // #nosec G115 -- value is a non-negative length or timestamp bounded by its source
 	buf.Write(data)
 }
 

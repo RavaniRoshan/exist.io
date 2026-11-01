@@ -276,7 +276,7 @@ func (db *DB) UpdateRepo(ctx context.Context, ownerSlug, name string, u RepoUpda
 	}
 	args = append(args, ownerSlug, name)
 	query := "UPDATE repos SET " + join(sets, ", ") +
-		" WHERE namespace_id = (SELECT id FROM namespaces WHERE slug = ?) AND name = ?"
+		" WHERE namespace_id = (SELECT id FROM namespaces WHERE slug = ?) AND name = ?" // #nosec G202 -- column list is built from fixed literals; values are parameterized
 	res, err := db.sql.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err

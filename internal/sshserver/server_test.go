@@ -183,4 +183,3 @@ func TestSSHServerDeployKeyAuthentication(t *testing.T) {
 	}
 	defer client.Close()
 }
-

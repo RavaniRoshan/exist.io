@@ -14,12 +14,12 @@ type ShardInfo struct {
 
 // ShardStats reports telemetry across the distributed object sharding layer.
 type ShardStats struct {
-	TotalObjectsStored int64   `json:"totalObjectsStored"`
-	TotalBytesStored   int64   `json:"totalBytesStored"`
-	CacheHitCount      int64   `json:"cacheHitCount"`
-	CacheMissCount     int64   `json:"cacheMissCount"`
-	CacheHitRatio      float64 `json:"cacheHitRatio"`
-	ActiveShardsCount  int     `json:"activeShardsCount"`
+	TotalObjectsStored int64       `json:"totalObjectsStored"`
+	TotalBytesStored   int64       `json:"totalBytesStored"`
+	CacheHitCount      int64       `json:"cacheHitCount"`
+	CacheMissCount     int64       `json:"cacheMissCount"`
+	CacheHitRatio      float64     `json:"cacheHitRatio"`
+	ActiveShardsCount  int         `json:"activeShardsCount"`
 	Shards             []ShardInfo `json:"shards"`
 }
 

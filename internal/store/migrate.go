@@ -51,11 +51,11 @@ func (db *DB) migrate() error {
 			return err
 		}
 		if _, err := tx.Exec(string(body)); err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("apply migration %q: %w", e.Name(), err)
 		}
 		if _, err := tx.Exec(`INSERT INTO migrations (version) VALUES (?)`, version); err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("record migration %q: %w", e.Name(), err)
 		}
 		if err := tx.Commit(); err != nil {

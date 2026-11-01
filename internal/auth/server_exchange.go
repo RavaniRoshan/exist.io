@@ -99,6 +99,6 @@ func ExchangeHandler(db *store.DB) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(exchangeResponse{
 			AccessToken:  rawToken,
 			RefreshToken: "",
-		})
+		}) // #nosec G117 -- token exchange response returns the credential to its authorized client by design
 	}
 }

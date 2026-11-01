@@ -30,7 +30,7 @@ type Store struct {
 
 // New returns a Store rooted at root, creating the directory if needed.
 func New(root string) (*Store, error) {
-	if err := os.MkdirAll(root, 0o755); err != nil {
+	if err := os.MkdirAll(root, 0o750); err != nil {
 		return nil, fmt.Errorf("gitstore: create root %s: %w", root, err)
 	}
 	return &Store{root: root}, nil
@@ -95,7 +95,7 @@ func (s *Store) Init(namespaceSlug, repoName, defaultBranch string) (*git.Reposi
 // EnsureHooks writes standard enterprise Git server hooks (including pre-receive secret scanning).
 func EnsureHooks(repoPath string) error {
 	hooksDir := filepath.Join(repoPath, "hooks")
-	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+	if err := os.MkdirAll(hooksDir, 0o750); err != nil {
 		return err
 	}
 	preReceive := filepath.Join(hooksDir, "pre-receive")
@@ -110,7 +110,7 @@ func EnsureHooks(repoPath string) error {
 	}
 
 	content := fmt.Sprintf("#!/bin/sh\nif command -v \"%s\" >/dev/null 2>&1; then\n  exec \"%s\" hook pre-receive\nfi\nexit 0\n", exe, exe)
-	return os.WriteFile(preReceive, []byte(content), 0o755)
+	return os.WriteFile(preReceive, []byte(content), 0o750) // #nosec G306,G703 -- pre-receive hook script must be executable; path is validated
 }
 
 // Open opens an existing bare repository.
@@ -160,7 +160,7 @@ func (s *Store) Transfer(oldNamespaceSlug, newNamespaceSlug, repoName string) er
 		return fmt.Errorf("gitstore: invalid or unsafe repository slug")
 	}
 	newParent := filepath.Join(s.root, newNamespaceSlug)
-	if err := os.MkdirAll(newParent, 0o755); err != nil {
+	if err := os.MkdirAll(newParent, 0o750); err != nil {
 		return fmt.Errorf("gitstore: create target namespace dir: %w", err)
 	}
 	if _, err := os.Stat(oldPath); err != nil {

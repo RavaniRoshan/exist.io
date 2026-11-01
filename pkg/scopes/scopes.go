@@ -34,8 +34,8 @@ const (
 	AppMetadataRead           = "app:metadata:read"
 	AppMetadataWrite          = "app:metadata:write"
 	AppSettingsWrite          = "app:settings:write"
-	AppWebhookDeliveriesRead  = "app:webhook_deliveries:read"
-	AppWebhookDeliveriesWrite = "app:webhook_deliveries:write"
+	AppWebhookDeliveriesRead  = "app:webhook_deliveries:read"  // #nosec G101 -- OAuth scope wire constants, not credentials
+	AppWebhookDeliveriesWrite = "app:webhook_deliveries:write" // #nosec G101 -- OAuth scope wire constants, not credentials
 
 	InstallationMetadataRead = "installation:metadata:read"
 

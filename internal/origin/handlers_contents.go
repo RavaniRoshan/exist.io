@@ -401,4 +401,3 @@ func (s *Server) searchSymbols(w http.ResponseWriter, r *http.Request) {
 		"count":   len(symbols),
 	})
 }
-

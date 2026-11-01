@@ -294,4 +294,3 @@ func TestPullRequests_TriggerAgentReview(t *testing.T) {
 		t.Fatalf("unexpected empty review verdict or ID: %+v", reviewResp)
 	}
 }
-

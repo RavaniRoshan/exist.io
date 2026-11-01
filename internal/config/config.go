@@ -115,7 +115,7 @@ func resolveJWTSecret(dataDir string) (string, error) {
 	}
 
 	path := filepath.Join(dataDir, "jwt_secret")
-	if body, err := os.ReadFile(path); err == nil {
+	if body, err := os.ReadFile(path); err == nil { // #nosec G304 -- path comes from operator configuration or a validated internal identifier
 		secret := strings.TrimSpace(string(body))
 		if len(secret) >= minJWTSecretBytes {
 			return secret, nil

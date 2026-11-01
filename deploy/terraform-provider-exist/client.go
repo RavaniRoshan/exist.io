@@ -113,8 +113,8 @@ func (c *Client) CreateNamespace(ctx context.Context, slug, name, nsType string)
 
 // Repository models
 type Repository struct {
-	ID            string `json:"id"`
-	Owner         struct {
+	ID    string `json:"id"`
+	Owner struct {
 		ID   string `json:"id"`
 		Slug string `json:"slug"`
 	} `json:"owner"`

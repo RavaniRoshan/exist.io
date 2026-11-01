@@ -31,7 +31,7 @@ func main() {
 
 	target := filepath.Join(root, "docs", "generated", "capability_counts.md")
 	if *check {
-		existing, err := os.ReadFile(target)
+		existing, err := os.ReadFile(target) // #nosec G304 -- path comes from operator configuration or a validated internal identifier
 		if err != nil {
 			fatal(fmt.Errorf("read %s: %w", target, err))
 		}
@@ -42,10 +42,10 @@ func main() {
 		return
 	}
 
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil { // #nosec G301 -- developer tool writes generated documentation
 		fatal(err)
 	}
-	if err := os.WriteFile(target, body, 0o644); err != nil {
+	if err := os.WriteFile(target, body, 0o644); err != nil { // #nosec G306 -- generated documentation is world-readable by design
 		fatal(err)
 	}
 	fmt.Printf("wrote %s\n", target)
@@ -105,7 +105,7 @@ func countRoutes(root string) (int, error) {
 			if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 				return nil
 			}
-			body, err := os.ReadFile(path)
+			body, err := os.ReadFile(path) // #nosec G122,G304 -- developer tool walks the repository it was started from
 			if err != nil {
 				return err
 			}

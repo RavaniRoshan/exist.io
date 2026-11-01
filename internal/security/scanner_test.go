@@ -62,9 +62,9 @@ func TestScannerDetectsExtendedSecrets(t *testing.T) {
 	scanner := NewScanner()
 
 	cases := []struct {
-		name      string
-		diff      string
-		wantID    string
+		name   string
+		diff   string
+		wantID string
 	}{
 		{
 			name:   "PEM Private Key",

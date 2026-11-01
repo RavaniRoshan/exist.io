@@ -123,7 +123,7 @@ func materializeEntries(baseTree *object.Tree, changes []FileChange, repo *git.R
 			return nil, err
 		}
 		if _, err := w.Write([]byte(fc.Content)); err != nil {
-			w.Close()
+			_ = w.Close()
 			return nil, err
 		}
 		if err := w.Close(); err != nil {

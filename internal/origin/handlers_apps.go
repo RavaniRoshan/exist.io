@@ -407,11 +407,11 @@ func (s *Server) revokeAppSigningKey(w http.ResponseWriter, r *http.Request) {
 
 func toAppDTO(a store.App, namespaceSlug string) map[string]any {
 	dto := map[string]any{
-		"id":                      a.ID,
-		"displayName":             a.DisplayName,
-		"namespaceSlug":           namespaceSlug,
-		"createdAt":               a.CreatedAt,
-		"updatedAt":               a.UpdatedAt,
+		"id":                       a.ID,
+		"displayName":              a.DisplayName,
+		"namespaceSlug":            namespaceSlug,
+		"createdAt":                a.CreatedAt,
+		"updatedAt":                a.UpdatedAt,
 		"installationRedirectUris": []string{},
 	}
 	if a.Description != "" {

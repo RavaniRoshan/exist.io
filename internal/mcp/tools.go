@@ -466,15 +466,15 @@ func BuiltinTools() []ToolDef {
 				}
 
 				pr := store.PullRequest{
-					ID:       idgen.NewPR(),
-					RepoID:   repo.ID,
-					Title:    title,
-					Body:     desc,
-					State:    "open",
-					HeadRef:  head,
-					BaseRef:  base,
-					HeadSHA:  headHash.String(),
-					BaseSHA:  baseHash.String(),
+					ID:      idgen.NewPR(),
+					RepoID:  repo.ID,
+					Title:   title,
+					Body:    desc,
+					State:   "open",
+					HeadRef: head,
+					BaseRef: base,
+					HeadSHA: headHash.String(),
+					BaseSHA: baseHash.String(),
 				}
 				if err := s.store.CreatePullRequest(ctx, &pr); err != nil {
 					return nil, err

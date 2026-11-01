@@ -57,15 +57,15 @@ func (s *Server) registerPRSocial(mux *http.ServeMux) {
 // Wire DTOs for PR Social
 
 type commentThreadDTO struct {
-	ID         string            `json:"id"`
-	Version    versionRefDTO     `json:"version"`
-	Path       string            `json:"path,omitempty"`
-	Side       string            `json:"side,omitempty"`
-	StartLine  int               `json:"startLine,omitempty"`
-	EndLine    int               `json:"endLine,omitempty"`
-	ResolvedAt string            `json:"resolvedAt,omitempty"`
-	CreatedAt  string            `json:"createdAt"`
-	UpdatedAt  string            `json:"updatedAt"`
+	ID         string        `json:"id"`
+	Version    versionRefDTO `json:"version"`
+	Path       string        `json:"path,omitempty"`
+	Side       string        `json:"side,omitempty"`
+	StartLine  int           `json:"startLine,omitempty"`
+	EndLine    int           `json:"endLine,omitempty"`
+	ResolvedAt string        `json:"resolvedAt,omitempty"`
+	CreatedAt  string        `json:"createdAt"`
+	UpdatedAt  string        `json:"updatedAt"`
 }
 
 type versionRefDTO struct {
@@ -91,12 +91,12 @@ type pullRequestCommentDTO struct {
 }
 
 type pullRequestReviewDTO struct {
-	ID                 string             `json:"id"`
-	Author             *prActorDTO        `json:"author,omitempty"`
-	Verdict            string             `json:"verdict"`
-	Body               string             `json:"body"`
-	SubmittedAt        string             `json:"submittedAt"`
-	PullRequestVersion versionRefDTO      `json:"pullRequestVersion"`
+	ID                 string              `json:"id"`
+	Author             *prActorDTO         `json:"author,omitempty"`
+	Verdict            string              `json:"verdict"`
+	Body               string              `json:"body"`
+	SubmittedAt        string              `json:"submittedAt"`
+	PullRequestVersion versionRefDTO       `json:"pullRequestVersion"`
 	Dismissal          *reviewDismissalDTO `json:"dismissal,omitempty"`
 }
 

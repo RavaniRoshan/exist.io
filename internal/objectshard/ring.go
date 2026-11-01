@@ -10,11 +10,11 @@ import (
 
 // HashRing implements consistent hashing with virtual nodes.
 type HashRing struct {
-	mu           sync.RWMutex
-	vnodes       int
-	ring         []uint32
-	ringMap      map[uint32]string
-	shards       map[string]ShardInfo
+	mu      sync.RWMutex
+	vnodes  int
+	ring    []uint32
+	ringMap map[uint32]string
+	shards  map[string]ShardInfo
 }
 
 // NewHashRing creates a new consistent hash ring.

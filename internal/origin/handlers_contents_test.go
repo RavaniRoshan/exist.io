@@ -20,7 +20,7 @@ func seedRepo(t *testing.T, srv *Server, owner, name string) string {
 		t.Fatalf("create repo: %d %s", rec.Code, rec.Body.String())
 	}
 	sig := object.Signature{Name: "Seed", Email: "seed@example.com"}
-	sha, err := srv.Git().WriteFiles(owner, name, "main", []gitstore.FileChange{
+	_, err := srv.Git().WriteFiles(owner, name, "main", []gitstore.FileChange{
 		{Path: "README.md", Content: "# Hello\nline two mentions needle\n"},
 		{Path: "src/main.go", Content: "package main\n\nfunc main() {}\n"},
 		{Path: "src/util/helper.go", Content: "package util\n\nfunc Help() {}\n"},
@@ -28,7 +28,7 @@ func seedRepo(t *testing.T, srv *Server, owner, name string) string {
 	if err != nil {
 		t.Fatalf("WriteFiles: %v", err)
 	}
-	sha, err = srv.Git().WriteFiles(owner, name, "main", []gitstore.FileChange{
+	sha, err := srv.Git().WriteFiles(owner, name, "main", []gitstore.FileChange{
 		{Path: "CHANGELOG.md", Content: "v1 needle found here\n"},
 	}, sig, "add changelog")
 	if err != nil {
