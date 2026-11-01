@@ -51,7 +51,7 @@ run_installer() {
     if [ -n "$shim" ]; then path="$shim"; fi
     env PATH="$path" \
         RELEASE_BASE_URL="http://127.0.0.1:$PORT" \
-        VERSION="$VERSION" \
+        EXIST_VERSION="$VERSION" \
         INSTALL_DIR="$out" \
         EXIST_INSTALL_INSECURE="$insecure" \
         /bin/bash "$INSTALLER" >"$WORK/stdout.log" 2>"$WORK/stderr.log"

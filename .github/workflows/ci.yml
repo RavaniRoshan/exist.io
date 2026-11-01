@@ -134,5 +134,9 @@ jobs:
         working-directory: .
         run: ./scripts/check-links.sh
 
+      - name: Verify quickstart consistency
+        working-directory: .
+        run: ./scripts/check_quickstart_consistency.sh
+
       - name: Build documentation site
         run: npm run build

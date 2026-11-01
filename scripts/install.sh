@@ -4,13 +4,14 @@
 #   curl -fsSL https://raw.githubusercontent.com/RavaniRoshan/exist.io/main/scripts/install.sh | bash
 #
 # Environment variables:
-#   VERSION: Specific version to install (default: latest release, e.g. v0.5.0-beta)
+#   EXIST_VERSION: Specific release tag to install (default: newest GitHub release)
 #   INSTALL_DIR: Directory where binaries will be installed (default: /usr/local/bin or ~/.local/bin)
+#   EXIST_INSTALL_INSECURE=1: Bypass checksum verification when no hashing tool exists (warned)
 
 set -euo pipefail
 
 REPO="RavaniRoshan/exist.io"
-VERSION="${VERSION:-v0.5.0-beta}"
+VERSION="${EXIST_VERSION:-}"
 
 # Color output helpers
 RED='\033[0;31m'
@@ -20,6 +21,62 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}${BOLD}==> exist.io Installer${NC}"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --version)
+            if [ $# -lt 2 ]; then
+                echo -e "${RED}Error: --version requires a release tag${NC}" >&2
+                exit 1
+            fi
+            VERSION="$2"
+            shift 2
+            ;;
+        --version=*)
+            VERSION="${1#*=}"
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: install.sh [--version <tag>]"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Error: unknown argument: $1${NC}" >&2
+            exit 1
+            ;;
+    esac
+done
+
+resolve_latest() {
+    local json tag
+    local -a auth=()
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+    json="$(curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors -H 'Accept: application/vnd.github+json' "${auth[@]}" \
+        "https://api.github.com/repos/${REPO}/releases?per_page=30")" || return 1
+    tag="$(printf '%s' "$json" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)"
+    [ -n "$tag" ] || return 1
+    printf '%s' "$tag"
+}
+
+if [ -z "$VERSION" ]; then
+    if ! VERSION="$(resolve_latest)"; then
+        echo -e "${RED}Error: could not resolve the latest release from the GitHub API.${NC}" >&2
+        echo -e "Set EXIST_VERSION=<tag> or pass --version <tag> to install a specific release." >&2
+        exit 1
+    fi
+fi
+
+case "$VERSION" in
+    v[0-9]*) ;;
+    *)
+        echo -e "${RED}Error: invalid release tag: $VERSION${NC}" >&2
+        exit 1
+        ;;
+esac
+
+echo -e "    Resolved Version:  ${BOLD}${VERSION}${NC}"
 
 # Detect OS
 OS_RAW="$(uname -s)"
@@ -45,7 +102,6 @@ case "$ARCH_RAW" in
 esac
 
 echo -e "    Detected Platform: ${BOLD}${OS}/${ARCH}${NC}"
-echo -e "    Target Version:    ${BOLD}${VERSION}${NC}"
 
 EXT="tar.gz"
 if [ "$OS" = "windows" ]; then
@@ -60,15 +116,20 @@ CHECKSUMS_URL="${RELEASE_BASE_URL}/SHA256SUMS"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
+if ! curl -fsSI -L --retry 5 --retry-delay 2 --retry-all-errors "$DOWNLOAD_URL" >/dev/null 2>&1; then
+    echo -e "${RED}Error: release asset not found: $DOWNLOAD_URL${NC}" >&2
+    exit 1
+fi
+
 echo -e "--> Downloading ${BOLD}${ARCHIVE_NAME}${NC}..."
-if ! curl -fsSL -o "$TMP_DIR/$ARCHIVE_NAME" "$DOWNLOAD_URL"; then
+if ! curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors -o "$TMP_DIR/$ARCHIVE_NAME" "$DOWNLOAD_URL"; then
     echo -e "${RED}Error: Failed to download archive from $DOWNLOAD_URL${NC}" >&2
     echo -e "Please verify the release version exists at https://github.com/${REPO}/releases" >&2
     exit 1
 fi
 
 echo -e "--> Downloading checksums..."
-if ! curl -fsSL -o "$TMP_DIR/SHA256SUMS" "$CHECKSUMS_URL"; then
+if ! curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors -o "$TMP_DIR/SHA256SUMS" "$CHECKSUMS_URL"; then
     echo -e "${RED}Error: could not retrieve the SHA-256 manifest from $CHECKSUMS_URL${NC}" >&2
     echo -e "Refusing to install an unverified binary." >&2
     exit 1
@@ -108,7 +169,12 @@ fi
 
 echo -e "--> Extracting binaries..."
 if [ "$EXT" = "zip" ]; then
-    unzip -q -o "$TMP_DIR/$ARCHIVE_NAME" -d "$TMP_DIR/extracted"
+    mkdir -p "$TMP_DIR/extracted"
+    if command -v unzip >/dev/null 2>&1; then
+        unzip -q -o "$TMP_DIR/$ARCHIVE_NAME" -d "$TMP_DIR/extracted"
+    else
+        tar -xf "$TMP_DIR/$ARCHIVE_NAME" -C "$TMP_DIR/extracted"
+    fi
 else
     mkdir -p "$TMP_DIR/extracted"
     tar -xzf "$TMP_DIR/$ARCHIVE_NAME" -C "$TMP_DIR/extracted"
@@ -168,17 +234,19 @@ echo -e "  - ${BOLD}$TARGET_DIR/existd$BIN_EXT${NC} (Forge daemon: Smart-HTTP, S
 echo -e "  - ${BOLD}$TARGET_DIR/exist$BIN_EXT${NC}  (Operator CLI & Agent integration)"
 echo ""
 echo -e "${BOLD}Quickstart (5-Minute Agent Run):${NC}"
-echo -e "  1. Start the forge daemon:"
+echo -e "  1. Bootstrap your forge administrator and starter repository:"
+echo -e "     ${BLUE}$ existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data${NC}"
+echo -e "     Store the API key printed once by bootstrap."
+echo ""
+echo -e "  2. Start the forge daemon:"
 echo -e "     ${BLUE}$ existd${NC}"
 echo ""
-echo -e "  2. In another terminal, bootstrap your first repo:"
-echo -e "     ${BLUE}$ exist init my-repo${NC}"
-echo ""
-echo -e "  3. Connect your coding agent (Claude Code, Cursor, Cline):"
+echo -e "  3. Connect your coding agent (Claude Code, Cursor, Cline) using the MCP snippet printed by bootstrap."
+echo -e "     Replace <your-admin-token> with the printed API key:"
 echo -e "     - MCP JSON-RPC Server: ${BOLD}http://localhost:8080/mcp${NC}"
 echo -e "     - Read-only Sandbox:   ${BOLD}http://localhost:8080/mcp/readonly${NC}"
 echo -e "     - Web UI:              ${BOLD}http://localhost:8080/${NC}"
 echo ""
-echo -e "Documentation & Tutorials: ${BLUE}https://github.com/${REPO}#readme${NC}"
-echo -e "Submit Beta Feedback:      ${BLUE}https://github.com/${REPO}/issues/new?template=beta_feedback.yml${NC}"
+echo -e "Documentation & Tutorials: ${BLUE}https://ravaniroshan.github.io/exist.io/?ref=installer${NC}"
+echo -e "Submit Beta Feedback:      ${BLUE}https://github.com/${REPO}/issues/new?template=beta_feedback.yml&ref=installer${NC}"
 echo ""
