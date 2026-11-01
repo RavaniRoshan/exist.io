@@ -16,7 +16,7 @@ Set Padding 18
 Set Theme "Catppuccin Macchiato"
 
 Hide
-Type "export PATH=/home/linuxbrew/.linuxbrew/bin:/home/shiva/bin:$PATH; cd /home/shiva/projects/exist.io"
+Type "export PATH=$HOME/bin:/snap/bin:$PATH; cd $(git rev-parse --show-toplevel)"
 Enter
 Sleep 1s
 Show

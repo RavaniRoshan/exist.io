@@ -3,13 +3,11 @@
 
 set -euo pipefail
 
-# Ensure PATH includes Go and utilities
-if ! command -v go >/dev/null 2>&1; then
-    if [ -x "/home/linuxbrew/.linuxbrew/bin/go" ]; then
-        export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-    fi
+# Ensure PATH includes Go and common local tool directories
+if ! command -v go >/dev/null 2>&1 && command -v brew >/dev/null 2>&1; then
+    export PATH="$(brew --prefix)/bin:$PATH"
 fi
-export PATH="/home/shiva/bin:/snap/bin:$PATH"
+export PATH="$HOME/bin:/snap/bin:$PATH"
 
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
