@@ -89,7 +89,7 @@ func TestSSOEndpoints(t *testing.T) {
 		t.Fatalf("expected client_id in redirect url, got: %s", loginRec.Body.String())
 	}
 
-	// 5. POST handle callback (auto-provisions user and establishes session)
+	// 5. Callback fails closed: no identity from client input, no session.
 	callbackBody := `{
 		"code": "auth_code_999",
 		"email": "employee@enterprise.internal",
@@ -99,31 +99,25 @@ func TestSSOEndpoints(t *testing.T) {
 	cbReq.Header.Set("Content-Type", "application/json")
 	cbRec := httptest.NewRecorder()
 	mux.ServeHTTP(cbRec, cbReq)
-	if cbRec.Code != http.StatusOK {
-		t.Fatalf("callback status = %d, want 200: %s", cbRec.Code, cbRec.Body.String())
+	if cbRec.Code != http.StatusNotImplemented {
+		t.Fatalf("callback status = %d, want 501: %s", cbRec.Code, cbRec.Body.String())
 	}
-
-	// Check cookie was set
-	cookies := cbRec.Result().Cookies()
-	foundCookie := false
-	for _, c := range cookies {
-		if c.Name == SessionCookieName && strings.HasPrefix(c.Value, "sess_") {
-			foundCookie = true
-			if !c.HttpOnly {
-				t.Fatalf("expected HttpOnly cookie")
-			}
+	for _, c := range cbRec.Result().Cookies() {
+		if c.Name == SessionCookieName {
+			t.Fatalf("callback set a session cookie for unverified input")
 		}
 	}
-	if !foundCookie {
-		t.Fatalf("expected session cookie in response")
+	if _, err := db.GetUserByEmail(ctx, "employee@enterprise.internal"); err == nil {
+		t.Fatalf("callback auto-provisioned a user from client input")
 	}
 
-	// Verify user is in database
-	dbUser, err := db.GetUserByEmail(ctx, "employee@enterprise.internal")
-	if err != nil {
-		t.Fatalf("GetUserByEmail after SSO callback: %v", err)
-	}
-	if dbUser.Name != "Jane Employee" {
-		t.Fatalf("expected name 'Jane Employee', got %s", dbUser.Name)
+	// 6. An admin cannot be linked or taken over through the callback.
+	adminBody := `{"code":"auth_code_1000","email":"admin@exist.io"}`
+	adminReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/sso/callback", strings.NewReader(adminBody))
+	adminReq.Header.Set("Content-Type", "application/json")
+	adminRec := httptest.NewRecorder()
+	mux.ServeHTTP(adminRec, adminReq)
+	if adminRec.Code != http.StatusNotImplemented {
+		t.Fatalf("admin callback status = %d, want 501", adminRec.Code)
 	}
 }

@@ -11,7 +11,6 @@ import (
 
 	"exist.io/internal/audit"
 	"exist.io/internal/store"
-	"exist.io/pkg/idgen"
 )
 
 // RegisterSSORoutes mounts enterprise SSO (OIDC/SAML) endpoints onto the router.
@@ -148,123 +147,23 @@ func (h *ssoHandler) handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Code  string `json:"code"`
-		Email string `json:"email,omitempty"`
-		Name  string `json:"name,omitempty"`
-		Sub   string `json:"sub,omitempty"`
+		Code string `json:"code"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Code == "" {
 		writeSSOError(w, http.StatusBadRequest, "Authorization code required")
 		return
 	}
 
-	// Extract or simulate Identity Provider verified identity
-	email := strings.TrimSpace(req.Email)
-	if email == "" {
-		// Default derivation for test/code exchange
-		email = fmt.Sprintf("sso_user_%s@enterprise.internal", req.Code)
-	}
-
-	if !strings.Contains(email, "@") || strings.ContainsAny(email, " \t\r\n/\\") {
-		writeSSOError(w, http.StatusBadRequest, "Invalid email format")
-		return
-	}
-
-	login := strings.Split(email, "@")[0]
-	name := req.Name
-	if name == "" {
-		name = login
-	}
-
-	// 1. Find or auto-provision user
-	user, err := h.db.GetUserByEmail(ctx, email)
-	if err == nil {
-		// Prevent unauthorized takeover of administrator accounts via unverified callback
-		if user.Role == "admin" && !cfg.EnforceSSO {
-			writeSSOError(w, http.StatusForbidden, "Administrative accounts cannot be linked via unverified SSO callback")
-			return
-		}
-	} else if errors.Is(err, store.ErrNotFound) {
-		randomPass, _, _ := GenerateSessionToken()
-		hash, _ := HashPassword(randomPass)
-		user = store.User{
-			ID:           idgen.NewUser(),
-			Email:        email,
-			Login:        login,
-			Name:         name,
-			PasswordHash: hash,
-			Role:         "member",
-			Status:       "active",
-			CreatedAt:    time.Now().UTC().Format(time.RFC3339),
-		}
-		if err := h.db.CreateUserWithPassword(ctx, user); err != nil {
-			writeSSOError(w, http.StatusInternalServerError, "Failed to auto-provision user: "+err.Error())
-			return
-		}
-		_ = audit.Log(audit.Event{
-			Actor:     email,
-			ActorType: "user",
-			Action:    "sso.auto_provisioned",
-			Resource:  email,
-			Severity:  audit.SeverityInfo,
-			Details:   "User auto-provisioned via SSO",
-		})
-	} else {
-		writeSSOError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if user.Status != "active" {
-		writeSSOError(w, http.StatusForbidden, "User account is suspended")
-		return
-	}
-
-	// 2. Create web session
-	rawToken, hash, err := GenerateSessionToken()
-	if err != nil {
-		writeSSOError(w, http.StatusInternalServerError, "Session generation failed")
-		return
-	}
-
-	csrf, _ := GenerateCSRFToken()
-	session := store.Session{
-		ID:        idgen.New("sess"),
-		UserID:    user.ID,
-		TokenHash: hash,
-		CSRFToken: csrf,
-		IPAddress: r.RemoteAddr,
-		UserAgent: r.UserAgent(),
-		ExpiresAt: time.Now().UTC().Add(DefaultSessionDuration).Format(time.RFC3339),
-	}
-	if err := h.db.CreateSession(ctx, session); err != nil {
-		writeSSOError(w, http.StatusInternalServerError, "Session persistence failed")
-		return
-	}
-
-	SetSessionCookie(w, rawToken, DefaultSessionDuration)
-
 	_ = audit.Log(audit.Event{
-		Actor:     user.Email,
+		Actor:     "anonymous",
 		ActorType: "user",
-		Action:    "sso.login",
-		Resource:  user.ID,
+		Action:    "sso.callback_rejected",
+		Resource:  "sso",
 		ClientIP:  r.RemoteAddr,
-		Severity:  audit.SeverityInfo,
-		Details:   fmt.Sprintf("User logged in via %s SSO", cfg.ProviderType),
+		Severity:  audit.SeverityWarning,
+		Details:   "SSO is unavailable in this build",
 	})
-
-	writeSSOJSON(w, http.StatusOK, map[string]any{
-		"token":      rawToken,
-		"csrf_token": csrf,
-		"user": map[string]any{
-			"id":     user.ID,
-			"email":  user.Email,
-			"login":  user.Login,
-			"name":   user.Name,
-			"role":   user.Role,
-			"status": user.Status,
-		},
-	})
+	writeSSOError(w, http.StatusNotImplemented, "SSO is not available in this build")
 }
 
 func writeSSOJSON(w http.ResponseWriter, code int, data any) {
