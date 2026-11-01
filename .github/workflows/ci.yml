@@ -51,6 +51,11 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
+      - name: Verify generated capability counts
+        run: |
+          go run ./internal/tools/gencounts
+          git diff --exit-code docs/generated/capability_counts.md
+
       - name: Run staticcheck
         run: staticcheck ./... || true
 

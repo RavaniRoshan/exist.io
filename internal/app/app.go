@@ -259,7 +259,7 @@ func Open(cfg config.Config) (*App, error) {
 			"cpuUsagePercent":      0.5,
 			"litestreamSyncStatus": "active",
 			"lastBackupTimestamp":  time.Now().UTC().Format(time.RFC3339),
-			"mcpMountedToolsCount": 35,
+			"mcpMountedToolsCount": len(mcp.BuiltinTools()),
 		})
 	})
 
