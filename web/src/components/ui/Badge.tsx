@@ -6,57 +6,52 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   pulse?: boolean
 }
 
-/**
- * Primer-grade StateLabel and CounterBadge.
- */
+const variantStyles = {
+  default: 'bg-raised text-text-1 border-hairline',
+  open: 'bg-signal/15 text-signal border-signal/30',
+  merged: 'bg-chart-4/15 text-chart-4 border-chart-4/30',
+  closed: 'bg-destructive/15 text-destructive border-destructive/30',
+  success: 'bg-signal/15 text-signal border-signal/30',
+  running: 'bg-signal/15 text-signal border-signal/30',
+  warning: 'bg-ember/15 text-ember border-ember/30',
+  agent: 'bg-signal/10 text-signal border-signal/40 font-mono',
+  outline: 'bg-transparent text-text-3 border-hairline',
+}
+
+const dotColors = {
+  default: 'bg-text-3',
+  open: 'bg-signal',
+  merged: 'bg-chart-4',
+  closed: 'bg-destructive',
+  success: 'bg-signal',
+  running: 'bg-signal',
+  warning: 'bg-ember',
+  agent: 'bg-signal',
+  outline: 'bg-text-3',
+}
+
+/** Forge state badge. Solid semantic tones, no raw palette colors. */
 export const Badge: React.FC<BadgeProps> = ({
   children,
   variant = 'default',
   pulse = false,
   className,
   ...props
-}) => {
-  const variantStyles = {
-    default: 'bg-secondary text-secondary-foreground border-border',
-    open: 'bg-emerald-600/15 text-emerald-400 border-emerald-500/30',
-    merged: 'bg-purple-600/20 text-purple-300 border-purple-500/40',
-    closed: 'bg-destructive/15 text-destructive border-destructive/30',
-    success: 'bg-emerald-600/15 text-emerald-400 border-emerald-500/30',
-    running: 'bg-primary/15 text-primary border-primary/30',
-    warning: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-    agent: 'bg-primary/15 text-primary border-primary/40 font-mono',
-    outline: 'bg-transparent text-muted-foreground border-border',
-  }
+}) => (
+  <span
+    className={cn(
+      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium border select-none transition-colors duration-150',
+      variantStyles[variant],
+      className
+    )}
+    {...props}
+  >
+    {pulse && <span className={cn('size-1.5 rounded-full motion-pulse', dotColors[variant])} />}
+    {children}
+  </span>
+)
 
-  const dotColors = {
-    default: 'bg-muted-foreground',
-    open: 'bg-emerald-400',
-    merged: 'bg-purple-400',
-    closed: 'bg-destructive',
-    success: 'bg-emerald-400',
-    running: 'bg-primary',
-    warning: 'bg-amber-400',
-    agent: 'bg-primary',
-    outline: 'bg-muted-foreground',
-  }
-
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border select-none transition-colors duration-150',
-        variantStyles[variant],
-        className
-      )}
-      {...props}
-    >
-      {pulse && (
-        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotColors[variant])} />
-      )}
-      {children}
-    </span>
-  )
-}
-
+/** Large uppercase state pill used on PR and issue headers. */
 export const StateLabel: React.FC<{
   state: 'open' | 'merged' | 'closed' | 'draft'
   icon?: React.ReactNode
@@ -64,16 +59,16 @@ export const StateLabel: React.FC<{
   className?: string
 }> = ({ state, icon, children, className }) => {
   const styles = {
-    open: 'bg-emerald-600 text-white border-emerald-500',
-    merged: 'bg-purple-600 text-white border-purple-500',
-    closed: 'bg-rose-600 text-white border-rose-500',
-    draft: 'bg-secondary text-muted-foreground border-border',
+    open: 'bg-signal text-signal-ink border-signal',
+    merged: 'bg-chart-4 text-white border-chart-4',
+    closed: 'bg-destructive text-white border-destructive',
+    draft: 'bg-raised text-text-3 border-hairline',
   }[state]
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border select-none shadow-2xs',
+        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption font-semibold border select-none',
         styles,
         className
       )}

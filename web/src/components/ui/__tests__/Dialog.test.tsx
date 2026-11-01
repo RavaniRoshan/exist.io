@@ -35,7 +35,7 @@ describe('Dialog Component', () => {
       </Dialog>
     )
 
-    const closeButton = screen.getByRole('button')
+    const closeButton = screen.getByLabelText('Close dialog')
     fireEvent.click(closeButton)
     expect(onClose).toHaveBeenCalledTimes(1)
   })
@@ -48,7 +48,7 @@ describe('Dialog Component', () => {
       </Dialog>
     )
 
-    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

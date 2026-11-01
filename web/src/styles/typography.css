@@ -1,0 +1,66 @@
+/* Composite type utilities. Use these instead of stacking size/weight/leading. */
+
+@utility text-display {
+  font-size: 2.5rem;
+  line-height: 2.75rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+@utility text-title-1 {
+  font-size: 1.5rem;
+  line-height: 1.875rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@utility text-title-2 {
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+@utility text-title-3 {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility text-body {
+  font-size: 0.8125rem;
+  line-height: 1.1875rem;
+  font-weight: 400;
+  letter-spacing: -0.006em;
+}
+
+@utility text-body-medium {
+  font-size: 0.8125rem;
+  line-height: 1.1875rem;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+}
+
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+}
+
+@utility text-micro {
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+@utility text-mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}

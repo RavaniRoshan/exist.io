@@ -6,15 +6,15 @@ describe('Primer Badge & StateLabel Components', () => {
   it('renders StateLabel for open, merged, and closed states', () => {
     const { rerender } = render(<StateLabel state="open">Open</StateLabel>)
     expect(screen.getByText('Open')).toBeInTheDocument()
-    expect(screen.getByText('Open').parentElement).toHaveClass('bg-emerald-600')
+    expect(screen.getByText('Open').parentElement).toHaveClass('bg-signal')
 
     rerender(<StateLabel state="merged">Merged</StateLabel>)
     expect(screen.getByText('Merged')).toBeInTheDocument()
-    expect(screen.getByText('Merged').parentElement).toHaveClass('bg-purple-600')
+    expect(screen.getByText('Merged').parentElement).toHaveClass('bg-chart-4')
 
     rerender(<StateLabel state="closed">Closed</StateLabel>)
     expect(screen.getByText('Closed')).toBeInTheDocument()
-    expect(screen.getByText('Closed').parentElement).toHaveClass('bg-rose-600')
+    expect(screen.getByText('Closed').parentElement).toHaveClass('bg-destructive')
   })
 
   it('renders Badge with variants and pulse indicator', () => {

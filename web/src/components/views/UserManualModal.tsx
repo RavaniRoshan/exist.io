@@ -341,7 +341,7 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-foreground">Key Agent Capabilities (35 Tools)</h4>
+                <h4 className="text-xs font-semibold text-foreground">Key Agent Capabilities</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="p-2.5 rounded bg-secondary/15 border border-border space-y-1">
                     <span className="font-mono text-primary text-[11px] font-bold">git_diff</span>

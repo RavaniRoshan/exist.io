@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'prs', label: 'Pull requests', count: livePrCount, icon: <GitPullRequest className="w-4 h-4" /> },
     { id: 'commits', label: 'Commits', icon: <GitCommit className="w-4 h-4" /> },
     { id: 'releases', label: 'Releases', count: liveReleaseCount, icon: <Tag className="w-4 h-4" /> },
-    { id: 'agents', label: 'Agent Console', count: '35', icon: <Bot className="w-4 h-4" /> },
+    { id: 'agents', label: 'Agent Console', icon: <Bot className="w-4 h-4" /> },
     { id: 'rulesets', label: 'Rulesets & Security', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
@@ -201,10 +201,10 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* 1. Global App Bar (56px) */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 gap-4">
+      {/* Instrument bar */}
+      <header className="sticky top-0 z-40 w-full border-b border-hairline bg-canvas/85 backdrop-blur-md">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-12 gap-4">
             {/* Left: Brand Glyph & Title */}
             <div className="flex items-center gap-3">
               <button
@@ -247,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="35 Model Context Protocol tools active"
               >
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span>MCP: 35 tools</span>
+                <span>MCP</span>
               </button>
 
               {/* Tour and User Manual Buttons */}

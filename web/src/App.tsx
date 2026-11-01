@@ -62,6 +62,15 @@ export default function App() {
   })
   const [adminSection, setAdminSection] = useState<'cluster' | 'users' | 'sso' | 'audit'>('cluster')
   const [tourOpen, setTourOpen] = useState(false)
+  const [systemInfo, setSystemInfo] = useState<{ version?: string; mcpMountedToolsCount?: number }>({})
+
+  useEffect(() => {
+    fetch('/api/v1/system/info')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (data) setSystemInfo(data) })
+      .catch(() => {})
+  }, [])
+
   const [manualOpen, setManualOpen] = useState(false)
   const [currentRepo, setCurrentRepo] = useState(defaultRepo)
 
@@ -138,7 +147,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-5 lg:px-8 py-6">
         {/* 0. Enterprise Home Activity Feed */}
         {activeTab === 'home' && (
           <GlobalHomeView
@@ -283,7 +292,7 @@ export default function App() {
               <span>SQLite WAL</span>
             </span>
             <span>•</span>
-            <span className="text-foreground">35 MCP Tools Mounted</span>
+            <span className="text-foreground">{systemInfo.mcpMountedToolsCount ?? '—'} MCP Tools Mounted</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -305,7 +314,7 @@ export default function App() {
             </a>
             <span className="text-border">|</span>
             <span className="text-foreground font-semibold">
-              exist.io v0.5.0-beta
+              exist.io {systemInfo.version ?? ''}
             </span>
           </div>
         </div>

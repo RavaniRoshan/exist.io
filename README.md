@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml"><img src="https://github.com/RavaniRoshan/exist.io/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
-  <a href="https://ravaniroshan.github.io/exist.io/"><img src="https://img.shields.io/badge/Documentation-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
+  <a href="https://ravaniroshan.github.io/exist.io/?ref=readme"><img src="https://img.shields.io/badge/Documentation-exist.io-2D6A57?style=flat-square&logo=gitbook&logoColor=white" alt="Documentation"></a>
   <a href="CHANGELOG.md"><img src="https://img.shields.io/github/v/release/RavaniRoshan/exist.io?include_prereleases&style=flat-square&label=Release&color=0F172A" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Go-Pure--Go%20(Zero%20CGO)-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Pure-Go">
@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/MCP-JSON--RPC%202.0-8A2BE2?style=flat-square" alt="MCP Server">
 </p>
 
-[**Product Documentation**](https://ravaniroshan.github.io/exist.io/) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Claims Ledger**](CLAIMS.md) &nbsp;&bull;&nbsp; [**Contributing**](CONTRIBUTING.md)
+[**Product Documentation**](https://ravaniroshan.github.io/exist.io/?ref=readme) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started?ref=readme) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture?ref=readme) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Claims Ledger**](CLAIMS.md) &nbsp;&bull;&nbsp; [**Contributing**](CONTRIBUTING.md)
 
 </div>
 
@@ -150,6 +150,10 @@ To ensure realistic expectations, exist.io documents its design constraints expl
    Bare repository operations use `go-git/v6` directly in Go memory. While completely hermetic and CGO-free, `go-git` exhibits higher memory consumption and slower packfile generation on massive monorepos (> 2 GB) compared to native C git.
 3. **Event-Driven Auto-Merge in v0.6.0-beta**:
    exist.io provides an event-driven auto-merge engine (`AutoMergeEngine`) that monitors PR requirements and automatically executes squash/merge operations once required status check suites pass. Speculative batch-queue merges across interdependent PRs are planned for v0.7.0+.
+
+4. **Telemetry (Off by Default)**:
+   Telemetry is off by default and consent-based. When enabled, exist.io sends only an anonymous instance ID, event name, version, OS family, and day. It never sends repository names, commit content, paths, user identifiers, or hostnames.
+
 
 ---
 

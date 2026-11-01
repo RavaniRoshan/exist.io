@@ -29,11 +29,12 @@ All agents working on this codebase MUST uphold these invariants at all times:
    - All mock objects in `web/src/lib/mockData.ts` are strictly gated by `isDemoModeActive() === true`.
    - If an endpoint returns empty results, render authentic GitHub Primer empty states with actionable buttons, never placeholder demo items.
 
-2. **Strict GitHub Primer Design System:**
-   - Exact `rounded-md` (6px squircle radius).
-   - `border border-border` (1px crisp borders).
-   - Flush `BoxRow` list items with hover transitions.
-   - Custom OKLCH color token architecture (`text-foreground`, `text-muted-foreground`, `bg-secondary`, `border-border`, `bg-card`).
+2. **Forge Design System:**
+   - Tokens live in `web/src/styles/tokens.css` (OKLCH primitives), `theme.css` (semantic shadcn vars), and `typography.css` (composite `text-*` utilities).
+   - Use semantic tokens (`bg-canvas`, `bg-slab`, `border-hairline`, `text-text-1`, `text-signal`) instead of raw palette classes.
+   - Controls: 6px radius, 32px default height, 1px hairline borders. Slabs: 8px radius, flat surfaces, no decorative shadows.
+   - Motion follows `web/src/styles/motion.css`; press darkens, never scales; reduced motion is honored.
+   - Primitives live in `web/src/components/primitives/` (shadcn on React Aria); the compatibility layer in `web/src/components/ui/` keeps existing APIs.
    - Accessible `UnderlineNav` with `role="tablist"` and `aria-selected` attributes.
 
 3. **Hermetic Pure-Go Backend (Zero CGO):**

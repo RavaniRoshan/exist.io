@@ -29,10 +29,10 @@ describe('Primer Button Component', () => {
 
   it('supports variants (primary, outline, danger)', () => {
     const { rerender } = render(<Button variant="primary">Primary</Button>)
-    expect(screen.getByRole('button')).toHaveClass('bg-primary')
+    expect(screen.getByRole('button')).toHaveClass('bg-signal')
 
     rerender(<Button variant="outline">Outline</Button>)
-    expect(screen.getByRole('button')).toHaveClass('border-border')
+    expect(screen.getByRole('button')).toHaveClass('border-hairline')
 
     rerender(<Button variant="danger">Danger</Button>)
     expect(screen.getByRole('button')).toHaveClass('text-destructive')

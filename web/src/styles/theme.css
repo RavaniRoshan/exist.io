@@ -1,0 +1,34 @@
+/* Semantic shadcn variables mapped onto the Forge token layer. */
+
+:root {
+  --background: var(--canvas);
+  --foreground: var(--text-1);
+  --card: var(--slab);
+  --card-foreground: var(--text-1);
+  --popover: var(--slab);
+  --popover-foreground: var(--text-1);
+  --primary: var(--signal);
+  --primary-foreground: var(--signal-ink);
+  --secondary: var(--raised);
+  --secondary-foreground: var(--text-1);
+  --muted: var(--raised);
+  --muted-foreground: var(--text-2);
+  --accent: var(--raised);
+  --accent-foreground: var(--text-1);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--signal-ink);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--signal);
+
+  --sidebar: var(--slab);
+  --sidebar-foreground: var(--text-1);
+  --sidebar-primary: var(--signal);
+  --sidebar-primary-foreground: var(--signal-ink);
+  --sidebar-accent: var(--raised);
+  --sidebar-accent-foreground: var(--text-1);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--signal);
+
+  --tracking-normal: -0.011em;
+}

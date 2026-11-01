@@ -10,7 +10,7 @@ describe('Miscellaneous UI Components', () => {
     const { container } = render(<Skeleton className="w-20 h-4" />)
     const el = container.firstChild as HTMLElement
     expect(el).toBeInTheDocument()
-    expect(el.className).toContain('bg-secondary/60')
+    expect(el.className).toContain('bg-raised')
     expect(el.className).toContain('w-20')
   })
 

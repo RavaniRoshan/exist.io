@@ -3,6 +3,7 @@
 package mcp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,6 +24,12 @@ type Server struct {
 	allTools    []ToolDef
 	toolMap     map[string]ToolDef
 	leaseSecret []byte
+	mergeHook   func(context.Context, store.PullRequest)
+}
+
+// SetMergeHook registers a callback invoked after a successful pull-request merge.
+func (s *Server) SetMergeHook(fn func(context.Context, store.PullRequest)) {
+	s.mergeHook = fn
 }
 
 // New creates a new MCP Server.

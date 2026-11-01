@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -12,6 +13,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -58,6 +61,20 @@ func main() {
 		if *email == "" || *namespace == "" {
 			fmt.Fprintln(os.Stderr, "Usage: existd bootstrap --email <email> --namespace <slug> [--data-dir <path>]")
 			os.Exit(1)
+		}
+
+		if os.Getenv("EXIST_TELEMETRY_OPT_IN") == "" {
+			if info, err := os.Stdin.Stat(); err == nil && info.Mode()&os.ModeCharDevice != 0 {
+				fmt.Print("Send an anonymous activation metric? [y/N] ")
+				answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+				choice := "0"
+				switch strings.ToLower(strings.TrimSpace(answer)) {
+				case "y", "yes":
+					choice = "1"
+				}
+				_ = os.MkdirAll(*dataDir, 0o700)
+				_ = os.WriteFile(filepath.Join(*dataDir, "telemetry_opt_in"), []byte(choice), 0o600)
+			}
 		}
 
 		cfg.DataDir = *dataDir

@@ -182,8 +182,8 @@ describe('RepoSettingsView', () => {
     const input = screen.getByPlaceholderText('e.g. alex')
     fireEvent.change(input, { target: { value: 'new-dev' } })
 
-    const allAddButtons = screen.getAllByRole('button', { name: /add collaborator/i })
-    fireEvent.click(allAddButtons[1])
+    const addButton = screen.getByRole('button', { name: /add collaborator/i })
+    fireEvent.click(addButton)
 
     await waitFor(() => {
       expect(api.addCollaborator).toHaveBeenCalledWith('shiva', 'rocket', 'new-dev', 'write')

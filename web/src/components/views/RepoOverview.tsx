@@ -865,7 +865,7 @@ git push -u origin main`}
               <div className="space-y-1.5 text-[11px] text-muted-foreground">
                 <div className="flex items-center justify-between">
                   <span>Mounted MCP tools:</span>
-                  <strong className="text-foreground font-mono">35 tools</strong>
+                  <strong className="text-foreground font-mono">MCP tools</strong>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Capability leases:</span>
