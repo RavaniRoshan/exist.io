@@ -21,7 +21,10 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
 
 	// Check for CLI subcommands
 	if len(os.Args) > 1 && os.Args[1] == "hook" {

@@ -49,3 +49,13 @@ docs/internal/
 # Video pipeline intermediates (regenerable)
 videos/**/.hyperframes/
 
+# Runtime credentials and local configuration
+jwt_secret
+ssh_host_key
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+.mcp.json
+

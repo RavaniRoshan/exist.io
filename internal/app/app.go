@@ -75,7 +75,7 @@ func Open(cfg config.Config) (*App, error) {
 	if cfg.DataDir == ":memory:" {
 		dbPath = ":memory:"
 	} else {
-		if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 			return nil, fmt.Errorf("app: create data dir %s: %w", cfg.DataDir, err)
 		}
 		dbPath = filepath.Join(cfg.DataDir, "meta.db")
