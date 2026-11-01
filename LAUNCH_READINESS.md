@@ -1,7 +1,7 @@
 # Launch Readiness Scorecard (`LAUNCH_READINESS.md`)
 
 **Gates passed: 5 · Blocked: 1 · Not verified: 1**
-**Evaluated: 2026-11-01 · Commit: `68e01e4` (branch `launch/exist-ops-001`)**
+**Evaluated: 2026-11-01 · Commit: `9baeec3` · Release: `v0.6.0-beta`**
 
 A gate is **PASS** only when the cited command exits zero and its output supports the claim (EXIST-OPS-001 DR-10). A gate is **BLOCKED** when it depends on an action the executing agent cannot perform. **NOT VERIFIED** means evidence could not be produced in this environment.
 
@@ -73,6 +73,14 @@ This revision supersedes the 2026-10-17 scorecard, which asserted readiness in i
 
 ---
 
+## Release integrity (VG-3)
+
+- **Tag:** `v0.6.0-beta` at `9baeec3`, published by the release workflow.
+- **Assets:** 5 platform archives (`linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`) plus `SHA256SUMS`.
+- **Installer:** `INSTALL_DIR=/tmp/install-final bash scripts/install.sh` resolved `v0.6.0-beta`, verified the checksum, and installed it.
+- **Version surfaces:** `existd v0.6.0-beta`, `exist version v0.6.0-beta`, `GET /healthz` → `v0.6.0-beta`, latest tag `v0.6.0-beta`, and the installer resolution agree. The README badge is dynamic (`shields.io/github/v/release`).
+- **Install matrix:** `linux-amd64`, `linux-arm64`, `darwin-arm64`, and `windows-amd64` jobs succeeded in run `41332477902`.
+
 ## Reproduce this scorecard
 
 ```bash
@@ -102,5 +110,4 @@ Expected: Gates 1–5 exit 0 with the outputs quoted above. Gates 6 and 7 cannot
 ## What this scorecard does not assert
 
 - It does not assert that CI security gates fail closed. That is WP-B3 and is recorded separately.
-- It does not assert that the one-line installer installs the current release. That is WP-C1–C4.
 - It does not assert external validation or positioning.
