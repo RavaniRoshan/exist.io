@@ -72,6 +72,9 @@ func (a *App) Handler() http.Handler {
 // If initialization fails at any stage, any resources already opened are closed cleanly.
 func Open(cfg config.Config) (*App, error) {
 	auth.SetSessionCookieSecure(strings.HasPrefix(cfg.PublicURL, "https://"))
+	if cfg.Version == "" {
+		cfg.Version = "dev"
+	}
 	var dbPath string
 	if cfg.DataDir == ":memory:" {
 		dbPath = ":memory:"
@@ -156,9 +159,9 @@ func Open(cfg config.Config) (*App, error) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "ok")
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "version": cfg.Version})
 	})
 
 	// Cluster Disaster Recovery & Replication API
@@ -251,7 +254,7 @@ func Open(cfg config.Config) (*App, error) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"serverStatus":         "healthy",
 			"uptime":               fmt.Sprintf("%.0fs", metrics.DefaultRegistry.UptimeSeconds()),
-			"version":              "existd v0.5.0-beta",
+			"version":              "existd " + cfg.Version,
 			"activeGitSessions":    metrics.DefaultRegistry.GitTransfersTotal(),
 			"sqliteWalSizeBytes":   walSize,
 			"databasePath":         filepath.Join(cfg.DataDir, "meta.db"),
@@ -318,7 +321,7 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"version":    "v0.4.0-enterprise",
+			"version":    cfg.Version,
 			"publicUrl":  cfg.PublicURL,
 			"gitHttpUrl": cfg.GitURL,
 			"sshAddr":    cfg.SSHAddr,

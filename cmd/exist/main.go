@@ -9,7 +9,10 @@ import (
 	"exist.io/internal/cli"
 )
 
+var version = "dev"
+
 func main() {
+	cli.Version = version
 	c := cli.New()
 	if err := c.Run(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "exist: %v\n", err)

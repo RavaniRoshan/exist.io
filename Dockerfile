@@ -21,8 +21,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /bin/existd ./cmd/existd && \
-    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /bin/exist ./cmd/exist
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION} -X exist.io/internal/cli.Version=${VERSION}" -o /bin/existd ./cmd/existd && \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION} -X exist.io/internal/cli.Version=${VERSION}" -o /bin/exist ./cmd/exist
 
 # ------------------------------------------------------------------------------
 # Stage 3: Hardened, Non-Root Enterprise Production Container

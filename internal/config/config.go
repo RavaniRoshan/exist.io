@@ -25,6 +25,7 @@ const (
 // Config holds runtime configuration for the exist.io server and CLI.
 // Defaults are strictly self-hosted and never reference Cursor infrastructure.
 type Config struct {
+	Version    string
 	ListenAddr string
 	DataDir    string
 	PublicURL  string
@@ -82,7 +83,10 @@ func Load() (Config, error) {
 	smtpFrom := getEnv("EXIST_SMTP_FROM", "noreply@exist.io")
 	smtpTLS := getEnv("EXIST_SMTP_TLS", "true") != "false"
 
+	version := getEnv("EXIST_VERSION", "dev")
+
 	return Config{
+		Version:        version,
 		ListenAddr:     listenAddr,
 		DataDir:        dataDir,
 		PublicURL:      publicURL,
