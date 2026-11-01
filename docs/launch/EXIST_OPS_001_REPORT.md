@@ -11,11 +11,18 @@
 | :--- | :--- | :--- |
 | A — Integrity | Complete | `go test ./internal/claims`, `scripts/check-links.sh`, `gencounts -check`, `LAUNCH_READINESS.md` |
 | B — Security | Complete | `internal/config` JWT tests, `internal/auth` SSO tests, staticcheck/gosec/govulncheck/gitleaks, installer harness |
-| C — Release mechanics | Code complete; cut pending | `VERSION`, `existd --version`, `/healthz`, installer resolution, release workflow |
+| C — Release mechanics | Complete | `v0.6.0-beta` published; installer resolves it; install matrix green |
 | D — Measurement | Complete | `internal/telemetry`, `docs/launch/METRICS.md` |
 | E — Activation | Complete | `internal/app/activation.go`, `/api/v1/admin/activation`, `ACTIVATION_RUNBOOK.md` |
 | F — Media | Partial | Asset 02 captured; 03–05 specified in `CAPTURE_REQUIRED.md` |
 | G — Closure | This report + scorecard | `LAUNCH_READINESS.md` |
+
+## Release
+
+- **Tag:** `v0.6.0-beta` at `9baeec3`
+- **Assets:** 5 platform archives plus `SHA256SUMS`
+- **Installer:** resolved `v0.6.0-beta`, verified the checksum, installed successfully
+- **Matrix:** linux-amd64, linux-arm64, darwin-arm64, windows-amd64 all succeeded (run `41332477902`)
 
 ## Defect index (Appendix A was not supplied; D-01–D-13 and D-17–D-20 are from the directive, D-14–D-16 inferred)
 
@@ -86,7 +93,6 @@ Security demonstrations:
 
 ## Remaining before Product Hunt
 
-1. Merge PR #2 and cut `v0.6.0-beta`.
 2. Capture assets 03–05 per `CAPTURE_REQUIRED.md`.
 3. Continue the view-by-view Forge migration (the foundation and shell are in place).
 4. Complete Gate 6 with an external tester.
