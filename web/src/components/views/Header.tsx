@@ -201,10 +201,10 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* 1. Global App Bar (56px) */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 gap-4">
+      {/* Instrument bar */}
+      <header className="sticky top-0 z-40 w-full border-b border-hairline bg-canvas/85 backdrop-blur-md">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-12 gap-4">
             {/* Left: Brand Glyph & Title */}
             <div className="flex items-center gap-3">
               <button

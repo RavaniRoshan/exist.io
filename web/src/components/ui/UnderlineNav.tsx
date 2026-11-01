@@ -17,10 +17,7 @@ export interface UnderlineNavProps {
   actions?: React.ReactNode
 }
 
-/**
- * GitHub Primer UnderlineNav.
- * Renders horizontal tab navigation with active bottom underline border.
- */
+/** Forge underline navigation. Active state is a 2px signal rule. */
 export const UnderlineNav: React.FC<UnderlineNavProps> = ({
   tabs,
   activeTab,
@@ -35,8 +32,8 @@ export const UnderlineNav: React.FC<UnderlineNavProps> = ({
   }
 
   return (
-    <div className={cn('flex items-center justify-between border-b border-border w-full overflow-x-auto scrollbar-none', className)}>
-      <nav className="flex items-center gap-1 -mb-[1px]" role="tablist">
+    <div className={cn('flex items-center justify-between border-b border-hairline w-full overflow-x-auto scrollbar-none', className)}>
+      <nav className="flex items-center gap-0.5 -mb-px" role="tablist">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
           return (
@@ -46,21 +43,25 @@ export const UnderlineNav: React.FC<UnderlineNavProps> = ({
               aria-selected={isActive}
               onClick={() => handleSelect(tab.id)}
               className={cn(
-                'relative flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium transition-colors cursor-pointer select-none whitespace-nowrap outline-none',
+                'relative flex items-center gap-1.5 px-3 py-2 text-body-medium transition-colors cursor-pointer select-none whitespace-nowrap outline-none border-b-2',
                 isActive
-                  ? 'text-foreground font-semibold border-b-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground border-b-2 border-transparent hover:border-border'
+                  ? 'text-text-1 border-signal'
+                  : 'text-text-3 border-transparent hover:text-text-1 hover:border-hairline'
               )}
             >
-              {tab.icon && <span className={cn('w-4 h-4 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')}>{tab.icon}</span>}
+              {tab.icon && (
+                <span className={cn('size-3.5 shrink-0', isActive ? 'text-signal' : 'text-text-3')}>
+                  {tab.icon}
+                </span>
+              )}
               <span>{tab.label}</span>
               {tab.count !== undefined && (
                 <span
                   className={cn(
-                    'px-2 py-0.2 text-[10px] rounded-full font-mono font-semibold',
+                    'px-1.5 py-0.5 text-micro rounded-full font-mono',
                     isActive
-                      ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'bg-secondary text-muted-foreground border border-border'
+                      ? 'bg-signal/15 text-signal border border-signal/30'
+                      : 'bg-raised text-text-3 border border-hairline'
                   )}
                 >
                   {tab.count}
@@ -71,16 +72,12 @@ export const UnderlineNav: React.FC<UnderlineNavProps> = ({
         })}
       </nav>
 
-      {actions && (
-        <div className="flex items-center gap-2 pb-1.5 shrink-0">
-          {actions}
-        </div>
-      )}
+      {actions && <div className="flex items-center gap-2 pb-1.5 shrink-0">{actions}</div>}
     </div>
   )
 }
 
-// Backwards compatibility alias for Tabs
+/** Backwards-compatible alias. */
 export const Tabs: React.FC<{
   tabs: NavTabItem[]
   activeTab: string

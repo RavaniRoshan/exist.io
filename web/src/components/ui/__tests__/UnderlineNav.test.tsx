@@ -23,7 +23,7 @@ describe('Primer UnderlineNav Component', () => {
     render(<UnderlineNav tabs={tabs} activeTab="prs" onTabChange={() => {}} />)
 
     const prTab = screen.getByRole('tab', { name: /pull requests/i })
-    expect(prTab).toHaveClass('border-primary')
+    expect(prTab).toHaveClass('border-signal')
     expect(prTab).toHaveAttribute('aria-selected', 'true')
   })
 
