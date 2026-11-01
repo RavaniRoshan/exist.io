@@ -43,7 +43,7 @@ func recordActivation(dataDir string, pr store.PullRequest, bootstrapAdminID str
 	}
 
 	path := filepath.Join(dataDir, "activation.json")
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600) // #nosec G304 -- path is derived from the operator-configured data directory
 	if errors.Is(err, os.ErrExist) {
 		return nil, nil
 	}
