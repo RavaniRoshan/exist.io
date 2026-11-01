@@ -68,25 +68,42 @@ if ! curl -fsSL -o "$TMP_DIR/$ARCHIVE_NAME" "$DOWNLOAD_URL"; then
 fi
 
 echo -e "--> Downloading checksums..."
-if curl -fsSL -o "$TMP_DIR/SHA256SUMS" "$CHECKSUMS_URL" 2>/dev/null; then
-    echo -e "--> Verifying SHA-256 checksum..."
-    (
-        cd "$TMP_DIR"
-        if command -v sha256sum >/dev/null 2>&1; then
-            grep "$ARCHIVE_NAME" SHA256SUMS | sha256sum -c - >/dev/null 2>&1 || {
-                echo -e "${RED}Error: Checksum verification failed!${NC}" >&2
-                exit 1
-            }
-        elif command -v shasum >/dev/null 2>&1; then
-            grep "$ARCHIVE_NAME" SHA256SUMS | shasum -a 256 -c - >/dev/null 2>&1 || {
-                echo -e "${RED}Error: Checksum verification failed!${NC}" >&2
-                exit 1
-            }
-        fi
-    )
-    echo -e "    ${GREEN}Checksum verified successfully.${NC}"
+if ! curl -fsSL -o "$TMP_DIR/SHA256SUMS" "$CHECKSUMS_URL"; then
+    echo -e "${RED}Error: could not retrieve the SHA-256 manifest from $CHECKSUMS_URL${NC}" >&2
+    echo -e "Refusing to install an unverified binary." >&2
+    exit 1
+fi
+
+if ! grep -Eq "[[:space:]]${ARCHIVE_NAME}$" "$TMP_DIR/SHA256SUMS"; then
+    echo -e "${RED}Error: SHA256SUMS contains no entry for ${ARCHIVE_NAME}.${NC}" >&2
+    echo -e "Refusing to install an unverified binary." >&2
+    exit 1
+fi
+
+HASH_TOOL=""
+if command -v sha256sum >/dev/null 2>&1; then
+    HASH_TOOL="sha256sum"
+elif command -v shasum >/dev/null 2>&1; then
+    HASH_TOOL="shasum -a 256"
+fi
+
+if [ -z "$HASH_TOOL" ]; then
+    if [ "${EXIST_INSTALL_INSECURE:-0}" = "1" ]; then
+        echo -e "${RED}${BOLD}WARNING: EXIST_INSTALL_INSECURE=1 — checksum verification bypassed.${NC}" >&2
+        echo -e "${RED}The downloaded binary is UNVERIFIED. Do not do this in production.${NC}" >&2
+    else
+        echo -e "${RED}Error: no SHA-256 tool available (sha256sum or shasum required).${NC}" >&2
+        echo -e "Refusing to install an unverified binary. Set EXIST_INSTALL_INSECURE=1 to override." >&2
+        exit 1
+    fi
 else
-    echo -e "    Notice: Checksum file not found on server; skipping verification."
+    echo -e "--> Verifying SHA-256 checksum..."
+    if ! (cd "$TMP_DIR" && grep -E "[[:space:]]${ARCHIVE_NAME}$" SHA256SUMS | $HASH_TOOL -c - >/dev/null 2>&1); then
+        echo -e "${RED}Error: Checksum verification failed!${NC}" >&2
+        echo -e "Refusing to install a binary that does not match the manifest." >&2
+        exit 1
+    fi
+    echo -e "    ${GREEN}Checksum verified successfully.${NC}"
 fi
 
 echo -e "--> Extracting binaries..."
