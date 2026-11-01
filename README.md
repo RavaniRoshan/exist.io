@@ -127,20 +127,19 @@ Open **`http://localhost:8080`** in your browser to view the living web dashboar
 
 ---
 
-## 📊 Verified Comparison Matrix
+## 📊 Verified Capabilities
 
-Only verifiable technical facts are reported below:
+Only facts backed by code and tests at the current commit are reported below:
 
-| Feature / Dimension | **exist.io** | **Cursor Origin** | **GitHub (Enterprise)** | **Forgejo / Gitea** |
-| :--- | :--- | :--- | :--- | :--- |
-| **Self-Hosted** | **Yes** (single binary) | No (cloud only) | Server edition only | **Yes** |
-| **Vendor Neutrality** | **Any agent** (Claude, Codex, Cline, Cursor) | Cursor-only accounts | Any | Any |
-| **MCP Native Server** | **Built-in** (`/mcp` + `/mcp/readonly`) | Proprietary API | Via external wrappers | Via community plugins |
-| **Agent Leases (`refs/heads/agent/*`)** | **Built-in HMAC leases** | Proprietary | Fine-grained PATs | Branch protection only |
-| **Pure-Go SSH Server** | **Yes** (:2222, zero OpenSSH dependency) | N/A | Host OpenSSH daemon | Host OpenSSH / Go SSH |
-| **Zero CGO Compilation** | **Yes** (`modernc.org/sqlite`) | N/A | Closed-source | Requires CGO or SQLite build tags |
-| **Database Architecture** | **SQLite WAL** (zero external DB) | Proprietary cloud DB | MySQL / Cloud SQL | SQLite / Postgres / MySQL |
-| **Commit Signatures** | **OpenSSH SIGSPEC & GPG** | Proprietary | GPG, SSH, S/MIME | GPG, SSH |
+| Capability | Implementation |
+| :--- | :--- |
+| **Self-hosted** | Single pure-Go binary with embedded web UI |
+| **MCP server** | Built-in at `/mcp` and `/mcp/readonly` |
+| **Agent leases** | HMAC capability leases restricted to `refs/heads/agent/*` |
+| **SSH transport** | Pure-Go server on `:2222`, zero host OpenSSH dependency |
+| **Compilation** | `CGO_ENABLED=0` with `modernc.org/sqlite` |
+| **Database** | SQLite WAL, zero external database |
+| **Commit signatures** | OpenSSH SIGSPEC and GPG (RFC 4880) verification |
 
 ---
 
@@ -197,7 +196,7 @@ exist conformance --endpoint http://localhost:8080 --token <your-api-key>
 
 ## 🧪 Experimental Modules (Scope Freeze)
 
-The following modules build cleanly and pass automated unit tests, but are frozen for the v0.5.0-beta release while focus is locked on the core agent loop:
+The following modules build cleanly and pass automated unit tests, but are frozen for launch while focus is locked on the core agent loop:
 
 - **Git LFS File Locking (`/info/lfs/locks`)**: Implemented in `internal/gitlfs`, frozen.
 - **Enterprise Federation (SCIM 2.0 & OIDC/SAML)**: Implemented in `internal/auth`, frozen for external security review.
@@ -214,7 +213,7 @@ Every pull request and release is validated by automated CI:
 # Run all Go tests with race detection
 go test -v -race ./...
 
-# Run frontend Vitest automated test suite (37 suites, 137 tests)
+# Run frontend Vitest automated test suite
 cd web && npm test
 
 # Verify production frontend build

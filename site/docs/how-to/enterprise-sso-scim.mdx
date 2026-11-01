@@ -1,9 +1,13 @@
 ---
-title: How to configure Enterprise SSO and SCIM 2.0
-description: Integrate exist.io with corporate identity providers using OIDC, SAML 2.0, and RFC 7644 SCIM user sync.
+title: How to configure Enterprise SSO and SCIM 2.0 (experimental)
+description: Experimental reference for OIDC, SAML 2.0, and RFC 7644 SCIM user sync in exist.io.
 ---
 
-exist.io provides enterprise identity federation supporting **OpenID Connect (OIDC)**, **SAML 2.0**, and **RFC 7643 / RFC 7644 SCIM 2.0** automated directory synchronization.
+:::caution[Not available in this build]
+SSO and SCIM are experimental and frozen for launch. The SSO callback returns HTTP 501 and derives no identity from client input. Do not enable this module for production use.
+:::
+
+exist.io provides experimental identity federation supporting **OpenID Connect (OIDC)**, **SAML 2.0**, and **RFC 7643 / RFC 7644 SCIM 2.0** automated directory synchronization.
 
 ## Step 1: OpenID Connect (OIDC) Integration
 

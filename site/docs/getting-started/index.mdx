@@ -83,11 +83,12 @@ The server binds to port `8080` and is immediately ready to accept Git Smart-HTT
 | :--- | :--- | :--- |
 | `http://localhost:8080/{owner}/{repo}.git` | Git Smart-HTTP | Clone, fetch, and push |
 | `ssh://git@localhost:2222/{owner}/{repo}.git` | Pure-Go SSH | Embedded SSH key transport (port 2222) |
-| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Autonomous AI agent 35+ Git tools |
+| `http://localhost:8080/mcp` | MCP (JSON-RPC) | Autonomous AI agent tools |
 | `http://localhost:8080/mcp/readonly` | MCP (JSON-RPC) | Sandboxed read-only MCP endpoint |
-| `http://localhost:8080/scim/v2/Users` | SCIM 2.0 | Automated corporate IdP user provisioning |
 | `http://localhost:8080/v1/origin/openapi.yaml` | HTTP | OpenAPI 3.1 specification |
 | `http://localhost:8080/healthz` | HTTP | Cluster health & readiness probe |
+
+SCIM 2.0 and SSO are experimental and frozen for launch; the SSO callback fails closed in this build.
 
 ## 4. Interactive Onboarding, In-App Manual, & In-Browser Commits
 

@@ -42,12 +42,15 @@ Merge decisions are protected by a native 3-way merge engine and ruleset evaluat
 | Included in exist.io | Provided Externally |
 | :--- | :--- |
 | Pure-Go Git Smart-HTTP & SSH server (:2222) | AI foundation models (Anthropic, OpenAI, local LLMs) |
-| Git LFS v1 Batch CAS engine & file locking | Coding agent execution runtimes (Cursor, Claude Code, Cline) |
-| Cryptographic signature verification (OpenSSH & GPG) | Corporate IdP authority (Microsoft Entra ID, Okta) |
-| Enterprise SSO (OIDC/SAML) & SCIM 2.0 user sync | Underlying compute infrastructure |
-| Official Terraform provider & Kubernetes Helm chart | |
-| Embedded MCP server (34 tools) at `/mcp` | |
+| Cryptographic signature verification (OpenSSH & GPG) | Coding agent execution runtimes (Cursor, Claude Code, Cline) |
+| Embedded MCP server at `/mcp` and `/mcp/readonly` | Underlying compute infrastructure |
 | Native 3-way merge and squash engine | |
 | Rulesets, SSH CAs, and CIDR allowlists | |
-| Web UI Living Dashboard (React 19 / Space UI) | |
+| Web UI (React 19 / Tailwind CSS) | |
 | CLI companion (`cmd/exist`) & daemon (`cmd/existd`) | |
+
+### Experimental (frozen for launch)
+
+- Git LFS v1 CAS engine and file locking.
+- Enterprise SSO (OIDC/SAML) and SCIM 2.0 user sync. The SSO callback fails closed in this build.
+- Terraform provider and Kubernetes Helm chart.

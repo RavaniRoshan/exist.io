@@ -1,9 +1,9 @@
 ---
 title: Model Context Protocol (MCP) tool catalog
-description: Complete technical reference of all 35 MCP tools exposed by exist.io for AI coding agents.
+description: Technical reference for the MCP tools exposed by exist.io for AI coding agents.
 ---
 
-exist.io exposes **35 specialized tools** over the [Model Context Protocol](https://modelcontextprotocol.io) at `/mcp` (read-write) and `/mcp/readonly` (sandboxed read-only).
+exist.io exposes the Model Context Protocol (MCP) over [JSON-RPC 2.0](https://modelcontextprotocol.io) at `/mcp` (read-write) and `/mcp/readonly` (sandboxed read-only). Run the standard `tools/list` method against `/mcp` for the authoritative tool set in your build.
 
 Every tool call uses standard JSON-RPC 2.0 with method `tools/call`.
 

@@ -8,19 +8,24 @@ exist.io is an open-source, self-hosted Git forge built for software engineering
 The goal is simple: keep your repositories, collaboration history, and agent integrations on infrastructure you control.
 
 :::note[Self-hosted & agent-native]
-exist.io is wire-compatible with Origin forge interfaces while running 100% self-hosted on your own hardware or cloud instances with zero proprietary cloud dependencies.
+exist.io runs entirely on your own hardware or cloud instances with zero proprietary cloud dependencies.
 :::
 
 ## Core capabilities
 
 - **Your repositories:** Own your data, Git packfiles, and SQLite database with zero external vendor lock-in.
 - **Dual Git transports:** Pure-Go Smart-HTTP and native SSH server on port `2222` with zero host daemon requirements.
-- **Git LFS & CAS storage:** RFC-compliant Git Large File Storage v1 Batch API and file locking.
 - **Cryptographic verification:** Real-time OpenSSH SIGSPEC and GPG commit signature audits in the Web UI.
-- **Enterprise Federation:** OIDC & SAML 2.0 Single Sign-On and RFC 7644 SCIM 2.0 user sync.
-- **Agent integrations (MCP):** Embedded Model Context Protocol server exposing 34 specialized tools at `/mcp`.
-- **Infrastructure as Code:** Official Terraform / OpenTofu provider and Kubernetes Helm chart.
+- **Agent integrations (MCP):** Embedded Model Context Protocol server at `/mcp` with a read-only sandbox at `/mcp/readonly`.
 - **Policy & compliance:** Branch and tag rulesets, bypass actor hierarchies, status check enforcement, SSH CAs, and CIDR allowlists.
+
+## Experimental modules (frozen for launch)
+
+These modules are implemented and tested, but frozen for launch and not part of the supported surface:
+
+- **Git LFS v1:** CAS storage and the file-locking protocol (`/info/lfs/locks`).
+- **Enterprise federation:** OIDC and SAML 2.0 SSO plus SCIM 2.0 user sync. The SSO callback fails closed with HTTP 501 in this build.
+- **Infrastructure as Code:** Terraform/OpenTofu provider and Kubernetes Helm chart, provided as source in `deploy/` without support.
 
 ## Watch exist.io in action
 
@@ -38,18 +43,18 @@ Explore the architectural explainer video and hands-on terminal walkthrough:
   <Card title="Pure-Go SSH & Git LFS" href="/how-to/ssh-git-lfs">
     Connect over port 2222 SSH, track large assets, and verify signed commits.
   </Card>
-  <Card title="Enterprise SSO & SCIM" href="/how-to/enterprise-sso-scim">
-    Integrate corporate IdPs via OIDC/SAML and automate user lifecycle provisioning.
+  <Card title="Experimental: SSO & SCIM" href="/how-to/enterprise-sso-scim">
+    Frozen for launch. The SSO callback fails closed in this build.
   </Card>
-  <Card title="Terraform & Helm" href="/how-to/terraform-helm">
-    Automate repository policies and deploy high-availability Kubernetes clusters.
+  <Card title="Experimental: Terraform & Helm" href="/how-to/terraform-helm">
+    Frozen for launch. Provided as source without support.
   </Card>
 </CardGroup>
 
 ## Documentation topics
 
 - **Tutorials:** [Getting started guide](/getting-started) &bull; [Your first agent PR](/tutorials/first-agent)
-- **How-To Guides:** [SSH, Git LFS & Signatures](/how-to/ssh-git-lfs) &bull; [Enterprise SSO & SCIM](/how-to/enterprise-sso-scim) &bull; [Terraform & Helm](/how-to/terraform-helm) &bull; [Connect agents via MCP](/how-to/mcp-setup) &bull; [Configure rulesets & protections](/how-to/rulesets) &bull; [Push with Git Smart-HTTP](/how-to/git-transport)
+- **How-To Guides:** [SSH, Git LFS & Signatures](/how-to/ssh-git-lfs) &bull; [Experimental: SSO & SCIM](/how-to/enterprise-sso-scim) &bull; [Experimental: Terraform & Helm](/how-to/terraform-helm) &bull; [Connect agents via MCP](/how-to/mcp-setup) &bull; [Configure rulesets & protections](/how-to/rulesets) &bull; [Push with Git Smart-HTTP](/how-to/git-transport)
 - **Reference:** [MCP tool catalog](/reference/mcp-tools) &bull; [CLI reference](/reference/cli) &bull; [Configuration reference](/reference/configuration)
 - **Explanation:** [Architecture](/architecture) &bull; [Merge & policy engine](/explanation/merge-engine) &bull; [Development status](/development/status) &bull; [Roadmap](/roadmap)
 

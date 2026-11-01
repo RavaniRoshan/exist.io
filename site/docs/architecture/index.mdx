@@ -14,9 +14,9 @@ flowchart TD
         GitSSH["Git over SSH (:2222)<br/>(OpenSSH / Ed25519)"]
         GitLFS["Git LFS Client<br/>(Batch API & CAS)"]
         Agent["AI Coding Agents<br/>(MCP JSON-RPC Protocol)"]
-        WebUI["Space UI Living Dashboard<br/>(React 19 / Vite / Motion)"]
-        IdP["Corporate IdP (Entra / Okta)<br/>(OIDC, SAML, SCIM 2.0)"]
-        IaC["Terraform & Helm<br/>(Infrastructure as Code)"]
+        WebUI["Web UI<br/>(React 19 / Vite / Motion)"]
+        IdP["Corporate IdP (Entra / Okta)<br/>(experimental: OIDC, SAML, SCIM 2.0)"]
+        IaC["Terraform & Helm<br/>(experimental: Infrastructure as Code)"]
     end
 
     subgraph Service["existd Service Daemon"]
@@ -25,9 +25,9 @@ flowchart TD
         SmartHTTP["Git Smart-HTTP Engine<br/>(Upload-Pack / Receive-Pack)"]
         LFSEngine["Git LFS v1 Batch CAS Engine<br/>(SHA-256 Verification & File Locks)"]
         SigEngine["Commit Signature Engine<br/>(OpenSSH SIGSPEC & GPG RFC 4880)"]
-        MCPServer["MCP JSON-RPC Server<br/>(34 AI Agent Tools at /mcp)"]
-        RESTRouter["REST API Router<br/>(119 Forge Operations at /v1/origin)"]
-        Federation["Federation & SCIM Engine<br/>(/scim/v2/Users, OIDC & SAML SSO)"]
+        MCPServer["MCP JSON-RPC Server<br/>(AI Agent Tools at /mcp)"]
+        RESTRouter["REST API Router<br/>(Origin Forge Operations at /v1/origin)"]
+        Federation["Federation & SCIM Engine<br/>(experimental: /scim/v2/Users, OIDC & SAML SSO)"]
         PolicyEngine["3-Way Merge & Ruleset Engine<br/>(Approvals, Checks, CIDR, SSH CA)"]
     end
 
@@ -80,7 +80,7 @@ All non-Git entities are managed by a SQLite database running in Write-Ahead Log
 - **Grants & Authorization:** Namespace and repository role assignments (`admin`, `write`, `read`).
 - **Pull Requests & Social:** PR metadata, review threads, line-level comments, reactions, and labels.
 - **Checks & Rulesets:** Check suites, check runs, branch/tag protection rulesets, and bypass actor lists.
-- **Enterprise Controls:** Inbound IP allowlists (CIDR blocks), SSH Certificate Authorities, and SSO / SCIM configurations.
+- **Enterprise Controls (experimental):** Inbound IP allowlists (CIDR blocks), SSH Certificate Authorities, and SSO / SCIM configurations.
 
 The database runs via `modernc.org/sqlite`, a pure Go implementation requiring zero cgo compilers.
 
@@ -120,17 +120,17 @@ Mounted under repository endpoints:
 - Evaluates committer public key fingerprints against enrolled developer keys.
 - Surfaces cryptographic verification audit data in the Web UI and REST API.
 
-### Enterprise Federation & SCIM 2.0 Engine
+### Enterprise Federation & SCIM 2.0 Engine (experimental, frozen for launch)
 
 - Implements **RFC 7643 / RFC 7644 SCIM 2.0** at `/scim/v2/Users` for automated user provisioning and offboarding.
-- Single Sign-On (SSO) support for both **OpenID Connect (OIDC)** and **SAML 2.0**.
+- Single Sign-On (SSO) support for both **OpenID Connect (OIDC)** and **SAML 2.0**. The SSO callback fails closed with HTTP 501 in this build.
 - Automatic workspace provisioning upon first login and session cookie lifecycle management.
 
 ### Model Context Protocol (MCP) server
 
 Mounted at `/mcp` (read-write) and `/mcp/readonly`:
 - Implements JSON-RPC 2.0 per the Model Context Protocol specification.
-- Exposes **34 specialized tools** enabling AI coding agents to navigate codebases, inspect diffs, open pull requests, post review comments, and report status check results.
+- Exposes agent tools enabling AI coding agents to navigate codebases, inspect diffs, open pull requests, post review comments, and report status check results.
 
 ### Merge and ruleset policy engine
 
