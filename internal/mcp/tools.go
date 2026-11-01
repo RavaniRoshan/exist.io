@@ -617,6 +617,9 @@ func BuiltinTools() []ToolDef {
 				if err := s.store.SetPullRequestMergeResult(ctx, pr.ID, commitSHA); err != nil {
 					return nil, err
 				}
+				if s.mergeHook != nil {
+					s.mergeHook(ctx, pr)
+				}
 				return s.store.GetPullRequest(ctx, repo.ID, num)
 			},
 		},
@@ -1539,6 +1542,9 @@ func BuiltinTools() []ToolDef {
 				}
 				if err := s.store.SetPullRequestMergeResult(ctx, pr.ID, commitSHA); err != nil {
 					return nil, err
+				}
+				if s.mergeHook != nil {
+					s.mergeHook(ctx, pr)
 				}
 				return s.store.GetPullRequest(ctx, repo.ID, num)
 			},

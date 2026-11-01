@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-git/go-git/v6/plumbing/object"
@@ -57,6 +59,11 @@ func Bootstrap(ctx context.Context, cfg config.Config, email, namespaceSlug stri
 	user, err := application.Store.GetUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap: get user: %w", err)
+	}
+	if cfg.DataDir != ":memory:" {
+		if err := os.MkdirAll(cfg.DataDir, 0o700); err == nil {
+			_ = os.WriteFile(filepath.Join(cfg.DataDir, "bootstrap_admin"), []byte(user.ID), 0o600)
+		}
 	}
 
 	// 2. Create Namespace

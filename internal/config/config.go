@@ -49,6 +49,9 @@ type Config struct {
 	SMTPPassword string
 	SMTPFrom     string
 	SMTPTLS      bool
+
+	TelemetryEnabled  bool
+	TelemetryEndpoint string
 }
 
 // Load reads configuration from environment variables, falling back to safe self-hosted defaults.
@@ -85,6 +88,14 @@ func Load() (Config, error) {
 
 	version := getEnv("EXIST_VERSION", "dev")
 
+	telemetryEnabled := getEnv("EXIST_TELEMETRY_OPT_IN", "") == "1"
+	if !telemetryEnabled {
+		if body, err := os.ReadFile(filepath.Join(dataDir, "telemetry_opt_in")); err == nil { // #nosec G304 -- operator-configured data directory
+			telemetryEnabled = strings.TrimSpace(string(body)) == "1"
+		}
+	}
+	telemetryEndpoint := getEnv("EXIST_TELEMETRY_ENDPOINT", "")
+
 	return Config{
 		Version:        version,
 		ListenAddr:     listenAddr,
@@ -105,6 +116,9 @@ func Load() (Config, error) {
 		SMTPPassword:   smtpPassword,
 		SMTPFrom:       smtpFrom,
 		SMTPTLS:        smtpTLS,
+
+		TelemetryEnabled:  telemetryEnabled,
+		TelemetryEndpoint: telemetryEndpoint,
 	}, nil
 }
 

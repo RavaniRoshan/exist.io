@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -35,6 +36,7 @@ import (
 	"exist.io/internal/replication"
 	"exist.io/internal/sshserver"
 	"exist.io/internal/store"
+	"exist.io/internal/telemetry"
 	"exist.io/internal/webui"
 	"exist.io/pkg/agentlease"
 	"exist.io/pkg/idgen"
@@ -59,6 +61,7 @@ type App struct {
 	AutoMerge     *AutoMergeEngine
 	Notifications *notifications.Worker
 	Mailer        *notifications.Mailer
+	Telemetry     *telemetry.Client
 
 	handler http.Handler
 }
@@ -231,6 +234,17 @@ func Open(cfg config.Config) (*App, error) {
 
 	// Prometheus Metrics exposition
 	mux.Handle("GET /metrics", metrics.DefaultRegistry.Handler())
+
+	mux.HandleFunc("GET /api/v1/admin/activation", func(w http.ResponseWriter, r *http.Request) {
+		record, activated := readActivation(cfg.DataDir)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"activated":       activated,
+			"activated_at":    record.ActivatedAt,
+			"pull_request_id": record.PullRequestID,
+			"actor_user_id":   record.ActorUserID,
+		})
+	})
 
 	// Enterprise Administration API
 	mux.HandleFunc("GET /api/v1/admin/health", func(w http.ResponseWriter, r *http.Request) {
@@ -3651,6 +3665,27 @@ func Open(cfg config.Config) (*App, error) {
 		Mailer:        mailer,
 		handler:       mux,
 	}
+	app.Telemetry = telemetry.New(telemetry.Config{
+		Enabled:  cfg.TelemetryEnabled,
+		Endpoint: cfg.TelemetryEndpoint,
+		Version:  cfg.Version,
+		DataDir:  cfg.DataDir,
+	})
+	mcpServer.SetMergeHook(func(ctx context.Context, pr store.PullRequest) {
+		adminBody, _ := os.ReadFile(filepath.Join(cfg.DataDir, "bootstrap_admin"))
+		adminID := strings.TrimSpace(string(adminBody))
+		record, err := recordActivation(cfg.DataDir, pr, adminID)
+		if err != nil {
+			log.Printf("activation: %v", err)
+			return
+		}
+		if record == nil {
+			return
+		}
+		if err := app.Telemetry.Record(ctx, "activation.first_merge"); err != nil {
+			log.Printf("telemetry: %v", err)
+		}
+	})
 	app.registerMigrateRoutes(mux, db, git)
 	app.registerSuggestionRoutes(mux, db, git)
 	app.registerNotificationRoutes(mux, db)
