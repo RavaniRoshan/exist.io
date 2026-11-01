@@ -1,0 +1,8 @@
+# Link-check exceptions
+#
+# One URL prefix per line, followed by an optional reason.
+# Only add an entry when the remote host is known to reject automated checks
+# while serving the page to humans. Every entry is reviewed at release time.
+#
+# Example:
+# https://example.com/private-page  requires interactive login

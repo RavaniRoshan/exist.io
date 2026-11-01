@@ -34,4 +34,4 @@ This ledger documents every technical and product claim made in the README, docu
 | 17 | **Web UI runs on http://localhost:3000** | `README.md:230` | **Remediated** | Removed `:3000` from endpoint table. Unified single-port `:8080` for Web UI, REST API, Git Smart-HTTP, and MCP. |
 | 18 | **Default SSH bind address is 0.0.0.0:2222** | `internal/config/config.go:38` (`127.0.0.1:2222`) | **Remediated** | Documentation corrected to state safe localhost default (`127.0.0.1:2222`). |
 | 19 | **Litestream sync status active in admin health API** | `internal/app/app.go:137` | **False** | Retained as experimental stub; documented in audit report. |
-| 20 | **Dual site URLs: exist.os vs exist.io** | `README.md`, `site/blume.config.ts` | **Remediated** | All `exist.os` references removed. Unified strictly on `https://ravaniroshan.github.io/exist.io/`. |
+| 20 | **Dual documentation URLs: legacy host vs exist.io** | `README.md`, `site/blume.config.ts` | **Remediated** | All legacy-domain references removed. Unified strictly on `https://ravaniroshan.github.io/exist.io/`. |

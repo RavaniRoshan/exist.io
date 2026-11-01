@@ -112,5 +112,9 @@ jobs:
       - name: Validate documentation links
         run: npm run validate
 
+      - name: Check published links
+        working-directory: .
+        run: ./scripts/check-links.sh
+
       - name: Build documentation site
         run: npm run build

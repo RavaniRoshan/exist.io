@@ -29,7 +29,7 @@ Build a claims ledger (`CLAIMS.md`): every claim in the README, its evidence (a 
 • Tests passed and version badges: they are hardcoded strings. Replace them with CI-driven badges.  
 
 ### F3. README and docs contradictions
-• Two site URLs (exist.os and exist.io): pick one, fix every link, add a link checker to CI.  
+• Two site URLs (a legacy docs host and exist.io): pick one, fix every link, add a link checker to CI.  
 • The quickstart says to open :8080, the endpoint table puts the Web UI on :3000, and the build steps never build the web UI. Embed the built UI in the daemon so one binary serves everything.  
 • The quickstart must be copy-paste correct from a clean machine, and that is tested in CI (Tier 2).  
 
@@ -171,7 +171,7 @@ SAML, SCIM, OIDC, LFS locking, webhook polish, Terraform provider, Helm chart, e
 PHASE 0: AUDIT (docs only, no code changes)
 - Build and test everything. Record what passes, fails, or does not run: go build, go vet, go test with the race detector, web build, docs build.
 - Create CLAIMS.md: a table of every claim in the README, site and docs, with columns claim, evidence (test name or file path), status (verified, partial, unverified, false), and action. Include at minimum: full wire compatibility with Origin, enterprise-ready, 100 percent open source with zero external proprietary dependencies, pure-Go zero cgo, 35 MCP tools, 119 REST operations, Git LFS v1 with locking, OpenSSH and GPG signature verification, merge queue, AST symbol search, capability leases, SAML, OIDC, SCIM, and the test-count and version badges.
-- Find contradictions and dead links: the exist.os versus exist.io URLs, the :8080 versus :3000 web UI port, the missing web build in the quickstart, hardcoded badges.
+- Find contradictions and dead links: the legacy docs host versus exist.io URLs, the :8080 versus :3000 web UI port, the missing web build in the quickstart, hardcoded badges.
 - Map the security surface: every network listener, every auth path, every place a token or lease is created, checked, or revoked. List what is unreviewed.
 - List what in research/ and agent.md is internal and should not ship. Check LICENSE files and dependency licenses.
 - Write AUDIT.md with the top 10 findings ranked by launch risk, each with file and line evidence.
