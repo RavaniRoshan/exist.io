@@ -127,20 +127,19 @@ Open **`http://localhost:8080`** in your browser to view the living web dashboar
 
 ---
 
-## 📊 Verified Comparison Matrix
+## 📊 Verified Capabilities
 
-Only verifiable technical facts are reported below:
+Only facts backed by code and tests at the current commit are reported below:
 
-| Feature / Dimension | **exist.io** | **Cursor Origin** | **GitHub (Enterprise)** | **Forgejo / Gitea** |
-| :--- | :--- | :--- | :--- | :--- |
-| **Self-Hosted** | **Yes** (single binary) | No (cloud only) | Server edition only | **Yes** |
-| **Vendor Neutrality** | **Any agent** (Claude, Codex, Cline, Cursor) | Cursor-only accounts | Any | Any |
-| **MCP Native Server** | **Built-in** (`/mcp` + `/mcp/readonly`) | Proprietary API | Via external wrappers | Via community plugins |
-| **Agent Leases (`refs/heads/agent/*`)** | **Built-in HMAC leases** | Proprietary | Fine-grained PATs | Branch protection only |
-| **Pure-Go SSH Server** | **Yes** (:2222, zero OpenSSH dependency) | N/A | Host OpenSSH daemon | Host OpenSSH / Go SSH |
-| **Zero CGO Compilation** | **Yes** (`modernc.org/sqlite`) | N/A | Closed-source | Requires CGO or SQLite build tags |
-| **Database Architecture** | **SQLite WAL** (zero external DB) | Proprietary cloud DB | MySQL / Cloud SQL | SQLite / Postgres / MySQL |
-| **Commit Signatures** | **OpenSSH SIGSPEC & GPG** | Proprietary | GPG, SSH, S/MIME | GPG, SSH |
+| Capability | Implementation |
+| :--- | :--- |
+| **Self-hosted** | Single pure-Go binary with embedded web UI |
+| **MCP server** | Built-in at `/mcp` and `/mcp/readonly` |
+| **Agent leases** | HMAC capability leases restricted to `refs/heads/agent/*` |
+| **SSH transport** | Pure-Go server on `:2222`, zero host OpenSSH dependency |
+| **Compilation** | `CGO_ENABLED=0` with `modernc.org/sqlite` |
+| **Database** | SQLite WAL, zero external database |
+| **Commit signatures** | OpenSSH SIGSPEC and GPG (RFC 4880) verification |
 
 ---
 
@@ -174,15 +173,15 @@ To ensure realistic expectations, exist.io documents its design constraints expl
 
 ---
 
-## 📊 Proven Performance & Concurrency Benchmarks
+## 📊 Measured Performance & Concurrency Benchmarks
 
-Empirically measured using the autonomous agent benchmark harness ([`bench/main.go`](bench/main.go), detailed report in [`docs/benchmarks.md`](docs/benchmarks.md)):
+Measured on November 1, 2026 with the autonomous agent benchmark harness ([`bench/main.go`](bench/main.go), environment and full report in [`docs/benchmarks.md`](docs/benchmarks.md)):
 
 | Concurrency Tier | Lease Issuance (p50 / p95) | Git Clone (p50 / p95) | Git Push (p50 / p95) | PR Open (p50 / p95) | Full Agent Loop (p50 / p95) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1 Agent (Baseline)** | 5 ms / 5 ms | 61 ms / 62 ms | 1.94 s / 2.04 s | 9 ms / 9 ms | **2.02 s / 2.12 s** |
-| **5 Concurrent Agents** | 10 ms / 50 ms | 72 ms / 83 ms | 2.66 s / 2.90 s | 11 ms / 14 ms | **2.76 s / 2.99 s** |
-| **20 Concurrent Agents** | 63 ms / 527 ms | 161 ms / 404 ms | 8.90 s / 9.18 s | 53 ms / 182 ms | **9.28 s / 9.66 s** |
+| **1 Agent (Baseline)** | 4 ms / 4 ms | 60 ms / 65 ms | 2.852 s / 3.019 s | 8 ms / 8 ms | **2.937 s / 3.097 s** |
+| **5 Concurrent Agents** | 7 ms / 29 ms | 61 ms / 70 ms | 3.951 s / 4.242 s | 9 ms / 12 ms | **4.068 s / 4.322 s** |
+| **20 Concurrent Agents** | 53 ms / 601 ms | 127 ms / 489 ms | 13.581 s / 14.522 s | 34 ms / 122 ms | **13.870 s / 15.381 s** |
 
 Reproduce benchmarks or verify active API conformance anytime:
 ```bash
@@ -197,7 +196,7 @@ exist conformance --endpoint http://localhost:8080 --token <your-api-key>
 
 ## 🧪 Experimental Modules (Scope Freeze)
 
-The following modules build cleanly and pass automated unit tests, but are frozen for the v0.5.0-beta release while focus is locked on the core agent loop:
+The following modules build cleanly and pass automated unit tests, but are frozen for launch while focus is locked on the core agent loop:
 
 - **Git LFS File Locking (`/info/lfs/locks`)**: Implemented in `internal/gitlfs`, frozen.
 - **Enterprise Federation (SCIM 2.0 & OIDC/SAML)**: Implemented in `internal/auth`, frozen for external security review.
@@ -208,13 +207,13 @@ The following modules build cleanly and pass automated unit tests, but are froze
 
 ## 🧪 Verification & Automated Testing
 
-Every pull request and release is validated by automated CI:
+Every pull request and release is validated by automated CI. Capability counts are generated from source in [`docs/generated/capability_counts.md`](docs/generated/capability_counts.md).
 
 ```bash
 # Run all Go tests with race detection
 go test -v -race ./...
 
-# Run frontend Vitest automated test suite (37 suites, 137 tests)
+# Run frontend Vitest automated test suite
 cd web && npm test
 
 # Verify production frontend build

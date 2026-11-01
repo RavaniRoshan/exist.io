@@ -19,16 +19,17 @@ All components below are backed by automated unit, contract, and integration tes
 - Full support for `git clone`, `git fetch`, and `git push`.
 - Integrated token authentication and namespace/repository permission checks.
 
-### 3. REST API surface (119 operations)
-- **100% coverage** of the 119 Origin REST API operations.
+### 3. REST API surface
+- Origin-compatible REST routes mounted under `/v1/origin`.
+- Conformance is checked with `exist conformance` against a running daemon.
 - Full CRUD for namespaces, repositories, branches, commits, trees, blobs, diffs, and tags.
 - Pull request lifecycle: creation, updates, state transitions (`open`, `closed`, `merged`), auto-merge queues.
 - Collaboration features: line-level review threads, general comments, emoji reactions, and label management.
 - Dynamic OpenAPI 3.1 specification publication at `/v1/origin/openapi.yaml`.
 
 ### 4. Model Context Protocol (MCP) server
-- First-class JSON-RPC 2.0 MCP server mounted at `/mcp`.
-- **34 specialized agent tools** covering tree traversal, blob reads, branch management, pull request creation, inline commenting, and status checks.
+- First-class JSON-RPC 2.0 MCP server mounted at `/mcp` and `/mcp/readonly`.
+- Agent tools covering tree traversal, blob reads, branch management, pull request creation, inline commenting, and status checks.
 - Read-only sandbox mount at `/mcp/readonly` to safely execute unvetted agents.
 
 ### 5. Policy, merge engine & security
@@ -45,8 +46,8 @@ All components below are backed by automated unit, contract, and integration tes
 - Subcommands: `auth`, `repo`, `pr`, `app`, and `api`.
 - Supports positional argument reordering and agent-friendly output modes.
 
-### 7. Official Infrastructure as Code (IaC)
-- Production-ready Terraform/OpenTofu provider (`deploy/terraform-provider-exist`) and Helm chart (`deploy/helm/exist-enterprise`).
+### 7. Official Infrastructure as Code (IaC) — experimental, frozen for launch
+- Terraform/OpenTofu provider (`deploy/terraform-provider-exist`) and Helm chart (`deploy/helm/exist-enterprise`), provided as source without support.
 
 ### 8. Embedded Pure-Go SSH Server (:2222) & Git LFS CAS Engine
 - Standalone zero-cgo SSH server listening on port 2222 with deploy key isolation and repository UUID verification.
@@ -55,9 +56,9 @@ All components below are backed by automated unit, contract, and integration tes
 ### 9. Cryptographic Commit Signature Verification
 - Real-time OpenSSH SIGSPEC and GPG (RFC 4880) commit signature parsing and public key fingerprint matching.
 
-### 10. SCIM 2.0 User Lifecycle & Enterprise SSO
+### 10. SCIM 2.0 User Lifecycle & Enterprise SSO — experimental, frozen for launch
 - RFC 7644 SCIM user sync at `/scim/v2/Users` with automated provisioning and immediate deprovisioning.
-- OpenID Connect (OIDC) and SAML 2.0 Single Sign-On federation.
+- OpenID Connect (OIDC) and SAML 2.0 Single Sign-On federation. The SSO callback fails closed with HTTP 501 in this build.
 
 ### 11. Pixel-Accurate GitHub Primer Web UI
 - Built on Vite, React 19, and Tailwind CSS with 6px squircle radius and OKLCH color token architecture.

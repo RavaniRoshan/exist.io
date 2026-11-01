@@ -13,7 +13,7 @@
 Traditional Git platforms were built 15+ years ago for human browser interaction. exist.io bridges this generational shift by treating autonomous coding agents as first-class citizens alongside human developers:
 - **Dual Transports:** Pure-Go Smart-HTTP (`:8080`) and standalone embedded pure-Go SSH server (`:2222`, zero cgo, zero host OpenSSH dependency).
 - **Git LFS v1 CAS Engine:** Content-Addressable Storage with SHA-256 validation, streaming chunked transfer, and binary file locking protocol (`/info/lfs/locks`).
-- **AI Agent Native Ecosystem:** Native Model Context Protocol (MCP) server at `/mcp` (34 tools) and sandboxed `/mcp/readonly`, ephemeral HMAC-SHA256 capability leases (`pkg/agentlease`) with ref-prefix isolation (`refs/heads/agent/*`), autonomous PR review agent (`internal/agentreviewer`), and pure-Go semantic AST symbol search (`internal/symbolsearch`).
+- **AI Agent Native Ecosystem:** Native Model Context Protocol (MCP) server at `/mcp` (full tool set) and sandboxed `/mcp/readonly`, ephemeral HMAC-SHA256 capability leases (`pkg/agentlease`) with ref-prefix isolation (`refs/heads/agent/*`), autonomous PR review agent (`internal/agentreviewer`), and pure-Go semantic AST symbol search (`internal/symbolsearch`).
 - **Cryptographic Verification:** Real-time OpenSSH SIGSPEC and GPG (RFC 4880) commit signature parsing and fingerprint matching.
 - **Enterprise Federation & IaC:** SCIM 2.0 user lifecycle sync (`/scim/v2/Users`), OIDC & SAML 2.0 Single Sign-On, official Terraform/OpenTofu provider, and production Kubernetes Helm chart.
 - **GitHub Primer UI Parity:** Pixel-accurate GitHub Primer design system with 6px squircle radius, 1px borders, custom OKLCH tokens, authentic empty states, and zero mock data in production.
@@ -77,7 +77,7 @@ exist.io/
 │   ├── gitlfs/              # Git LFS v1 Batch & CAS engine with SHA-256 chunk storage
 │   ├── gitstore/            # Bare repository manager using go-git/v6 & hooks injector
 │   ├── gittransport/        # Smart-HTTP Git protocol handler (upload-pack, receive-pack)
-│   ├── mcp/                 # Model Context Protocol (MCP) JSON-RPC 2.0 server (34 tools)
+│   ├── mcp/                 # Model Context Protocol (MCP) JSON-RPC 2.0 server (full tool set)
 │   ├── metrics/             # Prometheus exposition & cluster telemetry registry
 │   ├── security/            # Pre-receive hook, secret pattern scanner, and branch protection
 │   ├── sshserver/           # Standalone pure-Go SSH server (:2222) for git clone & push
@@ -133,7 +133,7 @@ exist.io/
 ### 4.4 Model Context Protocol (MCP) (`internal/mcp/`)
 - Standard JSON-RPC 2.0 endpoint at `/mcp` for agent pair-programming.
 - Read-only sandbox at `/mcp/readonly` for low-privilege agent exploration.
-- 34 tools available for file reading, semantic symbol search, commit inspection, PR reviews, and check executions.
+- Agent tools available for file reading, semantic symbol search, commit inspection, PR reviews, and check executions.
 
 ### 4.5 Ephemeral Agent Leases (`pkg/agentlease/`)
 - Short-lived capability tokens issued to autonomous agents.
@@ -162,7 +162,7 @@ go build -o bin/existd ./cmd/existd
 # Navigate to web directory
 cd web
 
-# Run full Vitest automated test suite (37 suites, 137 tests)
+# Run full Vitest automated test suite (counts generated in docs/generated/capability_counts.md)
 npm test
 
 # Run specific test suite

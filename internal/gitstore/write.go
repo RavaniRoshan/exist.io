@@ -333,6 +333,7 @@ func (s *Store) ListMatchingRefs(namespaceSlug, repoName, prefix string) ([]RefI
 		}
 		return nil
 	})
+	sort.Slice(out, func(i, j int) bool { return out[i].Ref < out[j].Ref })
 	return out, err
 }
 

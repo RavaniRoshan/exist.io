@@ -12,7 +12,8 @@ RUN npm run build
 # ------------------------------------------------------------------------------
 # Stage 2: Build exist.io Enterprise Daemon and CLI
 # ------------------------------------------------------------------------------
-FROM golang:1.24-alpine AS go-builder
+FROM golang:1.26-alpine AS go-builder
+ARG VERSION=v0.6.0-beta
 WORKDIR /src
 RUN apk add --no-cache git
 
@@ -20,8 +21,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=v0.2.0-enterprise" -o /bin/existd ./cmd/existd && \
-    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=v0.2.0-enterprise" -o /bin/exist ./cmd/exist
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /bin/existd ./cmd/existd && \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /bin/exist ./cmd/exist
 
 # ------------------------------------------------------------------------------
 # Stage 3: Hardened, Non-Root Enterprise Production Container

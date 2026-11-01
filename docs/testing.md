@@ -104,7 +104,7 @@ Per Project Rule 2 (*No false positives*), every security gate and policy check 
 
 ```bash
 # 1. Run all Go tests with race detection
-export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+# Ensure your Go toolchain is on PATH.
 go test -race ./...
 
 # 2. Run end-to-end agent loop integration test

@@ -16,7 +16,7 @@ This guide shows you how to connect autonomous AI coding agents to an exist.io i
 exist.io provides two distinct MCP endpoints:
 
 1. **Read-Write Endpoint (`/mcp`):**
-   Exposes all 34 MCP tools. Agents can read files, inspect diffs, create branches, open pull requests, comment on reviews, and merge changes.
+   Exposes the full MCP tool set. Agents can read files, inspect diffs, create branches, open pull requests, comment on reviews, and merge changes.
 2. **Read-Only Sandbox (`/mcp/readonly`):**
    Restricts execution to 16 read-only tools. Any write action (such as `pull_request_create` or `thread_comment`) is rejected at the protocol layer with an access-denied error. Use this for unvetted models or security-sensitive audit workflows.
 

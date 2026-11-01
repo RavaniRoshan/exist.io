@@ -20,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: go.mod
           cache: true
 
       - name: Set up Node.js
@@ -50,6 +50,11 @@ jobs:
 
       - name: Run go vet
         run: go vet ./...
+
+      - name: Verify generated capability counts
+        run: |
+          go run ./internal/tools/gencounts
+          git diff --exit-code docs/generated/capability_counts.md
 
       - name: Run staticcheck
         run: staticcheck ./... || true
@@ -111,6 +116,10 @@ jobs:
 
       - name: Validate documentation links
         run: npm run validate
+
+      - name: Check published links
+        working-directory: .
+        run: ./scripts/check-links.sh
 
       - name: Build documentation site
         run: npm run build

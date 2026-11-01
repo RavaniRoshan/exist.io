@@ -27,14 +27,14 @@ exist.io has progressed from an early design concept to a launch-ready, enterpri
 - Real-time cryptographic validation against enrolled committer public keys.
 - Interactive signature verification inspection drawer in the web dashboard.
 
-### 5. Enterprise Identity Federation & SCIM 2.0 (Complete)
+### 5. Enterprise Identity Federation & SCIM 2.0 (Experimental — frozen for launch)
 - RFC 7643 / RFC 7644 SCIM 2.0 user lifecycle synchronization endpoint at `/scim/v2/Users`.
-- Enterprise Single Sign-On (SSO) for OpenID Connect (OIDC) and SAML 2.0 identity providers.
+- Enterprise Single Sign-On (SSO) for OpenID Connect (OIDC) and SAML 2.0 identity providers. The SSO callback fails closed with HTTP 501 in this build.
 - Automated provisioning, role assignment, and immediate credential revocation upon employee departure.
 
-### 6. Official Infrastructure as Code (IaC) (Complete)
+### 6. Official Infrastructure as Code (IaC) (Experimental — frozen for launch)
 - Dedicated Terraform / OpenTofu provider in `deploy/terraform-provider-exist` managing namespaces, repos, rulesets, CIDRs, and SSH CAs.
-- Production Kubernetes Helm chart in `deploy/helm/exist-enterprise` with dual-port service, PVC persistence, cert-manager TLS, and Prometheus ServiceMonitor.
+- Kubernetes Helm chart in `deploy/helm/exist-enterprise` with dual-port service, PVC persistence, cert-manager TLS, and Prometheus ServiceMonitor.
 
 ### 7. Pull Requests, Reviews & 3-Way Merge Engine (Complete)
 - Native 3-way merge and squash merge logic with conflict detection.
@@ -42,10 +42,10 @@ exist.io has progressed from an early design concept to a launch-ready, enterpri
 - Line-level review threads, general comments, emoji reactions, and label assignment.
 
 ### 8. Model Context Protocol (MCP) Server (Complete)
-- Native Model Context Protocol (MCP) server exposing 35 specialized tools over JSON-RPC 2.0 at `/mcp` and sandboxed `/mcp/readonly`.
+- Native Model Context Protocol (MCP) server exposed at `/mcp` with a sandboxed read-only endpoint at `/mcp/readonly`.
 - Seamless integration with Claude Code, Cursor, Cline, and autonomous agent loops.
 
-### 9. Space UI Living Dashboard & Environment Separation (Complete)
+### 9. Web UI & Environment Separation (Complete)
 - High-craft, craft-first frontend dashboard with zero-slop design.
 - Strict isolation between **Production Mode** (live backend APIs with authentic empty states) and **Sandbox Demo Mode** (isolated fixtures).
 - Live telemetry dashboard answering operator questions: cluster health, SQLite WAL sync, active Git streams, and Prometheus targets.

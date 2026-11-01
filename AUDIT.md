@@ -98,8 +98,8 @@ Every toolchain and test suite was executed against the clean repository:
 
 ## 3. Discrepancies, Contradictions & Dead Links Audit
 
-1. **Brand & URL Split (`exist.os` vs `exist.io`)**:
-   - `README.md:10`, `README.md:25`, and `README.md:39` link to `https://ravaniroshan.github.io/exist.os/`.
+1. **Brand & URL Split (legacy docs domain vs exist.io)**:
+   - `README.md:10`, `README.md:25`, and `README.md:39` linked to the legacy documentation domain.
    - `README.md:11` links to `https://ravaniroshan.github.io/exist.io/`.
    - `site/blume.config.ts` defines base as `/exist.io`.
    - Action: Unify all references to `https://ravaniroshan.github.io/exist.io/`.

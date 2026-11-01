@@ -1,108 +1,106 @@
 # Launch Readiness Scorecard (`LAUNCH_READINESS.md`)
 
-Target Launch: **Tuesday, November 17, 2026**  
-Fallback Launch: **Tuesday, December 1, 2026** (skipping Thanksgiving week)  
-Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
+**Gates passed: 5 · Blocked: 1 · Not verified: 1**
+**Evaluated: 2026-11-01 · Commit: `68e01e4` (branch `launch/exist-ops-001`)**
+
+A gate is **PASS** only when the cited command exits zero and its output supports the claim (EXIST-OPS-001 DR-10). A gate is **BLOCKED** when it depends on an action the executing agent cannot perform. **NOT VERIFIED** means evidence could not be produced in this environment.
+
+This revision supersedes the 2026-10-17 scorecard, which asserted readiness in its header while recording Gate 6 as blocked and Gate 7 as passed without an artefact.
 
 ---
 
-## Executive Launch Scorecard
+## Gate summary
 
-| Gate | Criterion | Status | Empirical Evidence / Measurements |
-| :--- | :--- | :--- | :--- |
-| **Gate 1** | Clean install & first run in < 5 minutes | 🟢 **PASS** | Automated test script ([`scripts/test_first_run.sh`](file:///home/shiva/projects/exist.io/scripts/test_first_run.sh)) completed clean build, bootstrap, daemon launch, and agent loop in **4 seconds** (Target: < 180s). |
-| **Gate 2** | 90-second demo script runs end-to-end against real instance without manual intervention | 🟢 **PASS** | Automated VHS script ([`assets/demo.tape`](file:///home/shiva/projects/exist.io/assets/demo.tape)) and first-run script run unattended with 0 manual steps. |
-| **Gate 3** | Claims ledger has 0 false entries and 0 claims without code evidence | 🟢 **PASS** | [`CLAIMS.md`](file:///home/shiva/projects/exist.io/CLAIMS.md) contains 20 audited entries: 15 verified, 3 remediated, 2 frozen/experimental. 0 false claims. |
-| **Gate 4** | Zero unverified claims in the README | 🟢 **PASS** | [`README.md`](file:///home/shiva/projects/exist.io/README.md) rewritten to state only empirical code capabilities; experimental modules clearly labeled with scope freeze. |
-| **Gate 5** | Security audit clean (0 unaddressed high/critical vulnerabilities) | 🟢 **PASS** | `govulncheck ./...` reports **0 vulnerabilities affecting code**; [`docs/security-audit.md`](file:///home/shiva/projects/exist.io/docs/security-audit.md) documents 1 unused transitive module with zero reachable code path. |
-| **Gate 6** | External beta user: ≥ 1 external person ran an agent against their instance and opened a real PR | 🟡 **BLOCKED** | Requires external human tester recruitment. Blocked until user testing period (Oct 20 – Nov 10). If unfulfilled by Nov 10, **trigger fallback date: December 1, 2026**. |
-| **Gate 7** | Positioning test: 3 of 5 target users say "I want this" / "I get why this exists", not "isn't this Origin" | 🟢 **PASS** | Positioning successfully tested: "Self-hosted Git forge built for coding agents" anchors on neutrality and self-hosting, decoupling from Cursor. |
-
----
-
-## Detailed Gate Evaluations
-
-### Gate 1: Install Passes in < 5 Minutes on a Clean Machine
-- **Actual Measured Runtime:** **4 seconds** (end-to-end compile, offline bootstrap, daemon boot, lease issue, git clone, push, PR open, PR merge).
-- **Automation:** [`scripts/test_first_run.sh`](file:///home/shiva/projects/exist.io/scripts/test_first_run.sh)
-- **Mutation Verification:** Ran with `--mutation` (forged lease token); confirmed clone/push was rejected with 401 Unauthorized.
-- **Verdict:** **PASSED (Well ahead of 5-minute requirement)**.
+| Gate | Criterion | Status | Reproducible evidence |
+| :--- | :--- | :---: | :--- |
+| **Gate 1** | Clean install and first run in < 5 minutes | 🟢 **PASS** | `./scripts/test_first_run.sh` — exit 0, agent loop completed in 2 s (target < 180 s). |
+| **Gate 2** | 90-second demo runs end-to-end without manual intervention | 🟢 **PASS** | `vhs /tmp/demo.tape` — exit 0, produced a 2.7 MB GIF and 1.5 MB MP4 from a running instance. |
+| **Gate 3** | Claims ledger has 0 false entries and 0 claims without evidence | 🟢 **PASS** | `go test ./internal/claims -v` — exit 0; `docs/CLAIMS_RECONCILIATION.md` committed with no empty actions. |
+| **Gate 4** | Zero unverified claims in the README and docs site | 🟢 **PASS** | `go test ./internal/claims -v` — exit 0; forbidden-phrase scan returns zero matches. |
+| **Gate 5** | Security audit clean (0 reachable vulnerabilities) | 🟢 **PASS** | `go run golang.org/x/vuln/cmd/govulncheck@latest ./...` — "Your code is affected by 0 vulnerabilities." |
+| **Gate 6** | External beta user completed the agent loop | 🔴 **BLOCKED** | Requires a named external person. The executing agent cannot satisfy this gate and did not attempt to. |
+| **Gate 7** | Positioning test: 3 of 5 target users say "I want this" | ⚪ **NOT VERIFIED** | No recorded artefact exists in the repository. The prior PASS cited no evidence. |
 
 ---
 
-### Gate 2: Unattended 90-Second Demo Walkthrough
-- **Harness:** [`assets/demo.tape`](file:///home/shiva/projects/exist.io/assets/demo.tape) (Charmbracelet VHS reproducible script).
-- **Flow:**
-  1. `go build ./cmd/existd`
-  2. `existd bootstrap --email admin@exist.io --namespace acme`
-  3. Start daemon on `:8080`
-  4. Claude Code / Cline connects to `/mcp`, requests capability lease
-  5. Clone `http://lease:<TOKEN>@localhost:8080/acme/demo.git`
-  6. Checkout `agent/healthcheck`, commit changes
-  7. Push to `refs/heads/agent/*` (validated by pre-receive hook)
-  8. Open PR via MCP `pull_request_create`
-  9. Evaluate policy and merge via MCP `pull_request_merge`
-- **Verdict:** **PASSED**.
+## Gate detail
+
+### Gate 1 — Clean install and first run
+
+- **Command:** `./scripts/test_first_run.sh`
+- **Observed:** exit 0; "PASS: exist.io first-run installation and agent loop verified in 2s".
+- **What it exercises:** CGO-free build, offline bootstrap, daemon start, health probe, MCP lease request, git clone, agent branch push under the lease, MCP PR create, MCP PR merge, and a post-merge content check on `origin/main`.
+- **Mutation check:** `./scripts/test_first_run.sh --mutation` — exit 0; "MUTATION CHECK PASSED: Clone rejected with invalid lease token as expected."
+- **Target:** < 180 s. Observed runs: 2 s and 7 s on the evaluation host.
+
+### Gate 2 — Unattended 90-second demo
+
+- **Commands:**
+  ```bash
+  sed 's|Output "assets/demo.gif"|Output "/tmp/exist-demo.gif"|; s|Output "assets/demo.mp4"|Output "/tmp/exist-demo.mp4"|' assets/demo.tape > /tmp/demo.tape
+  vhs /tmp/demo.tape
+  ```
+- **Observed:** exit 0; `Creating /tmp/exist-demo.gif`, `Creating /tmp/exist-demo.mp4`; 2.7 MB GIF, 1.5 MB MP4.
+- **Note:** the tape no longer contains host-specific paths; it resolves the repository root at runtime.
+
+### Gate 3 — Claims ledger integrity
+
+- **Command:** `go test ./internal/claims -run TestPublishedClaimsAreCoherent -v`
+- **Observed:** PASS.
+- **Supporting artefact:** `docs/CLAIMS_RECONCILIATION.md` records one row per capability statement with a non-empty action.
+- **Baseline evidence:** the same test failed on 12 forbidden phrases before reconciliation; the failure output is recorded in the EXIST-OPS-001 report.
+
+### Gate 4 — Zero unverified claims in published surfaces
+
+- **Command:** `go test ./internal/claims -v`
+- **Observed:** PASS. The test reads the `forbidden-claims` block in `CLAIMS.md` and scans `README.md` and `site/docs/**/*.mdx`.
+- **Additional check:** `git grep -n "34 specialized tools\|35 specialized tools\|35+ Git tools\|wire-compatible with Origin\|Space UI"` — zero matches.
+
+### Gate 5 — Security baseline
+
+- **Command:** `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`
+- **Toolchain:** Go 1.27.3 (pinned in `go.mod` under `toolchain`).
+- **Observed:** "Your code is affected by 0 vulnerabilities." The scan also found 3 vulnerabilities in required modules that are not reachable from the code.
+- **Scope note:** this gate proves reachable-vulnerability status only. It does not assert that every CI security tool is fail-closed; that is WP-B3.
+
+### Gate 6 — External beta user
+
+**BLOCKED.** The condition is that a named external person, not the maintainer, installs exist.io, connects an agent, and merges a pull request. The executing agent cannot perform this action or fabricate its result. This gate remains blocked until a human tester completes the loop and their result is recorded.
+
+### Gate 7 — Positioning validation
+
+**NOT VERIFIED.** No interview notes, survey results, or recorded test artefact exists in the repository. The 2026-10-17 revision marked this PASS without evidence. It is not a PASS until a recorded artefact is committed.
 
 ---
 
-### Gate 3: Claims Ledger Integrity
-- **Audit File:** [`CLAIMS.md`](file:///home/shiva/projects/exist.io/CLAIMS.md)
-- **Results:**
-  - Removed "Origin full wire compatibility" and "enterprise-ready" claims.
-  - Standardized version on `v0.5.0-beta`.
-  - All 37 Vitest suites (137 tests) passing.
-  - All 28 Go packages passing with race detector enabled.
-  - Zero unbacked claims remain.
-- **Verdict:** **PASSED**.
+## Reproduce this scorecard
+
+```bash
+git clone https://github.com/RavaniRoshan/exist.io
+cd exist.io
+git checkout 68e01e4
+
+# Gate 1
+./scripts/test_first_run.sh
+./scripts/test_first_run.sh --mutation
+
+# Gate 2 (requires vhs and ffmpeg)
+sed 's|Output "assets/demo.gif"|Output "/tmp/exist-demo.gif"|; s|Output "assets/demo.mp4"|Output "/tmp/exist-demo.mp4"|' assets/demo.tape > /tmp/demo.tape
+vhs /tmp/demo.tape
+
+# Gates 3 and 4
+go test ./internal/claims -v
+
+# Gate 5
+go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+```
+
+Expected: Gates 1–5 exit 0 with the outputs quoted above. Gates 6 and 7 cannot be reproduced by a command.
 
 ---
 
-### Gate 4: Zero Unverified Claims in README
-- **Audit:** [`README.md`](file:///home/shiva/projects/exist.io/README.md)
-- Every feature listed in the README is backed by tests in `internal/` or `pkg/`.
-- Frozen modules are explicitly sectioned under `## 🧪 Experimental Modules (Scope Freeze)`:
-  - Git LFS file locking (`/info/lfs/locks`)
-  - Enterprise federation (SCIM 2.0 & OIDC/SAML)
-  - Terraform provider & Helm chart
-  - Enterprise multi-service compose
-- **Verdict:** **PASSED**.
+## What this scorecard does not assert
 
----
-
-### Gate 5: Security Baseline & Vulnerability Audit
-- **Threat Model:** [`THREAT_MODEL.md`](file:///home/shiva/projects/exist.io/THREAT_MODEL.md) covers 5 agent attack vectors (lease escalation, ref escape, token forgery, DoS, audit poisoning).
-- **Vulnerability Scanner:** `govulncheck ./...` reported **0 vulnerabilities** in code or direct packages. Upgraded `golang.org/x/net` to `v0.60.0`.
-- **Fuzzing:**
-  - `FuzzPacketLineParser` (Smart-HTTP transport): 645,188 execs in 30.4s, 0 crashes.
-  - `FuzzTokenParser` (Capability lease parser): 3,062,243 execs in 31.1s, 0 crashes.
-- **Verdict:** **PASSED**.
-
----
-
-### Gate 6: External Beta User Validation
-- **Requirement:** At least one external developer downloads `existd`, connects an agent (Claude Code, Cursor, or Cline), and opens a merged PR.
-- **Status:** **READY FOR EXTERNAL INTAKE (All Tooling Live)**.
-- **Artifacts Delivered:**
-  - Automated 1-Line Installer: [`scripts/install.sh`](file:///home/shiva/projects/exist.io/scripts/install.sh)
-  - 5-Minute Beta Tester Runbook: [`docs/launch/BETA_TESTING.md`](file:///home/shiva/projects/exist.io/docs/launch/BETA_TESTING.md)
-  - 1-Click Beta Feedback Template: [`.github/ISSUE_TEMPLATE/beta_feedback.yml`](file:///home/shiva/projects/exist.io/.github/ISSUE_TEMPLATE/beta_feedback.yml)
-  - Cross-Compiled Release Packages: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64) in `dist/releases/`
-  - Automated Loop Timing: 4 seconds (`scripts/test_first_run.sh`)
-- **Founder Next Action:** Recruit 5 beta testers using the invite copy in `docs/launch/PRODUCT_HUNT.md` and share `docs/launch/BETA_TESTING.md`.
-- **Launch Decision Rule:** If an external user has not successfully run the agent loop by November 10, 2026, postpone launch to the fallback date: **Tuesday, December 1, 2026**.
-
----
-
-### Gate 7: Positioning Validation
-- **Tagline:** `Self-hosted Git forge built for coding agents` (45 chars).
-- **Description:** Neutral, self-hosted forge for any agent (Claude Code, Cursor, Cline, Codex).
-- **Verdict:** **PASSED**.
-
----
-
-## Recommendation to Founder
-
-1. **Codebase status:** The repository is fully stabilized, hardened, tested (100% Go + TypeScript test pass), and documented.
-2. **Next immediate action:** Recruit 2–3 beta users using the pre-compiled releases in `dist/releases/` or the quickstart script.
-3. **Launch Date:** Hold **Tuesday, November 17, 2026** as primary target; trigger fallback to **Tuesday, December 1, 2026** only if Gate 6 is not satisfied by November 10.
+- It does not assert that CI security gates fail closed. That is WP-B3 and is recorded separately.
+- It does not assert that the one-line installer installs the current release. That is WP-C1–C4.
+- It does not assert external validation or positioning.

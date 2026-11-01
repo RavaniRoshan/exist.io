@@ -2,6 +2,8 @@ module exist.io
 
 go 1.26.0
 
+toolchain go1.27.3
+
 require (
 	github.com/go-git/go-git/v6 v6.0.0-beta.1
 	github.com/oklog/ulid v1.3.1
