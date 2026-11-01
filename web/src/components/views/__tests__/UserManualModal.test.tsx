@@ -29,7 +29,7 @@ describe('UserManualModal Component', () => {
     fireEvent.click(agentsTab)
     expect(screen.getByText('Model Context Protocol (MCP) Integration')).toBeInTheDocument()
     expect(screen.getByText('Claude Code Configuration')).toBeInTheDocument()
-    expect(screen.getByText('Key Agent Capabilities (35 Tools)')).toBeInTheDocument()
+    expect(screen.getByText('Key Agent Capabilities')).toBeInTheDocument()
 
     // Security & Signing tab
     const secTab = screen.getByRole('tab', { name: /rulesets & signing/i })

@@ -545,7 +545,7 @@ export const AgentConsoleView: React.FC = () => {
       {activeTab === 'catalog' && (
         <Box>
           <BoxHeader className="bg-secondary/35 py-2.5">
-            <span className="text-xs font-semibold text-foreground">Model Context Protocol Tools (35 Tools)</span>
+            <span className="text-xs font-semibold text-foreground">Model Context Protocol Tools</span>
           </BoxHeader>
 
           <BoxBody className="p-0">

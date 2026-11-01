@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'prs', label: 'Pull requests', count: livePrCount, icon: <GitPullRequest className="w-4 h-4" /> },
     { id: 'commits', label: 'Commits', icon: <GitCommit className="w-4 h-4" /> },
     { id: 'releases', label: 'Releases', count: liveReleaseCount, icon: <Tag className="w-4 h-4" /> },
-    { id: 'agents', label: 'Agent Console', count: '35', icon: <Bot className="w-4 h-4" /> },
+    { id: 'agents', label: 'Agent Console', icon: <Bot className="w-4 h-4" /> },
     { id: 'rulesets', label: 'Rulesets & Security', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
@@ -247,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="35 Model Context Protocol tools active"
               >
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span>MCP: 35 tools</span>
+                <span>MCP</span>
               </button>
 
               {/* Tour and User Manual Buttons */}
