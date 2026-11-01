@@ -1,0 +1,77 @@
+/* Forge motion language: feedback, not decoration. */
+
+@keyframes forge-overlay-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes forge-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes forge-signal-pulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes forge-sweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@layer utilities {
+  .motion-enter {
+    animation: forge-overlay-in var(--dur-2) var(--ease-out) both;
+  }
+
+  .motion-exit {
+    animation: forge-overlay-out var(--dur-1) var(--ease-in) both;
+  }
+
+  .motion-pulse {
+    animation: forge-signal-pulse 2.4s var(--ease-out) infinite;
+  }
+
+  .motion-sweep {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklch, var(--signal) 24%, transparent),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: forge-sweep 2.4s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-enter,
+  .motion-exit {
+    animation: none !important;
+  }
+  .motion-pulse,
+  .motion-sweep {
+    animation: none !important;
+  }
+}
