@@ -10,11 +10,11 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 
 | Gate | Criterion | Status | Empirical Evidence / Measurements |
 | :--- | :--- | :--- | :--- |
-| **Gate 1** | Clean install & first run in < 5 minutes | 🟢 **PASS** | Automated test script ([`scripts/test_first_run.sh`](file:///home/shiva/projects/exist.io/scripts/test_first_run.sh)) completed clean build, bootstrap, daemon launch, and agent loop in **4 seconds** (Target: < 180s). |
-| **Gate 2** | 90-second demo script runs end-to-end against real instance without manual intervention | 🟢 **PASS** | Automated VHS script ([`assets/demo.tape`](file:///home/shiva/projects/exist.io/assets/demo.tape)) and first-run script run unattended with 0 manual steps. |
-| **Gate 3** | Claims ledger has 0 false entries and 0 claims without code evidence | 🟢 **PASS** | [`CLAIMS.md`](file:///home/shiva/projects/exist.io/CLAIMS.md) contains 20 audited entries: 15 verified, 3 remediated, 2 frozen/experimental. 0 false claims. |
-| **Gate 4** | Zero unverified claims in the README | 🟢 **PASS** | [`README.md`](file:///home/shiva/projects/exist.io/README.md) rewritten to state only empirical code capabilities; experimental modules clearly labeled with scope freeze. |
-| **Gate 5** | Security audit clean (0 unaddressed high/critical vulnerabilities) | 🟢 **PASS** | `govulncheck ./...` reports **0 vulnerabilities affecting code**; [`docs/security-audit.md`](file:///home/shiva/projects/exist.io/docs/security-audit.md) documents 1 unused transitive module with zero reachable code path. |
+| **Gate 1** | Clean install & first run in < 5 minutes | 🟢 **PASS** | Automated test script ([`scripts/test_first_run.sh`](scripts/test_first_run.sh)) completed clean build, bootstrap, daemon launch, and agent loop in **4 seconds** (Target: < 180s). |
+| **Gate 2** | 90-second demo script runs end-to-end against real instance without manual intervention | 🟢 **PASS** | Automated VHS script ([`assets/demo.tape`](assets/demo.tape)) and first-run script run unattended with 0 manual steps. |
+| **Gate 3** | Claims ledger has 0 false entries and 0 claims without code evidence | 🟢 **PASS** | [`CLAIMS.md`](CLAIMS.md) contains 20 audited entries: 15 verified, 3 remediated, 2 frozen/experimental. 0 false claims. |
+| **Gate 4** | Zero unverified claims in the README | 🟢 **PASS** | [`README.md`](README.md) rewritten to state only empirical code capabilities; experimental modules clearly labeled with scope freeze. |
+| **Gate 5** | Security audit clean (0 unaddressed high/critical vulnerabilities) | 🟢 **PASS** | `govulncheck ./...` reports **0 vulnerabilities affecting code**; [`docs/security-audit.md`](docs/security-audit.md) documents 1 unused transitive module with zero reachable code path. |
 | **Gate 6** | External beta user: ≥ 1 external person ran an agent against their instance and opened a real PR | 🟡 **BLOCKED** | Requires external human tester recruitment. Blocked until user testing period (Oct 20 – Nov 10). If unfulfilled by Nov 10, **trigger fallback date: December 1, 2026**. |
 | **Gate 7** | Positioning test: 3 of 5 target users say "I want this" / "I get why this exists", not "isn't this Origin" | 🟢 **PASS** | Positioning successfully tested: "Self-hosted Git forge built for coding agents" anchors on neutrality and self-hosting, decoupling from Cursor. |
 
@@ -24,14 +24,14 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 
 ### Gate 1: Install Passes in < 5 Minutes on a Clean Machine
 - **Actual Measured Runtime:** **4 seconds** (end-to-end compile, offline bootstrap, daemon boot, lease issue, git clone, push, PR open, PR merge).
-- **Automation:** [`scripts/test_first_run.sh`](file:///home/shiva/projects/exist.io/scripts/test_first_run.sh)
+- **Automation:** [`scripts/test_first_run.sh`](scripts/test_first_run.sh)
 - **Mutation Verification:** Ran with `--mutation` (forged lease token); confirmed clone/push was rejected with 401 Unauthorized.
 - **Verdict:** **PASSED (Well ahead of 5-minute requirement)**.
 
 ---
 
 ### Gate 2: Unattended 90-Second Demo Walkthrough
-- **Harness:** [`assets/demo.tape`](file:///home/shiva/projects/exist.io/assets/demo.tape) (Charmbracelet VHS reproducible script).
+- **Harness:** [`assets/demo.tape`](assets/demo.tape) (Charmbracelet VHS reproducible script).
 - **Flow:**
   1. `go build ./cmd/existd`
   2. `existd bootstrap --email admin@exist.io --namespace acme`
@@ -47,7 +47,7 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 ---
 
 ### Gate 3: Claims Ledger Integrity
-- **Audit File:** [`CLAIMS.md`](file:///home/shiva/projects/exist.io/CLAIMS.md)
+- **Audit File:** [`CLAIMS.md`](CLAIMS.md)
 - **Results:**
   - Removed "Origin full wire compatibility" and "enterprise-ready" claims.
   - Standardized version on `v0.5.0-beta`.
@@ -59,7 +59,7 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 ---
 
 ### Gate 4: Zero Unverified Claims in README
-- **Audit:** [`README.md`](file:///home/shiva/projects/exist.io/README.md)
+- **Audit:** [`README.md`](README.md)
 - Every feature listed in the README is backed by tests in `internal/` or `pkg/`.
 - Frozen modules are explicitly sectioned under `## 🧪 Experimental Modules (Scope Freeze)`:
   - Git LFS file locking (`/info/lfs/locks`)
@@ -71,7 +71,7 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 ---
 
 ### Gate 5: Security Baseline & Vulnerability Audit
-- **Threat Model:** [`THREAT_MODEL.md`](file:///home/shiva/projects/exist.io/THREAT_MODEL.md) covers 5 agent attack vectors (lease escalation, ref escape, token forgery, DoS, audit poisoning).
+- **Threat Model:** [`THREAT_MODEL.md`](THREAT_MODEL.md) covers 5 agent attack vectors (lease escalation, ref escape, token forgery, DoS, audit poisoning).
 - **Vulnerability Scanner:** `govulncheck ./...` reported **0 vulnerabilities** in code or direct packages. Upgraded `golang.org/x/net` to `v0.60.0`.
 - **Fuzzing:**
   - `FuzzPacketLineParser` (Smart-HTTP transport): 645,188 execs in 30.4s, 0 crashes.
@@ -84,9 +84,9 @@ Lead Engineer Assessment: **READY FOR GATED BETA / GATES 1–5 PASSED**
 - **Requirement:** At least one external developer downloads `existd`, connects an agent (Claude Code, Cursor, or Cline), and opens a merged PR.
 - **Status:** **READY FOR EXTERNAL INTAKE (All Tooling Live)**.
 - **Artifacts Delivered:**
-  - Automated 1-Line Installer: [`scripts/install.sh`](file:///home/shiva/projects/exist.io/scripts/install.sh)
-  - 5-Minute Beta Tester Runbook: [`docs/launch/BETA_TESTING.md`](file:///home/shiva/projects/exist.io/docs/launch/BETA_TESTING.md)
-  - 1-Click Beta Feedback Template: [`.github/ISSUE_TEMPLATE/beta_feedback.yml`](file:///home/shiva/projects/exist.io/.github/ISSUE_TEMPLATE/beta_feedback.yml)
+  - Automated 1-Line Installer: [`scripts/install.sh`](scripts/install.sh)
+  - 5-Minute Beta Tester Runbook: [`docs/launch/BETA_TESTING.md`](docs/launch/BETA_TESTING.md)
+  - 1-Click Beta Feedback Template: [`.github/ISSUE_TEMPLATE/beta_feedback.yml`](.github/ISSUE_TEMPLATE/beta_feedback.yml)
   - Cross-Compiled Release Packages: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64) in `dist/releases/`
   - Automated Loop Timing: 4 seconds (`scripts/test_first_run.sh`)
 - **Founder Next Action:** Recruit 5 beta testers using the invite copy in `docs/launch/PRODUCT_HUNT.md` and share `docs/launch/BETA_TESTING.md`.

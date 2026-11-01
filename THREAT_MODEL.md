@@ -33,7 +33,7 @@ This section analyzes the primary attack vectors available to a malicious, misco
   - Auth resolvers (`internal/auth/db_resolver.go`, `internal/auth/auth_helper.go`) verify credential type and reject any agent lease presenting against administrative or user management routes with `401 Unauthorized` or `403 Forbidden`.
   - The MCP read-only sandbox (`/mcp/readonly`) unconditionally restricts tool invocation to non-mutating primitives (`repo_tree`, `file_read`, `diff_compare`, `symbol_search`), preventing administrative or mutating tool execution.
 - **Verification & Test:**
-  - Automated integration test in [`internal/app/agent_loop_e2e_test.go`](file:///home/shiva/projects/exist.io/internal/app/agent_loop_e2e_test.go) explicitly asserts that mutating operations on `/mcp/readonly` and unauthorized administrative calls are blocked.
+  - Automated integration test in [`internal/app/agent_loop_e2e_test.go`](internal/app/agent_loop_e2e_test.go) explicitly asserts that mutating operations on `/mcp/readonly` and unauthorized administrative calls are blocked.
 
 ---
 
@@ -48,9 +48,9 @@ This section analyzes the primary attack vectors available to a malicious, misco
     3. **Branch Deletion Prohibition:** An agent push attempting ref deletion (new-rev `0000000000000000000000000000000000000000`) is rejected with `GH007: Agent capability lease does not permit deleting refs`.
     4. **Protected Branch Guards:** Default branches (`main`, `master`) enforce `GH006` protection against non-fast-forward force-pushes and deletions.
 - **Verification & Test:**
-  - Unit test: [`internal/security/hook_test.go`](file:///home/shiva/projects/exist.io/internal/security/hook_test.go) (`TestPreReceiveHook_AgentLeaseEnforcement`).
-  - Transport test: [`internal/gittransport/server_test.go`](file:///home/shiva/projects/exist.io/internal/gittransport/server_test.go) (`TestGitSmartHTTP_AgentLeaseEnforcement`).
-  - First-run install script mutation check: [`scripts/test_first_run.sh --mutation`](file:///home/shiva/projects/exist.io/scripts/test_first_run.sh).
+  - Unit test: [`internal/security/hook_test.go`](internal/security/hook_test.go) (`TestPreReceiveHook_AgentLeaseEnforcement`).
+  - Transport test: [`internal/gittransport/server_test.go`](internal/gittransport/server_test.go) (`TestGitSmartHTTP_AgentLeaseEnforcement`).
+  - First-run install script mutation check: [`scripts/test_first_run.sh --mutation`](scripts/test_first_run.sh).
 
 ---
 
@@ -64,8 +64,8 @@ This section analyzes the primary attack vectors available to a malicious, misco
   - Token verification uses constant-time comparison (`crypto/subtle` / `hmac.Equal`) to prevent timing side-channel attacks.
   - Any altered payload or invalid signature returns `ErrInvalidSignature` and terminates authentication immediately.
 - **Verification & Test:**
-  - Unit tests: [`pkg/agentlease/lease_test.go`](file:///home/shiva/projects/exist.io/pkg/agentlease/lease_test.go) (`TestTamperedLeaseFails`).
-  - Automated fuzz testing: [`pkg/agentlease/lease_fuzz_test.go`](file:///home/shiva/projects/exist.io/pkg/agentlease/lease_fuzz_test.go) (`FuzzTokenParser`).
+  - Unit tests: [`pkg/agentlease/lease_test.go`](pkg/agentlease/lease_test.go) (`TestTamperedLeaseFails`).
+  - Automated fuzz testing: [`pkg/agentlease/lease_fuzz_test.go`](pkg/agentlease/lease_fuzz_test.go) (`FuzzTokenParser`).
 
 ---
 
@@ -79,7 +79,7 @@ This section analyzes the primary attack vectors available to a malicious, misco
   - **SSH Handshake Timeout:** 30-second handshake deadline on incoming raw TCP connections prevents Slowloris attacks.
   - **Git LFS CAS Engine:** Large files must be transferred via Content-Addressable Storage (CAS) with chunked SHA-256 verification, preventing Git packfile bloat.
 - **Verification & Test:**
-  - Integration tests in [`internal/gittransport/server_test.go`](file:///home/shiva/projects/exist.io/internal/gittransport/server_test.go) and [`internal/sshserver/server_test.go`](file:///home/shiva/projects/exist.io/internal/sshserver/server_test.go).
+  - Integration tests in [`internal/gittransport/server_test.go`](internal/gittransport/server_test.go) and [`internal/sshserver/server_test.go`](internal/sshserver/server_test.go).
 
 ---
 
@@ -89,10 +89,10 @@ This section analyzes the primary attack vectors available to a malicious, misco
 - **Impact:** Loss of enterprise audit trail, undetected compliance violations (SOC 2, ISO 27001).
 - **Mitigation:**
   - **Append-Only Architecture:** The `audit_logs` table in SQLite has no `DELETE` or `UPDATE` operations exposed through REST or MCP interfaces.
-  - **Process-Space Isolation:** Audit entries are written directly by internal server components (`internal/audit/logger.go`) during transport events, lease creation, and PR merges. Agents have no direct access to the database layer.
+  - **Process-Space Isolation:** Audit entries are written directly by internal server components (`internal/audit/audit.go`) during transport events, lease creation, and PR merges. Agents have no direct access to the database layer.
   - **Immutable JSON Records:** Every audit entry contains immutable metadata: unique audit ID (`aud-*`), nanosecond timestamp, authenticated actor ID, actor type (`agent`, `user`), action, target resource, client IP, severity, and details.
 - **Verification & Test:**
-  - Audit tests in [`internal/audit/audit_test.go`](file:///home/shiva/projects/exist.io/internal/audit/audit_test.go) and [`internal/store/audit_logs_test.go`](file:///home/shiva/projects/exist.io/internal/store/audit_logs_test.go).
+  - Audit tests in [`internal/audit/audit_test.go`](internal/audit/audit_test.go).
 
 ---
 

@@ -43,3 +43,9 @@ scratch/
 .agents/
 skills-lock.json
 
+# Internal, non-published notes
+docs/internal/
+
+# Video pipeline intermediates (regenerable)
+videos/**/.hyperframes/
+

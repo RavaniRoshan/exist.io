@@ -1,7 +1,7 @@
 # exist.io — Performance & Concurrency Benchmarks (`docs/benchmarks.md`)
 
 Conducted on: October 16, 2026  
-Harness: [`bench/main.go`](file:///home/shiva/projects/exist.io/bench/main.go)  
+Harness: [`bench/main.go`](../bench/main.go)  
 Environment: Local Linux x86_64, 16 CPU cores, SQLite WAL mode, Pure-Go Smart-HTTP transport
 
 ---
