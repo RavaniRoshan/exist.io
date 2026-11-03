@@ -55,14 +55,18 @@ func loadForbidden(t *testing.T, path string) []string {
 	return phrases
 }
 
-func mdxFiles(t *testing.T, root string) []string {
+func scannableFiles(t *testing.T, root string) []string {
 	t.Helper()
 	var files []string
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !entry.IsDir() && strings.HasSuffix(path, ".mdx") {
+		if entry.IsDir() {
+			return nil
+		}
+		switch strings.ToLower(filepath.Ext(path)) {
+		case ".mdx", ".md", ".ts", ".tsx":
 			files = append(files, path)
 		}
 		return nil
@@ -76,7 +80,14 @@ func mdxFiles(t *testing.T, root string) []string {
 func TestPublishedClaimsAreCoherent(t *testing.T) {
 	root := repoRoot(t)
 	phrases := loadForbidden(t, filepath.Join(root, "CLAIMS.md"))
-	files := append([]string{filepath.Join(root, "README.md")}, mdxFiles(t, filepath.Join(root, "site", "docs"))...)
+	files := []string{filepath.Join(root, "README.md")}
+	for _, dir := range []string{
+		filepath.Join(root, "site", "content"),
+		filepath.Join(root, "site", "app"),
+		filepath.Join(root, "site", "components"),
+	} {
+		files = append(files, scannableFiles(t, dir)...)
+	}
 
 	for _, file := range files {
 		body, err := os.ReadFile(file)
