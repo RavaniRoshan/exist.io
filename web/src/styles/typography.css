@@ -29,15 +29,15 @@
 }
 
 @utility text-body {
-  font-size: 0.8125rem;
-  line-height: 1.1875rem;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
   font-weight: 400;
   letter-spacing: -0.006em;
 }
 
 @utility text-body-medium {
-  font-size: 0.8125rem;
-  line-height: 1.1875rem;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
   font-weight: 500;
   letter-spacing: -0.006em;
 }

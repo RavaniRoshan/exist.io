@@ -7,6 +7,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* GitHub density: 14px UI base, 1.5 line-height. */
+body {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
