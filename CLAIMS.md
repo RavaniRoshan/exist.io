@@ -35,13 +35,15 @@ This ledger documents every technical and product claim made in the README, docu
 | 18 | **Default SSH bind address is 0.0.0.0:2222** | `internal/config/config.go:38` (`127.0.0.1:2222`) | **Remediated** | Documentation corrected to state safe localhost default (`127.0.0.1:2222`). | 53bce30 |
 | 19 | **Litestream sync status active in admin health API** | `internal/app/app.go:137` | **False** | Retained as experimental stub; documented in audit report. | 53bce30 |
 | 20 | **Dual documentation URLs: legacy host vs exist.io** | `README.md`, `site/blume.config.ts` | **Remediated** | All legacy-domain references removed. Unified strictly on `https://ravaniroshan.github.io/exist.io/`. | 53bce30 |
+| 21 | **Marketing + docs site rewrite (2026-11) introduces no new capability claims** | `site/` copy vs this ledger; `site/scripts/audit-claims.mjs`; `internal/claims/coherence_test.go` (now scans `site/{content,app,components}`) | **Verified** | Every capability statement on the landing traces to prior entries (#3–8, #10, #11, #14, #16–18). Claims gate re-pointed at the migrated docs path and extended to the site sources; `npm run claims-audit` enforced in CI. | 81720f9 |
 
 ---
 
 ## Forbidden claims (machine-enforced)
 
 `internal/claims/coherence_test.go` fails the build if any phrase below appears in
-`README.md` or `site/docs/**/*.mdx`. Add a phrase here when a claim is removed or
+`README.md` or under `site/content`, `site/app`, `site/components` (`.md`, `.mdx`,
+`.ts`, `.tsx`). Add a phrase here when a claim is removed or
 demoted to experimental, so it cannot silently return.
 
 <!-- forbidden-claims:start -->
