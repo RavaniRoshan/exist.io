@@ -335,13 +335,14 @@ func Open(cfg config.Config) (*App, error) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"version":    cfg.Version,
-			"publicUrl":  cfg.PublicURL,
-			"gitHttpUrl": cfg.GitURL,
-			"sshAddr":    cfg.SSHAddr,
-			"mcpUrl":     cfg.PublicURL + "/mcp",
-			"walStatus":  "active",
-			"engine":     "SQLite WAL modernc.org/sqlite (zero-CGO)",
+			"version":              cfg.Version,
+			"publicUrl":            cfg.PublicURL,
+			"gitHttpUrl":           cfg.GitURL,
+			"sshAddr":              cfg.SSHAddr,
+			"mcpUrl":               cfg.PublicURL + "/mcp",
+			"walStatus":            "active",
+			"engine":               "SQLite WAL modernc.org/sqlite (zero-CGO)",
+			"mcpMountedToolsCount": len(mcp.BuiltinTools()),
 		})
 	})
 

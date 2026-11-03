@@ -121,7 +121,7 @@ const defaultDemoRepos: RepositoryRecord[] = [
     is_private: false,
     clone_url: 'http://localhost:8080/shiva/agentic-mcp-bridge.git',
     web_url: 'http://localhost:8080/shiva/agentic-mcp-bridge',
-    description: '35+ Git operations over Model Context Protocol',
+    description: 'Git operations over Model Context Protocol',
     updated_at: '2 hours ago',
   },
   {
@@ -181,6 +181,15 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
 
   // Real or sandbox events
   const [events, setEvents] = useState<ActivityEvent[]>(() => (isDemoModeActive() ? enterpriseFeed : []))
+
+  const [mcpTools, setMcpTools] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/v1/system/info')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (typeof data?.mcpMountedToolsCount === 'number') setMcpTools(data.mcpMountedToolsCount) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     // If running in live production mode, fetch live cluster repositories and aggregate activities
@@ -695,7 +704,7 @@ export const GlobalHomeView: React.FC<GlobalHomeViewProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Mounted MCP Tools:</span>
-                <span className="text-foreground font-mono font-bold">35</span>
+                <span className="text-foreground font-mono font-bold">{mcpTools ?? '—'}</span>
               </div>
             </BoxBody>
           </Box>

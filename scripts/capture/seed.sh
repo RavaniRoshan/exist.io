@@ -9,7 +9,8 @@ PORT="${2:-18080}"
 rm -rf "$WORK"
 mkdir -p "$WORK/data" "$WORK/bin"
 
-CGO_ENABLED=0 go build -o "$WORK/bin/existd" "$ROOT_DIR/cmd/existd"
+VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")"
+CGO_ENABLED=0 go build -ldflags="-X main.version=$VERSION" -o "$WORK/bin/existd" "$ROOT_DIR/cmd/existd"
 "$WORK/bin/existd" bootstrap --email admin@corp.exist.io --namespace acme --data-dir "$WORK/data" > "$WORK/bootstrap.out" 2>&1
 API_KEY="$(grep 'API Key:' "$WORK/bootstrap.out" | awk '{print $3}')"
 if [ -z "$API_KEY" ]; then
