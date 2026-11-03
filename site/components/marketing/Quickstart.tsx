@@ -32,7 +32,7 @@ export function Quickstart() {
           </div>
         </div>
 
-        <ol className="lg:col-span-7">
+        <ol className="min-w-0 lg:col-span-7">
           {STEPS.map((step, i) => (
             <li key={step.label} className="flex items-start gap-5 border-t border-line py-5 last:border-b">
               <span className="mono mt-1 w-6 flex-none text-[12px] font-semibold text-ember">0{i + 1}</span>

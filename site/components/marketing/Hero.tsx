@@ -26,7 +26,7 @@ export function Hero() {
       <span aria-hidden="true" className="crosshair right-3 top-3 lg:right-6 lg:top-6" />
 
       <div className="container-site relative grid gap-12 pb-10 pt-14 lg:grid-cols-12 lg:items-center lg:gap-10 lg:pb-14 lg:pt-20">
-        <div className="lg:col-span-7">
+        <div className="min-w-0 lg:col-span-7">
           <Reveal>
             <p className="eyebrow">self-hosted · apache-2.0 · pure go</p>
           </Reveal>
@@ -68,7 +68,7 @@ export function Hero() {
           </Reveal>
         </div>
 
-        <figure className="lg:col-span-5">
+        <figure className="min-w-0 lg:col-span-5">
           <Reveal>
             <div className="plate">
               <div className="plate-inner">
