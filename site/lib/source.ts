@@ -13,7 +13,7 @@ const docs = defineDocs({
 });
 
 export const source = loader({
-  baseUrl: '/',
+  baseUrl: '/docs',
   source: docs.toFumadocsSource(),
   plugins: [],
 });

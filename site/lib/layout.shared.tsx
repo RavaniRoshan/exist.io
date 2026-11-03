@@ -10,9 +10,8 @@ export function baseOptions(): BaseLayoutProps {
     githubUrl: 'https://github.com/RavaniRoshan/exist.io',
     links: [
       {
-        text: 'Marketing site',
-        url: 'https://ravaniroshan.github.io/exist.os/',
-        external: true,
+        text: 'exist.io site',
+        url: '/',
       },
       {
         text: 'Releases',
