@@ -65,7 +65,12 @@ describe('GlobalHomeView', () => {
     expect(screen.queryByText(/#5 feat: add UserProfileView/i)).not.toBeInTheDocument()
   })
 
-  it('renders cluster telemetry metrics and triggers agent console tab callback', () => {
+  it('renders cluster telemetry metrics and triggers agent console tab callback', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ mcpMountedToolsCount: 46 }),
+    }))
+
     const onSelectRepo = vi.fn()
     const onSelectTab = vi.fn()
 
@@ -75,10 +80,11 @@ describe('GlobalHomeView', () => {
     expect(screen.getByText('Online (8080)')).toBeInTheDocument()
     expect(screen.getByText('Port 2222')).toBeInTheDocument()
     expect(screen.getByText('SQLite WAL')).toBeInTheDocument()
-    expect(screen.getByText('35')).toBeInTheDocument()
+    expect(await screen.findByText('46')).toBeInTheDocument()
 
     const openAgentBtn = screen.getByRole('button', { name: /open agent console/i })
     fireEvent.click(openAgentBtn)
     expect(onSelectTab).toHaveBeenCalledWith('agents')
+    vi.unstubAllGlobals()
   })
 })

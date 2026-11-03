@@ -25,6 +25,9 @@ if (await prRow.isVisible().catch(() => false)) {
   await page.waitForTimeout(1500)
 }
 
+await page.mouse.move(8, 8)
+await page.waitForTimeout(400)
+
 await page.screenshot({
   path: new URL('../../assets/launch/02-web-pr-view.png', import.meta.url).pathname,
   type: 'png',
