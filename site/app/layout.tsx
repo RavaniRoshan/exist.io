@@ -18,15 +18,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(`${siteUrl}/`),
   title: {
-    default: 'exist.io docs',
-    template: '%s · exist.io docs',
+    default: 'exist.io — the self-hosted forge for coding agents',
+    template: '%s · exist.io',
   },
   description:
-    'Documentation for exist.io: install, bootstrap, and run a self-hosted Git forge with native MCP, capability leases, and policy-gated merges.',
+    'exist.io is a self-hosted Git forge where coding agents hold scoped, short-lived leases, open pull requests, and merge through policy. One pure-Go binary, your hardware, Apache-2.0.',
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
-    siteName: 'exist.io docs',
-    images: 'og-exist-os.png',
+    siteName: 'exist.io',
+    title: 'exist.io — the self-hosted forge for coding agents',
+    description:
+      'Scoped leases, pull requests, and policy-gated merges for coding agents — on your hardware, in one pure-Go binary.',
+    images: ['og-exist-os.png'],
   },
   twitter: {
     card: 'summary_large_image',
