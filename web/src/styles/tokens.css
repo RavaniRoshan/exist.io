@@ -1,30 +1,39 @@
-/* Forge design tokens — the single source of visual truth. */
+/* Forge design tokens — the single source of visual truth.
+   Primer-aligned structure, Patina accent (oxidized copper).
+   Light = Primer canvas subtle; Dark = Primer #0d1117. */
 
 :root {
   color-scheme: light;
 
-  --canvas: oklch(0.975 0.003 95);
-  --slab: oklch(1 0 0);
-  --raised: oklch(0.955 0.003 95);
-  --hairline: oklch(0.885 0.005 95);
-  --text-1: oklch(0.22 0.01 250);
-  --text-2: oklch(0.43 0.01 250);
-  --text-3: oklch(0.56 0.01 250);
-  --signal: oklch(0.55 0.14 165);
-  --signal-ink: oklch(0.985 0.01 165);
-  --ember: oklch(0.62 0.14 60);
+  --canvas: oklch(0.972 0.002 250);      /* ≈ Primer #f6f8fa */
+  --slab: oklch(1 0 0);                  /* cards on canvas */
+  --raised: oklch(0.955 0.003 250);      /* raised surfaces / hover fills */
+  --hairline: oklch(0.885 0.006 255);    /* 1px borders */
+  --text-1: oklch(0.238 0.008 265);      /* ≈ Primer fg.default #1f2328 */
+  --text-2: oklch(0.44 0.012 258);       /* ≈ Primer fg.muted #59636e */
+  --text-3: oklch(0.575 0.012 258);      /* fg.subtle */
+
+  /* Patina — oxidized copper accent (ours; distinct from Primer green) */
+  --signal: oklch(0.45 0.065 184);       /* ≈ #2E6F63 */
+  --signal-hover: oklch(0.39 0.07 184);  /* ≈ #26594F */
+  --signal-ink: oklch(0.965 0.012 181);  /* near-white text on patina fills */
+  --signal-soft: oklch(0.93 0.025 184);  /* tinted fills / selected rows */
+
+  /* Brass — warm secondary for highlights/warnings (pairs with patina) */
+  --ember: oklch(0.63 0.115 86);
+  --ember-soft: oklch(0.94 0.045 88);
   --danger: oklch(0.55 0.2 25);
 
-  --chart-1: oklch(0.55 0.14 165);
-  --chart-2: oklch(0.62 0.14 60);
+  --chart-1: oklch(0.45 0.065 184);
+  --chart-2: oklch(0.63 0.115 86);
   --chart-3: oklch(0.52 0.12 250);
   --chart-4: oklch(0.55 0.15 300);
-  --chart-5: oklch(0.55 0.1 190);
+  --chart-5: oklch(0.55 0.1 205);
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: "Mona Sans Variable", "Mona Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --radius: 0.5rem;
+  --radius: 0.375rem; /* Primer 6px */
 
   --dur-1: 120ms;
   --dur-2: 180ms;
@@ -37,31 +46,37 @@
   --shadow-sm: 0 1px 3px 0 oklch(0 0 0 / 0.08);
   --shadow: 0 2px 8px -2px oklch(0 0 0 / 0.1);
   --shadow-md: 0 4px 16px -4px oklch(0 0 0 / 0.14);
-  --shadow-lg: 0 8px 28px -8px oklch(0 0 0 / 0.18);
-  --shadow-xl: 0 16px 48px -12px oklch(0 0 0 / 0.22);
-  --shadow-2xl: 0 24px 64px -16px oklch(0 0 0 / 0.28);
+  --shadow-lg: 0 8px 28px -8px oklch(0 0 0 / 0.16);
+  --shadow-xl: 0 16px 48px -12px oklch(0 0 0 / 0.2);
+  --shadow-2xl: 0 24px 64px -16px oklch(0 0 0 / 0.26);
 }
 
 .dark {
   color-scheme: dark;
 
-  --canvas: oklch(0.145 0.005 250);
-  --slab: oklch(0.185 0.006 250);
-  --raised: oklch(0.225 0.007 250);
-  --hairline: oklch(0.3 0.008 250);
-  --text-1: oklch(0.96 0.003 250);
-  --text-2: oklch(0.75 0.008 250);
-  --text-3: oklch(0.58 0.01 250);
-  --signal: oklch(0.8 0.15 165);
-  --signal-ink: oklch(0.18 0.02 165);
-  --ember: oklch(0.76 0.15 60);
+  --canvas: oklch(0.155 0.012 258);      /* ≈ Primer #0d1117 */
+  --slab: oklch(0.195 0.014 258);        /* ≈ Primer #161b22 */
+  --raised: oklch(0.225 0.013 258);      /* ≈ Primer #1c2129 */
+  --hairline: oklch(0.285 0.01 255);     /* ≈ Primer #2d333b */
+  --text-1: oklch(0.935 0.012 250);      /* ≈ Primer fg.default #e6edf3 */
+  --text-2: oklch(0.635 0.013 252);      /* ≈ Primer fg.muted #9198a1 */
+  --text-3: oklch(0.485 0.012 252);      /* ≈ Primer fg.subtle #6e7681 */
+
+  /* Patina, luminous for dark */
+  --signal: oklch(0.82 0.06 186);        /* ≈ #8CD2C3 */
+  --signal-hover: oklch(0.75 0.06 186);  /* ≈ #6FBFAD */
+  --signal-ink: oklch(0.16 0.02 184);    /* dark text on patina fills */
+  --signal-soft: oklch(0.28 0.03 186);   /* tinted fills / selected rows */
+
+  --ember: oklch(0.78 0.10 88);          /* brass, lifted for dark */
+  --ember-soft: oklch(0.3 0.045 86);
   --danger: oklch(0.65 0.2 25);
 
-  --chart-1: oklch(0.8 0.15 165);
-  --chart-2: oklch(0.76 0.15 60);
+  --chart-1: oklch(0.82 0.06 186);
+  --chart-2: oklch(0.78 0.10 88);
   --chart-3: oklch(0.7 0.12 250);
   --chart-4: oklch(0.7 0.15 300);
-  --chart-5: oklch(0.7 0.1 190);
+  --chart-5: oklch(0.7 0.1 205);
 
   --shadow-2xs: 0 1px 0 0 oklch(0 0 0 / 0.3);
   --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.4);
@@ -70,5 +85,5 @@
   --shadow-md: 0 4px 16px -4px oklch(0 0 0 / 0.6);
   --shadow-lg: 0 8px 28px -8px oklch(0 0 0 / 0.65);
   --shadow-xl: 0 16px 48px -12px oklch(0 0 0 / 0.7);
-  --shadow-2xl: 0 24px 64px -16px oklch(0 0 0 / 0.8);
+  --shadow-2xl: 0 24px 64px -16px oklch(0 0 0 / 0.75);
 }
