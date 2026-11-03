@@ -1,0 +1,11 @@
+{
+  "title": "How-to guides",
+  "pages": [
+    "git-transport",
+    "mcp-setup",
+    "rulesets",
+    "ssh-git-lfs",
+    "enterprise-sso-scim",
+    "terraform-helm"
+  ]
+}

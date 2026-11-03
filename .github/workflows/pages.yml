@@ -35,8 +35,12 @@ jobs:
         run: npm ci
         working-directory: site
 
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: site
+
       - name: Validate documentation links
-        run: npm run validate
+        run: npm run check-links
         working-directory: site
 
       - name: Build static site
@@ -46,7 +50,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: site/dist
+          path: site/out
           include-hidden-files: true
 
   deploy:
