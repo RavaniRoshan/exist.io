@@ -297,7 +297,7 @@ export default function App() {
 
           <div className="flex items-center gap-4">
             <a
-              href="https://ravaniroshan.github.io/exist.io/"
+              href="https://ravaniroshan.github.io/exist.io/docs/"
               target="_blank"
               rel="noreferrer"
               className="hover:text-primary transition-colors hover:underline"

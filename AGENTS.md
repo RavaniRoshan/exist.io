@@ -89,6 +89,12 @@ exist.io/
 │   ├── agentlease/          # Cryptographic capability leases with ref-prefix isolation
 │   ├── idgen/               # Canonical prefixed UUID generator (repo-*, pr-*, usr-*)
 │   └── scopes/              # OAuth & PAT token permission matrix
+├── site/                    # Unified marketing + docs site (Next.js static export → GitHub Pages at /exist.io)
+│   ├── app/                 # Marketing landing at /, docs under /docs, icon.svg, metadata
+│   ├── components/           # marketing/ (landing sections) + Fumadocs chrome
+│   ├── content/docs/         # MDX documentation (fumadocs-mdx)
+│   ├── scripts/              # check-links, audit-claims (CLAIMS.md gate), redirect-stubs (legacy doc URLs)
+│   └── DESIGN.md             # "paper, yellow, print engineering" — read BEFORE any site change
 ├── web/                     # Vite + React 19 + TypeScript frontend application
 │   ├── src/
 │   │   ├── components/
@@ -157,6 +163,26 @@ go test -v -count=1 ./internal/app ./internal/store ./internal/sshserver ./inter
 go build -o bin/exist ./cmd/exist
 go build -o bin/existd ./cmd/existd
 ```
+
+### Site (unified marketing + docs)
+```bash
+# Navigate to site directory
+cd site
+
+# Full gate: typecheck + build + link check + claims audit
+npm run verify
+
+# Individual steps
+npm run typecheck     # tsc --noEmit
+npm run build         # next build → out/ (+ postbuild legacy redirect stubs)
+npm run check-links   # validates every internal link in out/
+npm run claims-audit  # CLAIMS.md needles must pass; forbidden phrases must be absent
+```
+Deploys to GitHub Pages at `https://ravaniroshan.github.io/exist.io/` on push to
+`main` (see `.github/workflows/pages.yml`). Docs are served under `/docs/`;
+`/exist.io/<page>/` legacy URLs are static redirect stubs. Any copy change on the
+landing MUST keep `npm run claims-audit` green — update needles only together
+with a CLAIMS.md ledger entry.
 
 ### Frontend (React & TypeScript)
 ```bash

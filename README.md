@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/MCP-JSON--RPC%202.0-8A2BE2?style=flat-square" alt="MCP Server">
 </p>
 
-[**Product Documentation**](https://ravaniroshan.github.io/exist.io/?ref=readme) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/getting-started?ref=readme) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/architecture?ref=readme) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Claims Ledger**](CLAIMS.md) &nbsp;&bull;&nbsp; [**Contributing**](CONTRIBUTING.md)
+[**Product Documentation**](https://ravaniroshan.github.io/exist.io/?ref=readme) &nbsp;&bull;&nbsp; [**Getting Started**](https://ravaniroshan.github.io/exist.io/docs/getting-started?ref=readme) &nbsp;&bull;&nbsp; [**Architecture**](https://ravaniroshan.github.io/exist.io/docs/architecture?ref=readme) &nbsp;&bull;&nbsp; [**Roadmap**](ROADMAP.md) &nbsp;&bull;&nbsp; [**Claims Ledger**](CLAIMS.md) &nbsp;&bull;&nbsp; [**Contributing**](CONTRIBUTING.md)
 
 </div>
 
