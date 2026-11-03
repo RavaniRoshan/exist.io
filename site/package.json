@@ -1,13 +1,16 @@
 {
-  "name": "exist-io-docs",
+  "name": "exist-io-site",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/redirect-stubs.mjs",
     "start": "serve out",
     "typecheck": "tsc --noEmit",
-    "check-links": "node scripts/check-links.mjs"
+    "check-links": "node scripts/check-links.mjs",
+    "claims-audit": "node scripts/audit-claims.mjs",
+    "verify": "npm run typecheck && npm run build && npm run check-links && npm run claims-audit"
   },
   "dependencies": {
     "fumadocs-core": "^16.17.10",

@@ -1,4 +1,4 @@
-name: Build and deploy docs
+name: Build and deploy site
 
 on:
   push:
@@ -39,12 +39,16 @@ jobs:
         run: npm run typecheck
         working-directory: site
 
+      - name: Build static site
+        run: npm run build
+        working-directory: site
+
       - name: Validate documentation links
         run: npm run check-links
         working-directory: site
 
-      - name: Build static site
-        run: npm run build
+      - name: Audit claims
+        run: npm run claims-audit
         working-directory: site
 
       - name: Upload Pages artifact
