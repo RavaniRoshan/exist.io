@@ -18,12 +18,16 @@ data/
 docs/reverse-engineering/
 docs/superpowers/
 .superpowers/
+.firecrawl/
 
 # Node and Blume documentation build artifacts
 node_modules/
 site/node_modules/
 site/dist/
 site/.blume/
+site/.next/
+site/out/
+site/tsconfig.tsbuildinfo
 web/node_modules/
 web/dist/
 
