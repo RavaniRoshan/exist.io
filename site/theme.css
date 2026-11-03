@@ -1,0 +1,31 @@
+/* Forge palette for the documentation and marketing site. */
+
+:root {
+  --blume-background: #fbfaf7;
+  --blume-foreground: #1a1f24;
+  --blume-muted: #f2efe9;
+  --blume-muted-foreground: #5b636b;
+  --blume-border: #e3ded5;
+  --blume-accent: #0f7a5a;
+  --blume-accent-foreground: #ffffff;
+  --blume-content-width: 46rem;
+  --blume-radius: 0.5rem;
+}
+
+:root[data-theme="dark"] {
+  --blume-background: #0f1114;
+  --blume-foreground: #f2f4f5;
+  --blume-muted: #171b20;
+  --blume-muted-foreground: #9aa4ae;
+  --blume-border: #262c33;
+  --blume-accent: #5ee0b0;
+  --blume-accent-foreground: #08120e;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--blume-accent) 25%, transparent);
+}
+
+img {
+  border-radius: 0.5rem;
+}

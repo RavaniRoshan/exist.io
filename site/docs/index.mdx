@@ -1,15 +1,37 @@
 ---
-title: Your own Git forge
-description: An open-source, self-hosted home for repositories and coding-agent workflows.
+title: The self-hosted Git forge built for coding agents
+description: exist.io is a vendor-neutral, single-binary Git forge with native MCP, ephemeral capability leases, and a UI built for human and agent collaboration.
 ---
 
-exist.io is an open-source, self-hosted Git forge built for software engineering teams and autonomous AI coding agents. It provides a reliable home to host code, collaborate through pull requests and reviews, enforce enterprise security rulesets, and connect coding agents through dedicated, permission-aware interfaces.
+<Badge>v0.6.0-beta</Badge> <Badge>Apache-2.0</Badge> <Badge>Zero CGO</Badge>
 
-The goal is simple: keep your repositories, collaboration history, and agent integrations on infrastructure you control.
+exist.io gives coding agents a real Git home — repositories, pull requests, checks, and reviews — on infrastructure you control. It ships as one pure-Go binary with the web UI, Smart-HTTP, SSH, REST, and a native MCP server embedded.
 
-:::note[Self-hosted & agent-native]
-exist.io runs entirely on your own hardware or cloud instances with zero proprietary cloud dependencies.
-:::
+<Frame caption="A pull request in the Forge UI: passing checks, reviewers, and the merge gate in one view.">
+  <img src="/forge-pr.png" alt="exist.io pull request view" />
+</Frame>
+
+## Why exist.io
+
+<CardGroup cols={3}>
+  <Card title="Vendor-neutral" href="/overview">
+    Any agent. Claude Code, Codex, Cline, and Cursor all speak the same MCP endpoint.
+  </Card>
+  <Card title="Leases, not blanket tokens" href="/how-to/mcp-setup">
+    Short-lived HMAC capability leases scoped to `refs/heads/agent/*`, verified on every push.
+  </Card>
+  <Card title="One binary, your server" href="/getting-started">
+    SQLite WAL, bare Git repositories, and the UI embedded. No external database or host SSH daemon.
+  </Card>
+</CardGroup>
+
+## What ships in v0.6.0-beta
+
+- **Forge UI:** a dense, keyboard-first interface built on React Aria primitives, with light and dark token sets.
+- **Interactive review:** inline suggestions, review threads, and one-click suggestion commits.
+- **Auto-merge:** a background engine that merges once required checks pass.
+- **Notifications:** an in-app inbox with a pure-Go SMTP sender.
+- **Repository migration:** import from GitHub or any Git remote, including issues, pull requests, and comments.
 
 ## Core capabilities
 
@@ -27,29 +49,20 @@ These modules are implemented and tested, but frozen for launch and not part of 
 - **Enterprise federation:** OIDC and SAML 2.0 SSO plus SCIM 2.0 user sync. The SSO callback fails closed with HTTP 501 in this build.
 - **Infrastructure as Code:** Terraform/OpenTofu provider and Kubernetes Helm chart, provided as source in `deploy/` without support.
 
-## Watch exist.io in action
+## Install in one command
 
-Explore the architectural explainer video and hands-on terminal walkthrough:
+```bash
+curl -fsSL https://raw.githubusercontent.com/RavaniRoshan/exist.io/main/scripts/install.sh | bash
+```
 
-- 🎬 **[74-Second Architectural Explainer Video](https://github.com/RavaniRoshan/exist.io/raw/main/videos/exist-agent-git-explainer/renders/video.mp4):** Why 15-year-old forges break under agent swarms, and how capability leases and native MCP provide sovereign guardrails.
-- ⚡ **[90-Second Agent Loop Demo](https://github.com/RavaniRoshan/exist.io/raw/main/assets/demo.mp4):** Complete terminal screen-recording on macOS canvas showing cold bootstrap, agent lease push, MCP PR creation, and automated merge.
+The installer resolves the newest release and verifies its SHA-256 manifest before installing. Then bootstrap your forge and start the daemon:
 
-## Find your way around
+```bash
+existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
+existd
+```
 
-<CardGroup cols={2}>
-  <Card title="Getting started" href="/getting-started">
-    Step-by-step tutorial to build, bootstrap, and run your self-hosted forge.
-  </Card>
-  <Card title="Pure-Go SSH & Git LFS" href="/how-to/ssh-git-lfs">
-    Connect over port 2222 SSH, track large assets, and verify signed commits.
-  </Card>
-  <Card title="Experimental: SSO & SCIM" href="/how-to/enterprise-sso-scim">
-    Frozen for launch. The SSO callback fails closed in this build.
-  </Card>
-  <Card title="Experimental: Terraform & Helm" href="/how-to/terraform-helm">
-    Frozen for launch. Provided as source without support.
-  </Card>
-</CardGroup>
+Open `http://localhost:8080`. The bootstrap output prints the MCP snippet for your agent, including the admin API key.
 
 ## Documentation topics
 
@@ -57,31 +70,3 @@ Explore the architectural explainer video and hands-on terminal walkthrough:
 - **How-To Guides:** [SSH, Git LFS & Signatures](/how-to/ssh-git-lfs) &bull; [Experimental: SSO & SCIM](/how-to/enterprise-sso-scim) &bull; [Experimental: Terraform & Helm](/how-to/terraform-helm) &bull; [Connect agents via MCP](/how-to/mcp-setup) &bull; [Configure rulesets & protections](/how-to/rulesets) &bull; [Push with Git Smart-HTTP](/how-to/git-transport)
 - **Reference:** [MCP tool catalog](/reference/mcp-tools) &bull; [CLI reference](/reference/cli) &bull; [Configuration reference](/reference/configuration)
 - **Explanation:** [Architecture](/architecture) &bull; [Merge & policy engine](/explanation/merge-engine) &bull; [Development status](/development/status) &bull; [Roadmap](/roadmap)
-
-## Getting started quickly
-
-Install `existd` and the `exist` CLI in seconds (Linux, macOS, Windows):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/RavaniRoshan/exist.io/main/scripts/install.sh | bash
-```
-
-Then initialize storage and launch your forge daemon:
-
-```bash
-# Initialize storage and primary administrator
-existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
-
-# Start the forge daemon (Smart-HTTP :8080, SSH :2222, MCP :8080/mcp, Web UI)
-existd
-```
-
-Or build from source with zero CGO dependencies:
-
-```bash
-go build -o bin/existd ./cmd/existd
-./bin/existd bootstrap --email admin@corp.exist.io --namespace acme --data-dir ./data
-./bin/existd
-```
-
-Follow the full [Getting Started guide](/getting-started) to configure remotes, connect coding agents, and use the companion CLI.
