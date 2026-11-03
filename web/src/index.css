@@ -2,6 +2,7 @@
 @import "./styles/tokens.css";
 @import "./styles/theme.css";
 @import "./styles/typography.css";
+@import "./styles/agent.css";
 @import "./styles/motion.css";
 
 @custom-variant dark (&:is(.dark *));

@@ -17,6 +17,7 @@ import { Box, BoxHeader, BoxBody, BoxRow } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LivingAvatar } from '@/components/ui/LivingAvatar'
+import { AgentThinking } from '@/components/agent/agent-thinking'
 import {
   getAgentActivities,
   issueAgentLease,
@@ -29,7 +30,7 @@ import {
 
 export const AgentConsoleView: React.FC = () => {
   const [activities, setActivities] = useState<AgentActivityItem[]>([])
-  const [, setLoadingActivities] = useState(true)
+  const [loadingActivities, setLoadingActivities] = useState(true)
   const [availableTools, setAvailableTools] = useState<any[]>([])
   const [selectedToolName, setSelectedToolName] = useState('list_pull_requests')
   const [toolArgsInput, setToolArgsInput] = useState(
@@ -280,7 +281,11 @@ export const AgentConsoleView: React.FC = () => {
           </BoxHeader>
 
           <BoxBody className="p-0">
-            {activities.length === 0 ? (
+            {loadingActivities && activities.length === 0 ? (
+              <div className="flex items-center justify-center p-8">
+                <AgentThinking variant="infinity" label="Collecting agent telemetry" showTimer={false} />
+              </div>
+            ) : activities.length === 0 ? (
               <div className="p-8 text-center space-y-3">
                 <div className="w-10 h-10 rounded-md bg-secondary border border-border flex items-center justify-center mx-auto text-primary">
                   <Activity className="w-5 h-5" />
@@ -394,6 +399,12 @@ export const AgentConsoleView: React.FC = () => {
                   className="w-full bg-input border border-border rounded-md p-2.5 font-mono text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
                 />
               </div>
+
+              {executing && (
+                <div className="flex items-center gap-2 rounded-md border border-border bg-secondary/30 px-3 py-2">
+                  <AgentThinking variant="wave" label={`Invoking ${selectedToolName}`} />
+                </div>
+              )}
 
               {executionResult && (
                 <div className="space-y-1.5 pt-2 border-t border-border">

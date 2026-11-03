@@ -26,10 +26,12 @@ import {
   Compass,
   Archive,
   Bell,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { SearchPill } from '@/components/ui/Input'
+import { CommandPalette } from '@/components/CommandPalette'
+import { Kbd } from '@/components/primitives/kbd'
 import { Dialog } from '@/components/ui/Dialog'
 import { UnderlineNav, type NavTabItem } from '@/components/ui/UnderlineNav'
 import {
@@ -72,6 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [cloneModalOpen, setCloneModalOpen] = useState(false)
   const [cloneType, setCloneType] = useState<'http' | 'ssh' | 'mcp'>('http')
   const [copied, setCopied] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [isDemo, setIsDemo] = useState(isDemoModeActive())
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
@@ -148,6 +151,21 @@ export const Header: React.FC<HeaderProps> = ({
     setCurrentUser(null)
     setUserMenuOpen(false)
   }
+
+  // Global shortcut: "/" or Ctrl/Cmd+K toggles the command palette
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return
+      const key = event.key.toLowerCase()
+      if (event.key === '/' || ((event.metaKey || event.ctrlKey) && key === 'k')) {
+        event.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const toggleDemoMode = () => {
     const next = !isDemo
@@ -235,7 +253,17 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Central Search Bar */}
             <div className="hidden md:flex flex-1 max-w-sm mx-4">
-              <SearchPill />
+              <button
+                type="button"
+                onClick={() => setPaletteOpen(true)}
+                data-testid="command-palette-trigger"
+                aria-label="Search or jump to a page (press / or Ctrl+K)"
+                className="flex h-8 w-full items-center gap-2 rounded-md border border-hairline bg-raised/60 pl-2.5 pr-2 text-xs text-text-3 transition-colors hover:border-border hover:text-text-2"
+              >
+                <Search className="size-3.5" />
+                <span className="flex-1 text-left">Search or jump to…</span>
+                <Kbd>/</Kbd>
+              </button>
             </div>
 
             {/* Right Action Group */}
@@ -566,6 +594,17 @@ export const Header: React.FC<HeaderProps> = ({
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         onSuccess={(user) => setCurrentUser(user)}
+      />
+
+      {/* Command Palette (Ctrl/Cmd+K or /) */}
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        onTabChange={onTabChange}
+        onOpenTour={onOpenTour}
+        onOpenManual={onOpenManual}
+        onToggleDemoMode={toggleDemoMode}
+        isDemo={isDemo}
       />
     </>
   )
