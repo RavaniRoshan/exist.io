@@ -73,6 +73,13 @@ Rules:
 - `MergeGate` — interactive demo: three checks gate the merge CTA; success = ink panel, paper text, `--pass` accent.
 - `Crosshair`, `.ruler`, `.halftone` — CSS-only decorative devices.
 
+### Component layer
+
+- Interactive primitives come from shadcn/ui (aria-nova, React Aria) under `components/ui/`; `components.json` is the registry contract.
+- The paper identity is the only visual language: shadcn semantic vars (`--background`, `--primary`, `--border`, `--ring`, …) alias the paper/yellow/ember tokens in `app/global.css`. Never introduce the stock shadcn palette.
+- CSS devices (`.btn`, `.gate-box`) keep their exact look by passing `unstyled` to the primitive; adoption must not move a pixel.
+- New interactive UI starts from a shadcn primitive. Docs MDX exposes `<Kbd>` / `<KbdGroup>`.
+
 ### Logo
 
 `exist.io` wordmark in Geist 600, tracking-tight; to its left a 16px mark: signal-yellow rounded-square (3px radius), 1.5px ink border, centered 4×4 ink pixel. Docs variant: mono `/docs` tag appended (hairline pill). SVG only — no raster dependency.

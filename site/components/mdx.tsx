@@ -2,6 +2,7 @@ import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
 import Link from 'next/link';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '/exist.io';
 
@@ -93,6 +94,8 @@ export function getMDXComponents(components?: MDXComponents) {
     Frame,
     CardGroup,
     Card,
+    Kbd,
+    KbdGroup,
     img: Img,
     a: A,
     ...components,

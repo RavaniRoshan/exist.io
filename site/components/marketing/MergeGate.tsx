@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { IconCheck, IconPullRequest } from './icons';
 
 type Phase = 'idle' | 'merging' | 'merged';
@@ -63,15 +65,22 @@ export function MergeGate() {
         {CHECKS.map((check) => {
           const isChecked = Boolean(checked[check.id]);
           return (
-            <label key={check.id} className="gate-item" data-checked={isChecked}>
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={isChecked}
-                onChange={() => setChecked((state) => ({ ...state, [check.id]: !state[check.id] }))}
-              />
-              <span className="gate-box" aria-hidden="true">
-                <IconCheck width={14} height={14} />
+            <div
+              key={check.id}
+              className="gate-item"
+              data-checked={isChecked}
+              onClick={() => setChecked((state) => ({ ...state, [check.id]: !state[check.id] }))}
+            >
+              <span className="contents" onClick={(event) => event.stopPropagation()}>
+                <Checkbox
+                  unstyled
+                  aria-label={check.label}
+                  className="gate-box"
+                  isSelected={isChecked}
+                  onChange={(selected) =>
+                    setChecked((state) => ({ ...state, [check.id]: selected }))
+                  }
+                />
               </span>
               <span className="min-w-0">
                 <span className="block text-[15px] font-medium leading-tight text-ink">{check.label}</span>
@@ -80,17 +89,18 @@ export function MergeGate() {
               <span className={`mono ml-auto text-[10px] uppercase tracking-[0.18em] ${isChecked ? 'text-pass' : 'text-ink-3'}`}>
                 {isChecked ? 'pass' : 'wait'}
               </span>
-            </label>
+            </div>
           );
         })}
       </fieldset>
 
       <div className="mt-5 border-t border-line pt-4">
-        <button
+        <Button
+          unstyled
           type="button"
           className="btn btn-signal w-full justify-center disabled:cursor-not-allowed disabled:border-line disabled:bg-paper-2 disabled:text-ink-3"
-          disabled={!all || phase === 'merging'}
-          onClick={() => setPhase('merging')}
+          isDisabled={!all || phase === 'merging'}
+          onPress={() => setPhase('merging')}
         >
           {phase === 'merging' ? (
             <>
@@ -100,7 +110,7 @@ export function MergeGate() {
           ) : (
             'Merge pull request'
           )}
-        </button>
+        </Button>
         <p className="mono mt-3 text-center text-[11px] leading-relaxed text-ink-3" role="status">
           {all ? 'all checks passed — merge allowed by policy' : 'merge blocked by policy'}
         </p>
