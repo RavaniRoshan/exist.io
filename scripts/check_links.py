@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fail-closed link checker for published markdown.
 
-Checks README, claims/readiness/threat-model docs, docs/**, and site/docs/**.
+Checks README, claims/readiness/threat-model docs, docs/**, and site/content/docs/**.
 Fails on file:/// schemes, host-specific /home/ paths, broken relative links,
 and external links returning HTTP 4xx/5xx (after retries).
 """
@@ -26,7 +26,7 @@ TARGETS = [
     ROOT / "THREAT_MODEL.md",
 ]
 TARGETS += sorted((ROOT / "docs").rglob("*.md"))
-TARGETS += sorted((ROOT / "site" / "docs").rglob("*.mdx"))
+TARGETS += sorted((ROOT / "site" / "content" / "docs").rglob("*.mdx"))
 
 MD_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 HTML_ATTR = re.compile(r'(?:href|src)="([^"]+)"')

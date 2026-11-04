@@ -8,8 +8,8 @@ BOOTSTRAP='existd bootstrap --email admin@corp.exist.io --namespace acme --data-
 FILES=(
     "scripts/install.sh"
     "README.md"
-    "site/docs/index.mdx"
-    "site/docs/getting-started/index.mdx"
+    "site/content/docs/index.mdx"
+    "site/content/docs/getting-started/index.mdx"
 )
 
 status=0
@@ -20,7 +20,7 @@ for file in "${FILES[@]}"; do
     fi
 done
 
-if grep -rqF 'exist init' "$ROOT_DIR/scripts/install.sh" "$ROOT_DIR/README.md" "$ROOT_DIR/site/docs"; then
+if grep -rqF 'exist init' "$ROOT_DIR/scripts/install.sh" "$ROOT_DIR/README.md" "$ROOT_DIR/site/content/docs"; then
     echo "found the non-existent 'exist init' command in a first-run surface" >&2
     status=1
 fi

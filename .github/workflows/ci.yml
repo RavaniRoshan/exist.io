@@ -127,8 +127,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate documentation links
-        run: npm run validate
+      - name: Verify documentation site
+        run: npm run verify
 
       - name: Check published links
         working-directory: .
@@ -137,6 +137,3 @@ jobs:
       - name: Verify quickstart consistency
         working-directory: .
         run: ./scripts/check_quickstart_consistency.sh
-
-      - name: Build documentation site
-        run: npm run build
