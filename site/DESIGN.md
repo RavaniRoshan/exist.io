@@ -1,97 +1,203 @@
-# Exist — site design system
+# Exist — one design system for the forge, the site, and the docs
 
-One identity for the marketing landing (`/`) and the docs (`/docs`).
+The product (`web/`), the landing (`site/`), and the documentation (`site/docs`)
+share one palette, one typeface, and one set of surfaces. There is no separate
+"marketing theme". A visitor can move from the landing into the docs and flip
+light/dark without the identity changing underneath them.
 
-## References & extraction
+## Source of truth
 
-- **fumadocs.dev** — the "print engineering" reference. Extracted: paper `#f2f0ea`, paper-2 `#e8e5dc`, ink `#121210`, hairlines at 14%/82% ink, layout 1400px / gutter 32→16px, yellow `#fff383` with ink type on it, deep orange accent, crosshair registration marks, ruler tick strips, halftone dot artwork, hard 0-radius frames, status-bar footer, Geist + JetBrains Mono.
-- **clawsgo.ai** — the "cinematic dark AI" reference. Extracted: near-black canvas `#0a0a0a`, `#171717` panels, `#ffffff1a` hairlines, dot-grid hero, perspective product plate, Morandi muted panels, white primary CTA + dark-glass secondary, oversized radius on media only, institution/logo wall, mono log narratives.
+| Layer | File | Owns |
+|---|---|---|
+| Product tokens | `web/src/styles/tokens.css` | OKLCH palette, radii, font stacks, motion |
+| Product semantics | `web/src/styles/theme.css` | shadcn-style semantic aliases |
+| Site mirror | `site/app/global.css` | the same palette plus landing/docs devices |
+| Site fonts | `site/app/layout.tsx` | Mona Sans Variable via `@fontsource-variable/mona-sans` |
 
-## The synthesis — "paper, yellow, print engineering"
+If a colour changes, it changes in `web/src/styles/tokens.css` first, then the
+matching values in `site/app/global.css`. The site deliberately keeps legacy
+names (`--paper`, `--ink`, `--signal`, `--ember`) as aliases so older marketing
+components resolve to the new palette instead of drifting.
 
-Light paper is the canonical experience (docs included). Dark mode is a token flip via `prefers-color-scheme`, not a separate design. Yellow is the only loud color; ember carries everything interactive on light; green is reserved for pass/check states.
+## The palette — Patina on Primer structure
 
-### Color tokens
+Primer supplies the *structure*: canvas / slab / raised surfaces, hairline
+borders, muted text, 6px controls. Patina (oxidized copper) is the signal;
+brass is the warm secondary. Light is the default, dark is a real token flip.
 
-| Token | Light | Dark | Use |
+| Token | Light | Dark | Role |
 |---|---|---|---|
-| `--paper` | `#f2f0ea` | `#0d0d0c` | page background |
-| `--paper-2` | `#e8e5dc` | `#171715` | panels, muted fills |
-| `--paper-3` | `#f7f5ef` | `#131312` | cards on paper |
-| `--ink` | `#121210` | `#eceae2` | primary text |
-| `--ink-2` | `#4c4a42` | `#b9b6ab` | body/lede text |
-| `--ink-3` | `#747167` | `#8b887d` | captions, mono meta |
-| `--line` | `rgba(18,18,16,.14)` | `rgba(236,234,226,.13)` | hairlines, dividers |
-| `--line-strong` | `rgba(18,18,16,.82)` | `rgba(236,234,226,.75)` | frame borders, inputs |
-| `--signal` | `#fff383` | `#fff383` | **primary signal** — selection, primary CTA fill, tape/highlight, active rail |
-| `--signal-deep` | `#e9d457` | `#e9d457` | signal borders & pressed state |
-| `--ember` | `#b23a0e` | `#ff8a3d` | links, interactive text, active states (contrast-safe on both papers) |
-| `--ember-2` | `#8f2d09` | `#ffab6b` | ember hover |
-| `--pass` | `#0f7a5a` | `#5ee0b0` | check/merge-pass states only |
+| `--canvas` | `oklch(0.972 0.002 250)` ≈ `#f6f8fa` | `oklch(0.155 0.012 258)` ≈ `#10151c` | page |
+| `--slab` | `oklch(1 0 0)` | `oklch(0.195 0.014 258)` | cards, plates |
+| `--raised` | `oklch(0.955 0.003 250)` | `oklch(0.225 0.013 258)` | hover fills, bars |
+| `--hairline` | `oklch(0.885 0.006 255)` | `oklch(0.285 0.01 255)` | 1px borders |
+| `--text-1` | `oklch(0.238 0.008 265)` | `oklch(0.935 0.012 250)` | primary text |
+| `--text-2` | `oklch(0.44 0.012 258)` | `oklch(0.635 0.013 252)` | body |
+| `--text-3` | `oklch(0.575 0.012 258)` | `oklch(0.485 0.012 252)` | captions, meta |
+| `--patina` | `oklch(0.45 0.065 184)` ≈ `#2E6F63` | `oklch(0.82 0.06 186)` ≈ `#8CD2C3` | primary signal |
+| `--patina-hover` | `oklch(0.39 0.07 184)` | `oklch(0.75 0.06 186)` | primary hover |
+| `--patina-ink` | `oklch(0.965 0.012 181)` | `oklch(0.16 0.02 184)` | text on patina |
+| `--patina-soft` | `oklch(0.93 0.025 184)` | `oklch(0.28 0.03 186)` | selected rows, badges |
+| `--brass` | `oklch(0.63 0.115 86)` | `oklch(0.78 0.1 88)` | secondary / warning |
+| `--brass-soft` | `oklch(0.94 0.045 88)` | `oklch(0.3 0.045 86)` | brass wash |
+| `--danger` | `oklch(0.55 0.2 25)` | same | destructive |
 
 Rules:
-- **Never** yellow body text on paper; yellow never carries small text except on ink.
-- Interactive text on light = ember; hover = `--ember-2`.
-- Yellow ↔ ink inversion is the CTA hover signature (Fumadocs).
-- No other hues. Morandi tints are allowed only as low-opacity washes inside product plates, never as flat fills.
-- Focus ring: 2px ember, 3px offset. Selection: signal background, ink text (both modes).
 
-### Typography
+- Patina carries primary actions, active states, pass states, and the one
+  accented phrase in a headline. It is not a background for body copy.
+- Brass is for "denied", warnings, and the second window dot. Never for primary
+  actions.
+- Hairlines are 1px. Strong frames use `color-mix(text-1 82%, transparent)`;
+  dark mode uses 75%.
+- No other hues. Product screenshots may contain their own interior colours.
+- Selection is patina with `--patina-ink`; focus is a 2px patina ring at 3px.
 
-- **Geist** — display & body. Display tracking `-0.04em`, line-height ≤ 1.0, weight 400/500. Body 400/450.
-- **JetBrains Mono** — code, coordinates, eyebrow indices, status bar, command chips.
-- **Pixel accents are SVG**, not a typeface (logomark, crosshair ticks) — zero font risk.
-- No Inter, no serif, no system-ui display.
+### Dark mode
 
-### Layout & devices
+The Fumadocs provider (`components/provider.tsx`) owns a `next-themes`
+provider with `attribute: "class"`. The `.dark` class flips every token,
+including the `--color-fd-*` docs variables and the shadcn aliases. There is no
+`prefers-color-scheme` CSS branch. `ThemeToggle` in the marketing nav calls the
+same provider, so the landing and docs stay in sync and the choice persists.
 
-- Container 1400px max; gutter 32px (desktop) → 16px (mobile); section padding 80–112px (desktop) / 56–72px (mobile).
-- **Hairline everywhere**: section rules, frames, tables, status bar. 1px, `--line`.
-- **Registration crosshairs**: `+` marks at the four corners of hero & major plates (`.crosshair`, pseudo-elements).
-- **Ruler tick strips** (`.ruler`): repeating 24px hairlines; used at hero bottom and section dividers.
-- **Halftone dot field** (`.halftone`): radial-gradient dot pattern, fixed, pointer-events none.
-- **Frames are 0-radius**. **Media plates are 16–24px radius only** (documented exception; concentric double-bezel wrapper: outer `ink/6` shell p-1.5 + inner plate with inset highlight).
-- Asymmetric 12-col grids and bento spans; never 3 equal columns.
-- Single primary CTA per section; secondary is outline or text link with arrow.
-- 8px grid; vertical rhythm locked to it.
+## Typography
 
-### Motion
+- **Mona Sans Variable** — everything sans. Weights: 300 for display, 400 for
+  body, 500–600 for UI labels and the wordmark. Display tracking `-0.035em` to
+  `-0.047em`; display line-height `0.98–1.02`.
+- **`ui-monospace`** — eyebrows, coordinates, code, status bars, command chips,
+  figure captions, terminal. No second webfont.
+- Headlines are `font-light` with one patina phrase: "From lease to **merge.**",
+  "**Policy** at every step", "Built for **agents.**", "**Evidence,** not
+  adjectives." Do not colour whole headlines.
+- Body copy is 15–18px with `text-wrap: pretty`; headings use `balance`.
+- Mono meta is uppercase with `0.14em–0.22em` tracking, 9–11px.
 
-- Easing `cubic-bezier(0.32, 0.72, 0, 1)`; durations 500–700ms for entrances, 150–250ms for state changes.
-- Entrances: fade + translate-y 24–40px + blur(6px) → resolve; IntersectionObserver, stagger ≤ 70ms (max 280ms).
-- Press darkens, never scales. Hover inversions (signal↔ink) are discrete flips with 200ms color transition.
-- `prefers-reduced-motion`: all entrance motion disabled; content visible immediately.
-- No `linear`/`ease-in-out`; no layout-property animation; blur only on sticky surfaces.
+## Layout
 
-### Components
+- `.container-site`: max 1400px, 16px gutters, 32px from `md`.
+- Sections: `py-16` mobile / `py-24` desktop. Major sections end in a hairline.
+- 12-column grids, asymmetric spans (`5/4/3`, `7/5`). Never three equal cards.
+- Landing order: `Nav → Hero → SwarmBand → Loop → Product → Platform →
+  Quickstart → Evidence → FinalCta → StatusFooter`.
+- Every section starts with a numbered mono eyebrow (`01 — the agent loop`).
+- Rules, crosshairs, rulers, and dither seams provide structure instead of
+  shadows. Cards are flat; only media plates get a slight elevation.
 
-- `ButtonSignal` — signal fill, ink text, 1px `--line-strong` border, 0 radius, height 44px, hover → ink fill + paper text; `ButtonOutline` — transparent, `--line-strong` border, ink text, hover → paper-2 fill; `ButtonInk` — ink fill, paper text (inverted sections).
-- `CommandChip` — mono, paper-3 fill, hairline border, copy button (copied state ✓ 1.5s).
-- `Eyebrow` — mono 11px uppercase, tracked 0.18em, optional index (`01`) and ember dot.
-- `StatusBar` — footer: mono 11–12px, `v0.6.0-beta · PURE GO · ZERO CGO · APACHE-2.0`, pixel dots, hairline top, yellow segment mark.
-- `Plate` — double-bezel wrapper; inner plate `--paper-3` with hairline border; captions below in mono (`fig. 1 — pr view`).
-- `MergeGate` — interactive demo: three checks gate the merge CTA; success = ink panel, paper text, `--pass` accent.
-- `Crosshair`, `.ruler`, `.halftone` — CSS-only decorative devices.
+## Surfaces and devices
 
-### Component layer
+| Class | Use |
+|---|---|
+| `.frame` / `.frame-strong` | flat hairline panels (lease JSON, ref isolation, layers) |
+| `.window` / `.window-bar` / `.window-dots` | browser/terminal chrome around live demos and screenshots |
+| `.plate` / `.plate-inner` | double-bezel media plate, 14px outer / 9px inner |
+| `.btn` / `.btn-signal` / `.btn-ink` / `.btn-ghost` | 44px controls, 6px radius, 1px border, hover inversions; disabled resolves to `--raised` + `--text-3` |
+| `.btn-chip` | circular trailing icon; nudges on hover |
+| `.cmd` / `.cmd-scroll` / `.cmd-copy` | install chip; horizontal scroll with mask, copy button |
+| `.tab` | mono tab strip; patina underline on `aria-selected="true"` |
+| `.kbd` | keyboard key, mono 10px |
+| `.eyebrow` / `.marker` | indexed label; patina wash behind one headline phrase |
+| `.ruler` / `.crosshair` / `.halftone` / `.grid-field` / `.hatch` / `.dither` | print-engineering instruments |
+| `.statusbar` / `.pixel` | footer rail and square mark |
+| `.gate-item` / `.gate-box` | merge-gate checklist rows |
 
-- Interactive primitives come from shadcn/ui (aria-nova, React Aria) under `components/ui/`; `components.json` is the registry contract.
-- The paper identity is the only visual language: shadcn semantic vars (`--background`, `--primary`, `--border`, `--ring`, …) alias the paper/yellow/ember tokens in `app/global.css`. Never introduce the stock shadcn palette.
-- CSS devices (`.btn`, `.gate-box`) keep their exact look by passing `unstyled` to the primitive; adoption must not move a pixel.
-- New interactive UI starts from a shadcn primitive. Docs MDX exposes `<Kbd>` / `<KbdGroup>`.
+Frames are 6–8px radius; media windows 10px. Controls are 6px. No pill-shaped
+cards, no glassmorphism, no gradients on text.
 
-### Logo
+## Motion
 
-`exist.io` wordmark in Geist 600, tracking-tight; to its left a 16px mark: signal-yellow rounded-square (3px radius), 1.5px ink border, centered 4×4 ink pixel. Docs variant: mono `/docs` tag appended (hairline pill). SVG only — no raster dependency.
+- Easing: `--ease-out: cubic-bezier(0.2, 0, 0, 1)`; entrances use
+  `--ease-spring: cubic-bezier(0.32, 0.72, 0, 1)`.
+- Entrance: `.reveal` = opacity 0 → 1, `translateY(28px)` → 0, `blur(6px)` → 0,
+  760ms, driven by an IntersectionObserver in `Reveal.tsx`.
+- State changes: 140–200ms colour/border transitions. Press translates 1px; it
+  never scales.
+- Looping devices: marquee 38s, caret 1.05s step-end, status dot pulse 2.4s,
+  scanline 1.1s, pulse ring 2s, `rise-in` 420ms.
+- Hover inversions: platform cards, evidence rows, and primary buttons flip
+  foreground/background rather than adding a shadow.
+- `prefers-reduced-motion` disables reveals, marquees, carets, pulses,
+  scanlines, and smooth scrolling; content renders in its final state.
 
-### Icon
+## Interactive modules
 
-`app/icon.svg` — the mark alone. Favicon, apple-touch, and docs all derive from it.
+- **`ForgeDemo`** (hero) — auto-sequences lease → push → PR → checks → merge in
+  5 rows, with pause/play, replay, clickable progress segments, an aria-live
+  narration, and a "merged" stamp. Reduced motion jumps to the completed state.
+- **`Loop`** (01) — six-step tabbed pipeline. Auto-advances every 4.6s until
+  the pointer or focus enters; supports Arrow keys, Home, End; each step types
+  a terminal transcript with `rise-in` lines and a caret.
+- **`ProductPreview`** (02) — keyboard-accessible tabs over the three real
+  screenshots; changes trigger a scanline and a caption/badge swap.
+- **`MergeGate`** — check the three policy items to enable the merge button;
+  merging shows an inverted success panel with a pulse ring and reset.
+- **`QuickstartTerminal`** (04) — scroll-triggered, types install → bootstrap →
+  run, prints verified output lines, supports skip/run-again, copies all
+  commands. The visible typing is `aria-hidden`; an `sr-only` block keeps the
+  real commands in the initial HTML for the claims gate.
+- **`PixelField` + `SwarmBand`** — canvas blueprint dots with agent cells,
+  trails, and a pointer wake; pauses off-screen and under reduced motion.
+- **`ScrollProgress`** — 1px patina rail at the bottom of the sticky nav.
+- **`LiveClock`** — UTC clock in the status bar; hydrates without mismatch.
+- **`ThemeToggle`** — one switch for landing + docs.
 
-### Anti-slop guardrails (enforced in review)
+## Screenshots
 
-- No uniform border-radius across components.
-- No purple/blue gradients; no gradient text.
-- No emoji in UI copy; no exclamation marks.
-- No symmetrical 3-col card rows; no stock imagery; only real product screenshots (`public/product/`) or CSS/SVG art.
-- No `Inter`, no fake logos, no "enterprise-ready", no stale counts (see CLAIMS.md; machine-enforced for README + site sources).
+All product imagery is captured from a real seeded `existd`, not mocked in the
+site:
+
+```bash
+bash scripts/capture/seed.sh /tmp/exist-capture 18081
+# Playwright: 1440×900 CSS viewport, deviceScaleFactor 2, dark scheme,
+# token injected into localStorage, onboarding tour suppressed
+```
+
+| Asset | View |
+|---|---|
+| `site/public/product/forge-home.png` | repository overview + activity feed |
+| `site/public/product/forge-agents.png` | agent console / MCP + leases |
+| `site/public/product/forge-pr.png` | pull request + checks + merge gate |
+| `site/public/forge-pr.png` | docs hero (same capture) |
+| `site/public/og-exist-os.png` | 1200×630 social card, dark Patina |
+
+The captures are 2880×1800 (2× DPR) but are rendered in a 1440×900 box, so
+`next/image` dimensions stay `1440×900`. Figures are numbered 1–4 because the
+hero demo is fig. 1. Captions state the view and "real ui".
+
+## Documentation
+
+- Fumadocs tokens are derived from the same palette:
+  `--color-fd-background: var(--canvas)`, `--color-fd-primary: var(--patina)`,
+  etc. The docs sidebar, TOC, search, and code blocks inherit the identity.
+- `lib/layout.shared.tsx` and every marketing link use `asset()` /
+  `basePath` so production URLs stay under `/exist.io/`.
+- Docs MDX exposes the shared `Kbd` primitive. Frames use `Frame` with
+  `/forge-pr.png`.
+- The theme toggle in the docs sidebar and the marketing `ThemeToggle` write the
+  same preference.
+
+## Accessibility
+
+- Tabs use `role="tablist"`, `aria-selected`, roving `tabIndex`, and full
+  keyboard support.
+- The merge demo exposes `aria-live` state; decorative canvases are
+  `aria-hidden`.
+- Focus rings are visible on both palettes; hover inversions are duplicated
+  with `focus-visible` styles.
+- The terminal's typed surface is decorative; commands remain available to
+  assistive tech and to the claims audit.
+- Contrast: body copy uses `--text-2` on `--canvas`; small mono meta uses
+  `--text-3` only for non-essential captions. Patina fills always pair with
+  `--patina-ink`.
+
+## Guardrails
+
+- No second palette, no Tailwind default colours in new marketing code.
+- No stale screenshots, fake product UI, stock photos, or invented metrics.
+- No claim without a `CLAIMS.md` entry; `npm run claims-audit` reads the built
+  HTML and must stay green. The forbidden list includes "primer" and stale
+  counts.
+- No animation library; native CSS keyframes + canvas are enough.
+- Every push gate: `site npm run verify`, `web npm test && npm run build`,
+  `go test ./...`.

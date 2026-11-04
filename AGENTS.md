@@ -94,7 +94,7 @@ exist.io/
 │   ├── components/           # marketing/ (landing sections) + Fumadocs chrome
 │   ├── content/docs/         # MDX documentation (fumadocs-mdx)
 │   ├── scripts/              # check-links, audit-claims (CLAIMS.md gate), redirect-stubs (legacy doc URLs)
-│   └── DESIGN.md             # "paper, yellow, print engineering" — read BEFORE any site change
+│   └── DESIGN.md             # Unified Patina design system — read BEFORE any site change
 ├── web/                     # Vite + React 19 + TypeScript frontend application
 │   ├── src/
 │   │   ├── components/

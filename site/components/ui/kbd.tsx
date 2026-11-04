@@ -1,6 +1,6 @@
 'use client';
 
-// shadcn/ui (aria-nova) Kbd, mapped onto the paper/yellow tokens.
+// shadcn/ui (aria-nova) Kbd, mapped onto the unified Patina tokens.
 import { cn } from '@/lib/utils';
 import { Keyboard as KbdPrimitive } from 'react-aria-components';
 
