@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import { CommandChip } from './CommandChip';
+import { ForgeDemo } from './ForgeDemo';
 import { Reveal } from './Reveal';
 import { IconArrowUpRight } from './icons';
 import { asset } from '@/lib/asset';
@@ -16,29 +16,27 @@ const STATS: Array<[string, string]> = [
 export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-line">
-      {/* blueprint dot field, right side, fading into paper */}
       <div
         aria-hidden="true"
-        className="halftone pointer-events-none absolute inset-y-0 right-0 w-3/5 opacity-70 [mask-image:linear-gradient(to_right,transparent,black_45%)]"
+        className="grid-field pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_88%)]"
       />
-      {/* registration crosshairs */}
       <span aria-hidden="true" className="crosshair left-3 top-3 lg:left-6 lg:top-6" />
       <span aria-hidden="true" className="crosshair right-3 top-3 lg:right-6 lg:top-6" />
 
-      <div className="container-site relative grid gap-12 pb-10 pt-14 lg:grid-cols-12 lg:items-center lg:gap-10 lg:pb-14 lg:pt-20">
+      <div className="container-site relative grid gap-12 pb-12 pt-14 lg:grid-cols-12 lg:items-center lg:gap-10 lg:pb-16 lg:pt-20">
         <div className="min-w-0 lg:col-span-7">
           <Reveal>
             <p className="eyebrow">self-hosted · apache-2.0 · pure go</p>
           </Reveal>
 
           <Reveal>
-            <h1 className="mt-6 text-[clamp(3.1rem,7.4vw,5.3rem)] font-medium leading-[0.98] tracking-[-0.045em] text-ink">
-              The self-hosted forge for <span className="marker">coding&nbsp;agents.</span>
+            <h1 className="mt-6 text-[clamp(3.05rem,7.2vw,5.15rem)] font-light leading-[0.98] tracking-[-0.045em] text-text-1">
+              The self-hosted forge for <span className="marker text-patina">coding&nbsp;agents.</span>
             </h1>
           </Reveal>
 
           <Reveal>
-            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-ink-2">
+            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-text-2">
               exist.io gives Claude Code, Codex, Cline, and Cursor a real Git home —
               scoped leases, pull requests, and policy-gated merges — on your hardware,
               in one binary.
@@ -51,7 +49,7 @@ export function Hero() {
                 Install exist.io
                 <span className="btn-chip" aria-hidden="true"><IconArrowUpRight width={14} height={14} strokeWidth={2} /></span>
               </a>
-              <a href="/docs/" className="btn">
+              <a href={asset('/docs/')} className="btn">
                 Read the docs
                 <span className="btn-chip" aria-hidden="true"><IconArrowUpRight width={14} height={14} strokeWidth={2} /></span>
               </a>
@@ -61,7 +59,7 @@ export function Hero() {
           <Reveal>
             <div className="mt-6">
               <CommandChip command={INSTALL} />
-              <p className="mono mt-3 text-[11px] leading-relaxed text-ink-3">
+              <p className="mono mt-3 text-[11px] leading-relaxed text-text-3">
                 v0.6.0-beta · apache-2.0 · zero cgo · no external database
               </p>
             </div>
@@ -70,34 +68,25 @@ export function Hero() {
 
         <figure className="min-w-0 lg:col-span-5">
           <Reveal>
-            <div className="plate">
-              <div className="plate-inner">
-                <Image
-                  src={asset('/product/forge-pr.png')}
-                  alt="exist.io pull request view — checks passing, capability lease verified, merge gate ready"
-                  width={1440}
-                  height={900}
-                  priority
-                  className="h-full w-full object-cover object-top"
-                />
-              </div>
-            </div>
+            <ForgeDemo />
             <figcaption className="mt-3 flex items-center justify-between gap-4">
-              <span className="mono text-[11px] text-ink-3">fig. 1 — pr view · lease verified · checks 3/3</span>
-              <span className="mono border border-signal-deep bg-signal px-2 py-1 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#121210]">real ui</span>
+              <span className="mono text-[10.5px] text-text-3">fig. 1 — live merge sequence · checks 3/3</span>
+              <span className="mono rounded-sm border border-patina/40 bg-patina-soft px-2 py-1 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-patina">
+                interactive
+              </span>
             </figcaption>
           </Reveal>
         </figure>
       </div>
 
       <div className="ruler" aria-hidden="true" />
-      <div className="border-b border-line bg-paper-3">
+      <div className="relative border-b border-line bg-slab">
         <dl className="container-site grid grid-cols-2 divide-x divide-line md:grid-cols-4">
           {STATS.map(([value, label]) => (
             <div key={label} className="flex flex-col gap-1 px-4 py-4 first:pl-0 sm:px-6">
               <dt className="sr-only">{label}</dt>
-              <dd className="mono text-lg font-semibold leading-none text-ink sm:text-xl">{value}</dd>
-              <dd className="mono text-[9.5px] uppercase leading-snug tracking-[0.14em] text-ink-3">{label}</dd>
+              <dd className="mono text-lg font-semibold leading-none text-text-1 sm:text-xl">{value}</dd>
+              <dd className="mono text-[9.5px] uppercase leading-snug tracking-[0.14em] text-text-3">{label}</dd>
             </div>
           ))}
         </dl>

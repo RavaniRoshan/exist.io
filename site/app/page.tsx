@@ -1,5 +1,6 @@
 import { Nav } from '@/components/marketing/Nav';
 import { Hero } from '@/components/marketing/Hero';
+import { SwarmBand } from '@/components/marketing/SwarmBand';
 import { Loop } from '@/components/marketing/Loop';
 import { Product } from '@/components/marketing/Product';
 import { Platform } from '@/components/marketing/Platform';
@@ -14,6 +15,7 @@ export default function Home() {
       <Nav />
       <main>
         <Hero />
+        <SwarmBand />
         <Loop />
         <Product />
         <Platform />

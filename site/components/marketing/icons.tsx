@@ -123,6 +123,23 @@ export function IconBox(props: IconProps) {
   );
 }
 
+export function IconSun(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+export function IconMoon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z" />
+    </svg>
+  );
+}
+
 export function IconStar(props: IconProps) {
   return (
     <svg {...base} {...props}>
@@ -139,7 +156,7 @@ export function IconGitHub(props: IconProps) {
   );
 }
 
-/** Exist logomark: signal-yellow chip, ink border, single ink pixel. */
+/** Exist logomark: patina chip, ink border, single ink pixel. */
 export function Logomark({ size = 22, ...props }: IconProps & { size?: number }) {
   return (
     <svg
@@ -150,8 +167,8 @@ export function Logomark({ size = 22, ...props }: IconProps & { size?: number })
       aria-label="exist.io"
       {...props}
     >
-      <rect x="0.75" y="0.75" width="18.5" height="18.5" rx="3.5" fill="var(--signal)" stroke="#121210" strokeWidth="1.5" />
-      <rect x="7.5" y="7.5" width="5" height="5" fill="#121210" />
+      <rect x="0.75" y="0.75" width="18.5" height="18.5" rx="3.5" fill="var(--patina)" stroke="var(--text-1)" strokeWidth="1.5" />
+      <rect x="7.5" y="7.5" width="5" height="5" fill="var(--patina-ink)" />
     </svg>
   );
 }

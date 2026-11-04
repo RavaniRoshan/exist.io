@@ -1,19 +1,9 @@
-import { Geist, Geist_Mono } from 'next/font/google';
+import '@fontsource-variable/mona-sans';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Provider } from '@/components/provider';
 import { siteUrl } from '@/lib/shared';
 import './global.css';
-
-const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
-});
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(`${siteUrl}/`),
@@ -32,7 +22,14 @@ export const metadata: Metadata = {
     title: 'exist.io — the self-hosted forge for coding agents',
     description:
       'Scoped leases, pull requests, and policy-gated merges for coding agents — on your hardware, in one pure-Go binary.',
-    images: ['og-exist-os.png'],
+    images: [
+      {
+        url: 'og-exist-os.png',
+        width: 1200,
+        height: 630,
+        alt: 'exist.io — the self-hosted forge for coding agents',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -41,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className="flex min-h-screen flex-col">
         <Provider>{children}</Provider>
       </body>
